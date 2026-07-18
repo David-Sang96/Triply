@@ -41,7 +41,9 @@
           "project": "triply-tutorial",
           "url": "https://sentry.io/"
         }
-      ]
+      ],
+      "@clerk/expo",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

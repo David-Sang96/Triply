@@ -2,3 +2,13 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css";
 @import "nativewind/theme";
+
+@theme {
+  /* Poppins (design system). Default body text uses Regular; the weight-named
+     families below are applied per element because React Native needs the
+     specific font file for each weight, not just a font-weight value. */
+  --font-sans: "Poppins_400Regular";
+  --font-pmedium: "Poppins_500Medium";
+  --font-psemibold: "Poppins_600SemiBold";
+  --font-pbold: "Poppins_700Bold";
+}
