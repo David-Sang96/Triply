@@ -33,6 +33,14 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "@sentry/react-native",
+        {
+          "organization": "qworky",
+          "project": "triply-tutorial",
+          "url": "https://sentry.io/"
+        }
       ]
     ],
     "experiments": {

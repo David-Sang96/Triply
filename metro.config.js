@@ -1,6 +1,8 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 const { withNativewind } = require("nativewind/metro");
 
-const config = getDefaultConfig(__dirname);
+// getSentryExpoConfig is a drop-in replacement for Expo's getDefaultConfig
+// that adds Sentry's source-map support. We then wrap it with NativeWind.
+const config = getSentryExpoConfig(__dirname);
 
 module.exports = withNativewind(config);
