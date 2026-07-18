@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
 
-import { inngest } from "./client";
+import { inngest } from "@/server/inngest/client";
 
 // Payload the Clerk webhook sends for a created or updated user
 // (src/app/api/webhooks/clerk+api.ts). Kept flat and limited to what the write

@@ -63,15 +63,19 @@ in order — each phase depends on the ones before it.
   - [ ] `days` table (unique `trip_id, day_number`)
   - [ ] `activities` table (place fields + `place_verified`)
   - [ ] `place_cache` table (Nominatim cache)
-- [x] Run `drizzle-kit` migration against Neon *(via `npm run db:push`; `users` table created)*
+- [x] Apply the schema to Neon *(via `npm run db:push` — pushes `schema.ts`
+      directly, creating the `users` table; this is not a versioned migration.
+      `npm run db:generate` produces versioned SQL for production.)*
 - [x] **Verify:** neon-http write works *(the user-sync Inngest job inserts a row —
       done in place of a `select 1` health route, which does not exist yet)*
 
 ## Phase 3 — Auth (Clerk — Google + Email)
 
 > Scope grew beyond "Google only": email/password sign-up (with email-code
-> verification) and sign-in are now built too. Client-side auth is done; the
-> backend items below wait on Phase 1 (no server exists yet).
+> verification) and sign-in are now built too. Client-side auth **and** the
+> backend user-sync (Clerk webhook + Inngest jobs → Neon) are done. What remains
+> is protecting the trip API routes with `authenticateRequest()`, which depends
+> on those routes existing (Phase 5).
 
 **Client (done)**
 

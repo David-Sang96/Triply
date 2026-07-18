@@ -12,7 +12,7 @@ fast and gives us automatic retries if the database write fails.
 
 ## The big picture
 
-```
+```text
 ┌─────────────┐   sign up / sign in    ┌─────────────┐
 │  App UI      │ ─────────────────────► │   Clerk      │  (creates the user,
 │ (sign-up,    │                        │  (auth SaaS) │   stores email, name…)
@@ -95,7 +95,7 @@ never cause errors. For `user.deleted`, Clerk sends only the `id`.
 | File | Job |
 |---|---|
 | `src/app/(auth)/sign-up.tsx`, `sign-in.tsx`, `welcome.tsx` | The UI. Uses Clerk (`@clerk/expo`) for email and Google sign-in. |
-| `src/app/api/webhooks/clerk+api.ts` | Receives Clerk's `user.created` webhook, verifies it, sends the Inngest event. |
+| `src/app/api/webhooks/clerk+api.ts` | Receives Clerk's `user.created` / `user.updated` / `user.deleted` webhooks, verifies them, sends the matching Inngest event. |
 | `src/server/inngest/client.ts` | Creates the one Inngest client (`id: "triply"`). |
 | `src/server/inngest/functions.ts` | The user-sync jobs: `syncUserCreated` (insert), `syncUserUpdated` (upsert), `syncUserDeleted` (delete). |
 | `src/app/api/inngest+api.ts` | The endpoint Inngest calls to run our functions (`serve` from `inngest/edge`). |
@@ -170,30 +170,31 @@ You need three long-running terminals plus one browser setup. (These are
 developer-run — see `AGENTS.md`.)
 
 1. **Once — create the table in Neon:**
-   ```
+   ```sh
    npm run db:push
    ```
 2. **Expo dev server** (serves the API routes). This is usually already running:
-   ```
+   ```sh
    npm run start
    ```
    Note: `app.json` must have `web.output: "server"`, or the `+api.ts` routes do
    not run. Restart Expo after changing that.
 3. **Inngest dev server** (runs the background job):
-   ```
+   ```sh
    npm run inngest:dev
    ```
    Wait for it to say **"apps synced"** — that means it found our
-   `/api/inngest` endpoint and registered `syncUserCreated`.
+   `/api/inngest` endpoint and registered the user-sync functions
+   (`syncUserCreated`, `syncUserUpdated`, `syncUserDeleted`).
 4. **ngrok** (gives Clerk a public URL to reach your laptop):
-   ```
+   ```sh
    npm run tunnel
    ```
    Copy the `https://…ngrok-free.app` URL (also visible at
    http://127.0.0.1:4040, which shows every request live).
 5. **Clerk Dashboard → Webhooks → Add Endpoint:**
    - URL: `https://<ngrok-url>/api/webhooks/clerk`
-   - Subscribe to `user.created`.
+   - Subscribe to `user.created`, `user.updated`, and `user.deleted`.
    - Make sure its Signing Secret matches `CLERK_WEBHOOK_SIGNING_SECRET`.
 
 Then sign up a user (or use Clerk's **Testing** tab) and watch the row appear.
