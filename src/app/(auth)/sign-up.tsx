@@ -5,9 +5,15 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as WebBrowser from "expo-web-browser";
 
 import { AuthField } from "@/components/AuthField";
 import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
+
+// TODO: point these at the real policy pages once they exist.
+const TERMS_URL = "https://triply.app/terms";
+const PRIVACY_URL = "https://triply.app/privacy";
+const openPolicy = (url: string) => WebBrowser.openBrowserAsync(url);
 
 function errMessage(err: unknown, fallback: string): string {
   const e = err as {
@@ -81,6 +87,7 @@ export default function SignUp() {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [resending, setResending] = useState(false);
   const [touched, setTouched] = useState<Partial<Record<keyof FieldErrors, boolean>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(299);
@@ -132,7 +139,12 @@ export default function SignUp() {
 
     setBusy(true);
     try {
-      await signUp.create({ emailAddress, password, firstName, lastName });
+      await signUp.create({
+        emailAddress: emailAddress.trim(),
+        password,
+        firstName,
+        lastName,
+      });
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setSecondsLeft(299);
       setStep("verify");
@@ -163,16 +175,25 @@ export default function SignUp() {
   };
 
   const onResend = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || resending) return;
     setFormError(null);
-    setCode("");
-    setSecondsLeft(299);
-    setResendNonce((n) => n + 1);
+    setResending(true);
     try {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      // Only reset the code/countdown once the new code was actually sent.
+      setCode("");
+      setSecondsLeft(299);
+      setResendNonce((n) => n + 1);
     } catch (err) {
       setFormError(errMessage(err, "Could not resend the code."));
+    } finally {
+      setResending(false);
     }
+  };
+
+  const toggleTerms = () => {
+    setAgreed((a) => !a);
+    touch("terms");
   };
 
   // ---- Verify step ----
@@ -374,14 +395,13 @@ export default function SignUp() {
           </View>
 
           {/* Terms agreement */}
-          <Pressable
-            onPress={() => {
-              setAgreed((a) => !a);
-              touch("terms");
-            }}
-            className="mt-5 flex-row items-start"
-          >
-            <View
+          <View className="mt-5 flex-row items-start">
+            <Pressable
+              onPress={toggleTerms}
+              hitSlop={6}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreed }}
+              accessibilityLabel="Agree to the Terms of Service and Privacy Policy"
               className="mt-0.5 h-5 w-5 items-center justify-center rounded-md border"
               style={{
                 borderColor: errFor("terms")
@@ -393,14 +413,24 @@ export default function SignUp() {
               }}
             >
               {agreed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
-            </View>
+            </Pressable>
             <Text className="ml-2 flex-1 text-[13px] leading-5 text-slate-500">
-              I agree to the{" "}
-              <Text className="font-psemibold text-[#208AEF]">Terms of Service</Text>
-              {" "}and{" "}
-              <Text className="font-psemibold text-[#208AEF]">Privacy Policy</Text>
+              <Text onPress={toggleTerms}>I agree to the </Text>
+              <Text
+                onPress={() => openPolicy(TERMS_URL)}
+                className="font-psemibold text-[#208AEF]"
+              >
+                Terms of Service
+              </Text>
+              <Text onPress={toggleTerms}> and </Text>
+              <Text
+                onPress={() => openPolicy(PRIVACY_URL)}
+                className="font-psemibold text-[#208AEF]"
+              >
+                Privacy Policy
+              </Text>
             </Text>
-          </Pressable>
+          </View>
           {errFor("terms") ? (
             <Text className="mt-1 text-[12px] text-red-500">{errFor("terms")}</Text>
           ) : null}

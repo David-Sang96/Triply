@@ -24,10 +24,10 @@ if (!publishableKey) {
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  // Sends personally identifiable info (e.g. IP address). See the Sentry docs.
-  sendDefaultPii: true,
-  // Capture 100% of transactions in development. Lower this in production.
-  tracesSampleRate: 1.0,
+  // PII (e.g. IP address) only in development — keep it off in released builds.
+  sendDefaultPii: __DEV__,
+  // Sample all transactions in development, a small fraction in production.
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
 });
 
 SplashScreen.preventAutoHideAsync();
