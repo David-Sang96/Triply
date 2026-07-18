@@ -49,16 +49,17 @@ rely on memory of older Expo or React Native patterns.
 **Backend & services** — *planned unless marked installed. Do not substitute
 other tools; rationale is in `_plans/triply-implementation-plan.md`.*
 
-- **Database:** Postgres on [Neon](https://neon.tech) (`neon-http` driver)
-- **ORM:** [Drizzle](https://orm.drizzle.team)
-- **Auth:** [Clerk](https://clerk.com) — Google sign-in (`@clerk/expo`)
+- **Database:** Postgres on [Neon](https://neon.tech) (`neon-http` driver) — **installed**
+- **ORM:** [Drizzle](https://orm.drizzle.team) (`drizzle-orm` + `drizzle-kit`) — **installed**
+- **Auth:** [Clerk](https://clerk.com) — Google + email (`@clerk/expo`, `@clerk/backend`) — **installed**
 - **AI:** [Google Gemini](https://ai.google.dev) (`@google/genai`, structured JSON)
 - **Place verification:** OpenStreetMap [Nominatim](https://nominatim.org) (geocoding)
 - **Images:** [Pexels](https://pexels.com) (search) + [ImageKit](https://imagekit.io) (optimization/delivery)
-- **Background jobs:** [Inngest](https://www.inngest.com) (`inngest/edge`)
+- **Background jobs:** [Inngest](https://www.inngest.com) (`inngest/edge`) — **installed**
 - **Monitoring:** [Sentry](https://sentry.io) — **installed**
 
-Only NativeWind and Sentry are installed today. The rest is the planned stack.
+Installed today: NativeWind, Sentry, Clerk, Neon + Drizzle, Inngest. Still
+planned: Gemini, Nominatim, Pexels, ImageKit.
 
 ## Project layout & conventions
 
@@ -82,3 +83,23 @@ Only NativeWind and Sentry are installed today. The rest is the planned stack.
 - `npm run ios` / `npm run android` — native dev build (expo-dev-client). **Do
   not run these** — see the non-negotiable rules.
 - `npm run lint` — expo lint.
+
+**Backend / database — developer-run, do NOT run these yourself.** Like the app
+dev server, these touch the developer's live services (Neon, ngrok, Clerk) or
+run long-lived processes. If one is needed, STOP and ask the developer.
+
+- `npm run db:push` — apply `src/server/db/schema.ts` to Neon. **Writes to the
+  live database.**
+- `npm run db:generate` — generate versioned SQL migrations under `drizzle/`
+  (for production; dev uses `db:push`).
+- `npm run db:studio` — open Drizzle Studio to browse/edit DB rows.
+- `npm run inngest:dev` — local Inngest dev server, pointed at
+  `http://localhost:8081/api/inngest`. Long-running. (Edit the port in the
+  script if the Expo dev server uses a different one.)
+- `npm run tunnel` — expose the dev server via ngrok so Clerk can reach the
+  webhook route. Long-running; needs ngrok installed on the machine.
+
+Local backend dev flow: `db:push` once, then run `inngest:dev` and `tunnel` in
+separate terminals alongside the Expo dev server. The Clerk webhook
+(`user.created`) → Inngest event (`clerk/user.created`) → `syncUserCreated`
+inserts a row into the Neon `users` table.
