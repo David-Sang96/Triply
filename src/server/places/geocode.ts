@@ -61,23 +61,23 @@ export async function geocodePlace(
 
   try {
     const res = await fetch(url, { headers });
-    if (res.ok) {
-      const data = (await res.json()) as {
-        features?: {
-          geometry?: { coordinates?: [number, number] };
-          properties?: Record<string, unknown>;
-        }[];
+    if (!res.ok) return null; // transient upstream error — do not cache
+
+    const data = (await res.json()) as {
+      features?: {
+        geometry?: { coordinates?: [number, number] };
+        properties?: Record<string, unknown>;
+      }[];
+    };
+    raw = data;
+    // Photon returns GeoJSON: coordinates are [lng, lat].
+    const coords = data.features?.[0]?.geometry?.coordinates;
+    if (Array.isArray(coords) && coords.length === 2) {
+      result = {
+        lat: coords[1],
+        lng: coords[0],
+        displayName: displayNameFrom(data.features?.[0]?.properties, placeName),
       };
-      raw = data;
-      // Photon returns GeoJSON: coordinates are [lng, lat].
-      const coords = data.features?.[0]?.geometry?.coordinates;
-      if (Array.isArray(coords) && coords.length === 2) {
-        result = {
-          lat: coords[1],
-          lng: coords[0],
-          displayName: displayNameFrom(data.features?.[0]?.properties, placeName),
-        };
-      }
     }
   } catch (err) {
     console.error("Photon geocode failed:", err);

@@ -21,7 +21,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const tripsQuery = useTrips();
 
-  const firstName = user?.firstName ?? "David";
+  const firstName = user?.firstName ?? "there";
   const avatarUrl = user?.imageUrl;
   const trips = tripsQuery.data ?? [];
 

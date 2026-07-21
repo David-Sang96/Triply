@@ -24,6 +24,8 @@ export function Stepper({ value, min, max, onChange, helper }: Props) {
           onPress={() => onChange(Math.max(min, value - 1))}
           disabled={atMin}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Decrease value"
           className="h-12 w-12 items-center justify-center active:opacity-60"
         >
           <Ionicons
@@ -39,6 +41,8 @@ export function Stepper({ value, min, max, onChange, helper }: Props) {
           onPress={() => onChange(Math.min(max, value + 1))}
           disabled={atMax}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Increase value"
           className="h-12 w-12 items-center justify-center active:opacity-60"
         >
           <Ionicons

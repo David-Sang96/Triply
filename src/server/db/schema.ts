@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -61,46 +62,50 @@ export const timeOfDay = pgEnum("time_of_day", [
   "evening",
 ]);
 
-export const trips = pgTable("trips", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  destination: text("destination").notNull(),
-  numDays: integer("num_days").notNull(),
-  numTravelers: integer("num_travelers").notNull(),
-  budgetLevel: budgetLevel("budget_level").notNull(),
-  interests: text("interests").array().notNull(),
-  pace: text("pace"),
-  title: text("title"),
-  summary: text("summary"),
-  coverImageUrl: text("cover_image_url"),
-  // Unsplash requires crediting the photographer and linking back to Unsplash
-  // wherever a photo is shown (see src/server/images.ts).
-  coverImagePhotographerName: text("cover_image_photographer_name"),
-  coverImagePhotographerUrl: text("cover_image_photographer_url"),
-  coverImageUnsplashUrl: text("cover_image_unsplash_url"),
-  // Gallery of destination photos for the detail carousel (first is the cover).
-  images: jsonb("images").$type<
-    {
-      url: string;
-      photographerName: string;
-      photographerUrl: string;
-      unsplashUrl: string;
-    }[]
-  >(),
-  status: tripStatus("status").notNull().default("queued"),
-  errorMessage: text("error_message"),
-  // Failed generations do not count toward the per-user cap.
-  countsAgainstCap: boolean("counts_against_cap").notNull().default(true),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date()),
-});
+export const trips = pgTable(
+  "trips",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    destination: text("destination").notNull(),
+    numDays: integer("num_days").notNull(),
+    numTravelers: integer("num_travelers").notNull(),
+    budgetLevel: budgetLevel("budget_level").notNull(),
+    interests: text("interests").array().notNull(),
+    pace: text("pace"),
+    title: text("title"),
+    summary: text("summary"),
+    coverImageUrl: text("cover_image_url"),
+    // Unsplash requires crediting the photographer and linking back to Unsplash
+    // wherever a photo is shown (see src/server/images.ts).
+    coverImagePhotographerName: text("cover_image_photographer_name"),
+    coverImagePhotographerUrl: text("cover_image_photographer_url"),
+    coverImageUnsplashUrl: text("cover_image_unsplash_url"),
+    // Gallery of destination photos for the detail carousel (first is the cover).
+    images: jsonb("images").$type<
+      {
+        url: string;
+        photographerName: string;
+        photographerUrl: string;
+        unsplashUrl: string;
+      }[]
+    >(),
+    status: tripStatus("status").notNull().default("queued"),
+    errorMessage: text("error_message"),
+    // Failed generations do not count toward the per-user cap.
+    countsAgainstCap: boolean("counts_against_cap").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("trips_user_id_idx").on(t.userId)],
+);
 
 export const days = pgTable(
   "days",
@@ -115,42 +120,50 @@ export const days = pgTable(
   (t) => [unique("days_trip_day_unique").on(t.tripId, t.dayNumber)],
 );
 
-export const activities = pgTable("activities", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  dayId: uuid("day_id")
-    .notNull()
-    .references(() => days.id, { onDelete: "cascade" }),
-  timeOfDay: timeOfDay("time_of_day").notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  estCostUsd: integer("est_cost_usd"),
-  placeName: text("place_name"),
-  lat: real("lat"),
-  lng: real("lng"),
-  // Set true only when the geocoder returned coordinates for the place.
-  placeVerified: boolean("place_verified").notNull().default(false),
-  sortOrder: integer("sort_order").notNull().default(0),
-});
+export const activities = pgTable(
+  "activities",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    dayId: uuid("day_id")
+      .notNull()
+      .references(() => days.id, { onDelete: "cascade" }),
+    timeOfDay: timeOfDay("time_of_day").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    estCostUsd: integer("est_cost_usd"),
+    placeName: text("place_name"),
+    lat: real("lat"),
+    lng: real("lng"),
+    // Set true only when the geocoder returned coordinates for the place.
+    placeVerified: boolean("place_verified").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => [index("activities_day_id_idx").on(t.dayId)],
+);
 
 export const chatRole = pgEnum("chat_role", ["user", "assistant"]);
 
 // A general-assistant conversation (like a ChatGPT/WhatsApp thread in an inbox
 // list). `title` is auto-derived from the first message. Trip-scoped chat does
 // NOT use this table — it stays one single thread per trip (see chatMessages).
-export const chatConversations = pgTable("chat_conversations", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date()),
-});
+export const chatConversations = pgTable(
+  "chat_conversations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("chat_conversations_user_id_idx").on(t.userId, t.updatedAt)],
+);
 
 // One row per chat turn. Exactly one of `tripId` / `conversationId` is set:
 //   tripId set          → the single ongoing thread scoped to that trip
@@ -180,6 +193,10 @@ export const chatMessages = pgTable(
   (t) => [
     index("chat_messages_thread_idx").on(t.userId, t.tripId, t.createdAt),
     index("chat_messages_conversation_idx").on(t.conversationId, t.createdAt),
+    check(
+      "chat_messages_exactly_one_thread",
+      sql`(${t.tripId} is not null) <> (${t.conversationId} is not null)`,
+    ),
   ],
 );
 

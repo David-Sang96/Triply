@@ -68,6 +68,7 @@ export default function ChatsScreen() {
           <Pressable
             onPress={goBack}
             hitSlop={8}
+            accessibilityLabel="Go back"
             className="h-9 w-9 items-center justify-center active:opacity-70"
           >
             <Ionicons name="chevron-back" size={24} color={colors.ink} />

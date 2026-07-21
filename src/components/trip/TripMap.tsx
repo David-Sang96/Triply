@@ -13,7 +13,9 @@ export type MapPlace = {
 // needs network. Note: OSM's public tile server is fine for light/personal use;
 // a production app should use a dedicated tile provider.
 function buildHtml(places: MapPlace[]): string {
-  const data = JSON.stringify(places);
+  // A place name containing "</script>" would otherwise close this script
+  // block before the JSON is parsed — escape "<" so it stays inside the string.
+  const data = JSON.stringify(places).replace(/</g, "\\u003c");
   return `<!DOCTYPE html>
 <html>
 <head>

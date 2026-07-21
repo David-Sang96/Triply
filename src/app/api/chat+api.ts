@@ -30,11 +30,15 @@ function titleFromMessage(text: string): string {
   return capped.charAt(0).toUpperCase() + capped.slice(1);
 }
 
-const postSchema = z.object({
-  message: z.string().trim().min(1).max(4000),
-  tripId: z.string().nullable().optional(),
-  conversationId: z.string().nullable().optional(),
-});
+const postSchema = z
+  .object({
+    message: z.string().trim().min(1).max(4000),
+    tripId: z.string().nullable().optional(),
+    conversationId: z.string().nullable().optional(),
+  })
+  .refine((v) => !(v.tripId && v.conversationId), {
+    message: "Only one of tripId or conversationId may be provided",
+  });
 
 const SYSTEM_PROMPT = [
   "You are Triply's friendly, knowledgeable travel assistant.",
@@ -179,7 +183,13 @@ export async function POST(request: Request) {
         },
       },
     });
-    if (trip) systemInstruction += "\n\n" + buildTripContext(trip);
+    // tripId is client-supplied — a trip that doesn't exist or isn't this
+    // user's must reject the request, not silently proceed and store a
+    // message against an unverified trip.
+    if (!trip) {
+      return Response.json({ error: "Trip not found" }, { status: 404 });
+    }
+    systemInstruction += "\n\n" + buildTripContext(trip);
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -207,9 +217,17 @@ export async function POST(request: Request) {
   }
 
   // Persist the user's turn up front so it is never lost even if Gemini fails.
-  await db
-    .insert(chatMessages)
-    .values({ userId, tripId, conversationId, role: "user", content: message });
+  try {
+    await db
+      .insert(chatMessages)
+      .values({ userId, tripId, conversationId, role: "user", content: message });
+  } catch (err) {
+    console.error("Failed to persist chat message:", err);
+    return Response.json(
+      { error: "The assistant couldn't reply. Please try again." },
+      { status: 502 },
+    );
+  }
 
   const contents = [...history, { role: "user" as const, content: message }].map(
     (m) => ({

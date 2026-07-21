@@ -215,14 +215,24 @@ export const generateTrip = inngest.createFunction(
     await step.run("finalize", async () => {
       await db.update(trips).set({ status: "finalizing" }).where(eq(trips.id, tripId));
 
-      const dayRows = itinerary.days.map((d) => ({
+      // Gemini's structured output isn't guaranteed unique per dayNumber; a
+      // duplicate would violate days_trip_day_unique and fail the whole batch.
+      // Keep the first occurrence of each dayNumber.
+      const seenDayNumbers = new Set<number>();
+      const uniqueDays = itinerary.days.filter((d) => {
+        if (seenDayNumbers.has(d.dayNumber)) return false;
+        seenDayNumbers.add(d.dayNumber);
+        return true;
+      });
+
+      const dayRows = uniqueDays.map((d) => ({
         id: crypto.randomUUID(),
         tripId,
         dayNumber: d.dayNumber,
         themeTitle: d.themeTitle || null,
       }));
 
-      const activityRows = itinerary.days.flatMap((d, dayIndex) =>
+      const activityRows = uniqueDays.flatMap((d, dayIndex) =>
         d.activities.map((a, order) => {
           const geo = a.placeName ? geoByPlace[a.placeName] : null;
           const timeOfDay = (

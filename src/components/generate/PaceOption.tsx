@@ -18,6 +18,8 @@ export function PaceOption({
   return (
     <Pressable
       onPress={onSelect}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
       className={`mb-2.5 flex-row items-center rounded-xl border px-3.5 py-3 active:opacity-90 ${
         selected ? "border-brand bg-brand-soft" : "border-line bg-surface"
       }`}

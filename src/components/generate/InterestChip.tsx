@@ -26,6 +26,8 @@ export function InterestChip({
     <Pressable
       onPress={onToggle}
       disabled={disabled}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected, disabled }}
       style={{ width }}
       className={`h-[52px] flex-row items-center justify-center rounded-xl border active:opacity-80 ${
         selected ? "border-brand bg-brand" : "border-line bg-surface"

@@ -194,7 +194,9 @@ export default function GenerateScreen() {
         {/* Interests */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
           What are you interested in?{" "}
-          <Text className="text-[13px] text-brand">(Select up to 5)</Text>
+          <Text className="text-[13px] text-brand">
+            (Select up to {MAX_INTERESTS})
+          </Text>
         </Text>
         <View className="mt-3 flex-row flex-wrap gap-3">
           {INTERESTS.map((interest) => {

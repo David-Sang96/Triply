@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ne } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { getUserId, unauthorized } from "@/server/auth";
@@ -64,19 +64,22 @@ export async function POST(request: Request) {
   }
   const input = parsed.data;
 
-  // Cap check: only non-failed trips that count against the cap.
-  const [{ value: activeCount }] = await db
-    .select({ value: count() })
-    .from(trips)
-    .where(
-      and(
-        eq(trips.userId, userId),
-        eq(trips.countsAgainstCap, true),
-        ne(trips.status, "failed"),
-      ),
-    );
+  // Cap check + insert as a single statement (the neon-http driver has no
+  // interactive transactions — see src/server/db/index.ts), so two concurrent
+  // requests can't both pass a separate "count < cap" check and both insert.
+  // The WHERE subquery re-counts at insert time, closing that race.
+  const result = await db.execute<{ id: string }>(sql`
+    INSERT INTO ${trips} (user_id, destination, num_days, num_travelers, budget_level, interests, pace, status)
+    SELECT ${userId}, ${input.destination}, ${input.numDays}, ${input.numTravelers}, ${input.budgetLevel}::budget_level, ${input.interests}::text[], ${input.pace ?? null}, 'queued'
+    WHERE (
+      SELECT count(*) FROM ${trips}
+      WHERE ${trips.userId} = ${userId} AND ${trips.countsAgainstCap} = true AND ${trips.status} <> 'failed'
+    ) < ${MAX_TRIPS}
+    RETURNING id
+  `);
+  const trip = result.rows[0];
 
-  if (activeCount >= MAX_TRIPS) {
+  if (!trip) {
     return Response.json(
       {
         error: `You've reached the limit of ${MAX_TRIPS} trips. Delete one to plan a new trip.`,
@@ -86,21 +89,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const [trip] = await db
-    .insert(trips)
-    .values({
-      userId,
-      destination: input.destination,
-      numDays: input.numDays,
-      numTravelers: input.numTravelers,
-      budgetLevel: input.budgetLevel,
-      interests: input.interests,
-      pace: input.pace ?? null,
-      status: "queued",
-    })
-    .returning({ id: trips.id });
-
-  await inngest.send({ name: "trip/requested", data: { tripId: trip.id } });
+  try {
+    await inngest.send({ name: "trip/requested", data: { tripId: trip.id } });
+  } catch (err) {
+    console.error("Failed to dispatch trip/requested:", err);
+    await db
+      .update(trips)
+      .set({
+        status: "failed",
+        errorMessage: "We couldn't start generating this trip. Please try again.",
+        countsAgainstCap: false,
+      })
+      .where(eq(trips.id, trip.id));
+    return Response.json(
+      { error: "Couldn't start your trip. Please try again." },
+      { status: 502 },
+    );
+  }
 
   return Response.json({ id: trip.id }, { status: 201 });
 }

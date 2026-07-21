@@ -192,11 +192,15 @@ export default function ChatScreen() {
   }, []);
 
   const persisted = history.data ?? [];
-  // Once the persisted thread includes it, drop the optimistic bubble instead
-  // of rendering a duplicate (computed at render time — no effect needed).
+  // Once the persisted thread's latest message is this one, drop the
+  // optimistic bubble instead of rendering a duplicate (computed at render
+  // time — no effect needed). Checking only the last message (not the whole
+  // history) avoids matching an earlier, unrelated message with the same text.
+  const lastPersisted = persisted[persisted.length - 1];
   const pendingConfirmed =
     pendingUserMsg != null &&
-    persisted.some((m) => m.role === "user" && m.content === pendingUserMsg);
+    lastPersisted?.role === "user" &&
+    lastPersisted.content === pendingUserMsg;
 
   const greeting = tripId
     ? `Hi! I'm your Triply assistant. Ask me anything about your ${
@@ -265,6 +269,7 @@ export default function ChatScreen() {
         <Pressable
           onPress={goBack}
           hitSlop={8}
+          accessibilityLabel="Go back"
           className="h-9 w-9 items-center justify-center active:opacity-70"
         >
           <Ionicons name="chevron-back" size={24} color={colors.ink} />
@@ -341,6 +346,7 @@ export default function ChatScreen() {
         <Pressable
           onPress={send}
           disabled={!input.trim() || sendChat.isPending}
+          accessibilityLabel="Send message"
           className={`ml-2 h-11 w-11 items-center justify-center rounded-full bg-brand active:opacity-90 ${
             !input.trim() || sendChat.isPending ? "opacity-50" : ""
           }`}
