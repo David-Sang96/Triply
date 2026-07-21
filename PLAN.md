@@ -63,7 +63,9 @@ in order — each phase depends on the ones before it.
   - [ ] `days` table (unique `trip_id, day_number`)
   - [ ] `activities` table (place fields + `place_verified`)
   - [ ] `place_cache` table (Nominatim cache)
-- [x] Run `drizzle-kit` migration against Neon *(via `npm run db:push`; `users` table created)*
+- [x] Run migration against Neon *(schema now managed by versioned migrations:
+      `db:generate` → `db:migrate`; adopt on an existing DB with `db:baseline`.
+      `db:push` is legacy/throwaway-only since it wipes data.)*
 - [x] **Verify:** neon-http write works *(the user-sync Inngest job inserts a row —
       done in place of a `select 1` health route, which does not exist yet)*
 

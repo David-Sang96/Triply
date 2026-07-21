@@ -11,4 +11,21 @@
   --font-pmedium: "Poppins_500Medium";
   --font-psemibold: "Poppins_600SemiBold";
   --font-pbold: "Poppins_700Bold";
+
+  /* Triply design system palette (design/design-system.png). Use these named
+     tokens (bg-brand, text-ink, border-line, …) instead of raw hex or slate-*
+     so the whole app stays aligned to the system. The JS equivalents for icon
+     `color` props and native-tab tints live in src/theme/colors.ts. */
+  --color-brand: #208aef; /* Primary — Sky Blue */
+  --color-brand-soft: #eaf2fe; /* Tinted brand surface (selected states) */
+  --color-coral: #ff6b68; /* Secondary — Coral */
+  --color-ink: #111827; /* Text / Primary */
+  --color-muted: #6b7280; /* Text / Secondary */
+  --color-faint: #9ca3af; /* Hints, placeholders, helper text */
+  --color-line: #e5e7eb; /* Border */
+  --color-canvas: #f7fafc; /* Background */
+  --color-surface: #ffffff; /* Surface / cards */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
 }

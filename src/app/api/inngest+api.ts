@@ -2,6 +2,7 @@ import { serve } from "inngest/edge";
 
 import { inngest } from "@/server/inngest/client";
 import {
+  generateTrip,
   syncUserCreated,
   syncUserDeleted,
   syncUserUpdated,
@@ -15,7 +16,7 @@ import {
 //   POST — invoke a function when an event fires
 const handler = serve({
   client: inngest,
-  functions: [syncUserCreated, syncUserUpdated, syncUserDeleted],
+  functions: [syncUserCreated, syncUserUpdated, syncUserDeleted, generateTrip],
 });
 
 export function GET(request: Request) {
