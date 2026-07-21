@@ -6,12 +6,19 @@ import { verifyToken } from "@clerk/backend";
 // the header is missing or the token is invalid — callers respond 401.
 // Comma-separated allowlist of origins/app schemes Clerk tokens may be minted
 // for (Clerk's `authorizedParties`) — rejects tokens from any other
-// Clerk-connected frontend sharing this instance. Optional: unset preserves
-// today's behavior (no origin restriction) until the app's real origin(s) are
-// known and added to .env.
+// Clerk-connected frontend sharing this instance. Optional in local dev (no
+// origin restriction until the app's real origin(s) are known), but required
+// in production — an unset value there would silently disable this check.
 const authorizedParties = process.env.CLERK_AUTHORIZED_PARTIES?.split(",")
   .map((p) => p.trim())
   .filter(Boolean);
+
+if (process.env.NODE_ENV === "production" && !authorizedParties?.length) {
+  throw new Error(
+    "CLERK_AUTHORIZED_PARTIES is not set. Required in production — set it to " +
+      "this deployment's real origin(s)/app scheme(s) (see .env.example).",
+  );
+}
 
 export async function getUserId(request: Request): Promise<string | null> {
   const header = request.headers.get("Authorization") ?? "";

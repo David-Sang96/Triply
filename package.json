@@ -71,6 +71,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/db-migrate.mjs",
     "db:baseline": "node scripts/db-baseline.mjs",
+    "db:backfill-orphan-chats": "node scripts/db-backfill-orphan-chats.mjs",
     "db:studio": "drizzle-kit studio",
     "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:8081/api/inngest",
     "tunnel": "ngrok http 8081"
