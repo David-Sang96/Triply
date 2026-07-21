@@ -1,0 +1,86 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Image } from "expo-image";
+import { useEffect, useState } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+
+import { HERO_SLIDES } from "@/data/home";
+import { colors, shadows } from "@/theme/colors";
+
+type Props = {
+  name: string;
+  onGenerate?: () => void;
+};
+
+// Hero "content slider": the background image and the middle headline/subtitle
+// change together every 3 seconds with a soft fade. The greeting and the
+// "Generate a trip" button stay fixed across slides.
+export function HeroCarousel({ name, onGenerate }: Props) {
+  const [index, setIndex] = useState(0);
+  // Lazy init keeps a single Animated.Value across renders without reading a
+  // ref during render. The image and headline share it so they fade as one.
+  const [fade] = useState(() => new Animated.Value(1));
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIndex((i) => (i + 1) % HERO_SLIDES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Dip the shared opacity on each slide change, then ease back to full — the
+  // image and text share this value so they transition as one.
+  useEffect(() => {
+    fade.setValue(0.35);
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [index, fade]);
+
+  const slide = HERO_SLIDES[index];
+
+  return (
+    <View className="h-[236px] w-full overflow-hidden rounded-3xl">
+      {/* Background image — fades with each slide */}
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
+        <Image
+          source={{ uri: slide.image }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={400}
+        />
+      </Animated.View>
+
+      {/* Legibility overlay */}
+      <View className="absolute inset-0 bg-[#0B2A4A]/45" />
+
+      {/* Foreground content */}
+      <View className="flex-1 justify-between p-5">
+        <Text className="font-pmedium text-[15px] text-white">
+          Hello, {name} 👋
+        </Text>
+
+        <Animated.View style={{ opacity: fade }}>
+          <Text className="font-pbold text-[24px] leading-[30px] text-white">
+            {slide.title}
+          </Text>
+          <Text className="mt-1.5 font-sans text-[13px] leading-[18px] text-white/90">
+            {slide.subtitle}
+          </Text>
+        </Animated.View>
+
+        <Pressable
+          onPress={onGenerate}
+          className="mt-3 h-[46px] flex-row items-center justify-center self-start rounded-xl bg-brand px-5 active:opacity-90"
+          style={shadows.md}
+        >
+          <Ionicons name="sparkles" size={16} color={colors.surface} />
+          <Text className="ml-2 font-psemibold text-[15px] text-white">
+            Generate a trip
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}

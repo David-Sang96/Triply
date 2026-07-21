@@ -88,10 +88,17 @@ planned: Gemini, Nominatim, Pexels, ImageKit.
 dev server, these touch the developer's live services (Neon, ngrok, Clerk) or
 run long-lived processes. If one is needed, STOP and ask the developer.
 
-- `npm run db:push` — apply `src/server/db/schema.ts` to Neon. **Writes to the
-  live database.**
-- `npm run db:generate` — generate versioned SQL migrations under `drizzle/`
-  (for production; dev uses `db:push`).
+- **Schema changes use versioned migrations (not `db:push`).** Migrations
+  *alter* tables, so existing data is preserved. Workflow: edit
+  `src/server/db/schema.ts` → `npm run db:generate` (writes SQL to `drizzle/`)
+  → `npm run db:migrate` (applies it to Neon).
+- `npm run db:migrate` — apply pending migrations from `drizzle/` to Neon.
+  **Writes to the live database.**
+- `npm run db:generate` — generate a versioned SQL migration from schema changes.
+- `npm run db:baseline` — one-time: record existing migrations as already-applied
+  (used when adopting migrations on a DB created earlier via `db:push`).
+- `npm run db:push` — **legacy / throwaway resets only.** Recreates tables and
+  **wipes data** on schema changes; do not use it for normal changes.
 - `npm run db:studio` — open Drizzle Studio to browse/edit DB rows.
 - `npm run inngest:dev` — local Inngest dev server, pointed at
   `http://localhost:8081/api/inngest`. Long-running. (Edit the port in the
@@ -99,7 +106,7 @@ run long-lived processes. If one is needed, STOP and ask the developer.
 - `npm run tunnel` — expose the dev server via ngrok so Clerk can reach the
   webhook route. Long-running; needs ngrok installed on the machine.
 
-Local backend dev flow: `db:push` once, then run `inngest:dev` and `tunnel` in
-separate terminals alongside the Expo dev server. The Clerk webhook
+Local backend dev flow: `db:migrate` to sync the schema, then run `inngest:dev`
+and `tunnel` in separate terminals alongside the Expo dev server. The Clerk webhook
 (`user.created`) → Inngest event (`clerk/user.created`) → `syncUserCreated`
 inserts a row into the Neon `users` table.
