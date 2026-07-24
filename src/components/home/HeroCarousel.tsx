@@ -23,7 +23,7 @@ const FALLBACK_SLIDE: HeroSlide = {
 };
 
 // Hero "content slider": the background image and the middle headline/subtitle
-// change together every 3 seconds with a soft fade. The greeting and the
+// change together every 5 seconds with a soft fade. The greeting and the
 // "Generate a trip" button stay fixed across slides.
 export function HeroCarousel({ name, slides, onGenerate }: Props) {
   const [index, setIndex] = useState(0);
@@ -35,7 +35,7 @@ export function HeroCarousel({ name, slides, onGenerate }: Props) {
     if (slides.length < 2) return;
     const id = setInterval(() => {
       setIndex((i) => (i + 1) % slides.length);
-    }, 3000);
+    }, 5000);
     return () => clearInterval(id);
   }, [slides.length]);
 
