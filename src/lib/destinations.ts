@@ -11,6 +11,7 @@ export type Destination = {
   imageUrl: string;
   heroTitle: string | null;
   heroSubtitle: string | null;
+  description: string | null;
 };
 
 export type HeroSlide = {
@@ -32,4 +33,15 @@ export function useDestinations() {
       ),
     staleTime: 10 * 60 * 1000,
   });
+}
+
+// One destination by slug, for the detail screen. Reuses the same
+// ["destinations"] query the Home screen already fetches — with only ~16
+// rows total, there's no need for a dedicated per-destination API route.
+export function useDestination(slug: string) {
+  const query = useDestinations();
+  return {
+    ...query,
+    data: query.data?.find((d) => d.slug === slug),
+  };
 }

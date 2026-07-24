@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       imageUrl: destinations.imageUrl,
       heroTitle: destinations.heroTitle,
       heroSubtitle: destinations.heroSubtitle,
+      description: destinations.description,
     })
     .from(destinations)
     .orderBy(asc(destinations.sortOrder));

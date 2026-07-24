@@ -50,6 +50,13 @@
       "when": 1784900928955,
       "tag": "0006_fresh_swordsman",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784903902215,
+      "tag": "0007_typical_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

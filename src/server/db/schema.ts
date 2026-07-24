@@ -234,6 +234,10 @@ export const destinations = pgTable("destinations", {
   imageUrl: text("image_url").notNull(),
   heroTitle: text("hero_title"),
   heroSubtitle: text("hero_subtitle"),
+  // Short blurb shown on the destination detail screen (tapped from a
+  // Popular destinations card). Nullable — the detail screen just omits the
+  // "About" section for a row that doesn't have one yet.
+  description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
