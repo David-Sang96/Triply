@@ -87,6 +87,9 @@ export const trips = pgTable(
     // above. useCustomCover picks which one is shown; the Unsplash fields
     // above are kept untouched so the user can switch back to them.
     customCoverImageUrl: text("custom_cover_image_url"),
+    // ImageKit's fileId for the row above — needed to delete the file from
+    // ImageKit when it's replaced by a new upload or the trip is deleted.
+    customCoverImageFileId: text("custom_cover_image_file_id"),
     useCustomCover: boolean("use_custom_cover").notNull().default(false),
     // Gallery of destination photos for the detail carousel (first is the cover).
     images: jsonb("images").$type<
