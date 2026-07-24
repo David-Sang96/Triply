@@ -3,29 +3,41 @@ import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { HERO_SLIDES } from "@/data/home";
+import type { HeroSlide } from "@/lib/destinations";
 import { colors, shadows } from "@/theme/colors";
 
 type Props = {
   name: string;
+  slides: HeroSlide[];
   onGenerate?: () => void;
+};
+
+// Shown while destinations are still loading, or if none are hero-flagged —
+// no photo, just the brand-color background, so the greeting/button always
+// have somewhere to sit rather than the screen showing a gap.
+const FALLBACK_SLIDE: HeroSlide = {
+  id: "fallback",
+  image: "",
+  title: "Ready for your\nnext adventure?",
+  subtitle: "Let AI plan your next trip.",
 };
 
 // Hero "content slider": the background image and the middle headline/subtitle
 // change together every 3 seconds with a soft fade. The greeting and the
 // "Generate a trip" button stay fixed across slides.
-export function HeroCarousel({ name, onGenerate }: Props) {
+export function HeroCarousel({ name, slides, onGenerate }: Props) {
   const [index, setIndex] = useState(0);
   // Lazy init keeps a single Animated.Value across renders without reading a
   // ref during render. The image and headline share it so they fade as one.
   const [fade] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
+    if (slides.length < 2) return;
     const id = setInterval(() => {
-      setIndex((i) => (i + 1) % HERO_SLIDES.length);
+      setIndex((i) => (i + 1) % slides.length);
     }, 3000);
     return () => clearInterval(id);
-  }, []);
+  }, [slides.length]);
 
   // Dip the shared opacity on each slide change, then ease back to full — the
   // image and text share this value so they transition as one.
@@ -38,19 +50,21 @@ export function HeroCarousel({ name, onGenerate }: Props) {
     }).start();
   }, [index, fade]);
 
-  const slide = HERO_SLIDES[index];
+  const slide = slides[index] ?? FALLBACK_SLIDE;
 
   return (
-    <View className="h-[236px] w-full overflow-hidden rounded-3xl">
+    <View className="h-[236px] w-full overflow-hidden rounded-3xl bg-brand">
       {/* Background image — fades with each slide */}
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
-        <Image
-          source={{ uri: slide.image }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={400}
-        />
-      </Animated.View>
+      {slide.image ? (
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: fade }]}>
+          <Image
+            source={{ uri: slide.image }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={400}
+          />
+        </Animated.View>
+      ) : null}
 
       {/* Legibility overlay */}
       <View className="absolute inset-0 bg-[#0B2A4A]/45" />

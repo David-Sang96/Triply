@@ -10,7 +10,8 @@ import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { InspirationPill } from "@/components/home/InspirationPill";
 import { SectionHeader } from "@/components/home/SectionHeader";
 import { UserTripCard } from "@/components/home/UserTripCard";
-import { DESTINATIONS, INSPIRATIONS } from "@/data/home";
+import { INSPIRATIONS } from "@/data/home";
+import { useDestinations } from "@/lib/destinations";
 import { useTrips } from "@/lib/trips";
 import { colors, shadows } from "@/theme/colors";
 
@@ -20,10 +21,20 @@ export default function HomeScreen() {
   const { user } = useUser();
   const router = useRouter();
   const tripsQuery = useTrips();
+  const destinationsQuery = useDestinations();
 
   const firstName = user?.firstName ?? "there";
   const avatarUrl = user?.imageUrl;
   const trips = tripsQuery.data ?? [];
+  const destinations = destinationsQuery.data ?? [];
+  const heroSlides = destinations
+    .filter((d) => d.heroTitle && d.heroSubtitle)
+    .map((d) => ({
+      id: d.id,
+      image: d.imageUrl,
+      title: d.heroTitle as string,
+      subtitle: d.heroSubtitle as string,
+    }));
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
@@ -68,6 +79,7 @@ export default function HomeScreen() {
         <View className="px-5">
           <HeroCarousel
             name={firstName}
+            slides={heroSlides}
             onGenerate={() => router.push("/generate")}
           />
         </View>
@@ -130,15 +142,34 @@ export default function HomeScreen() {
         <View className="mt-6 px-5">
           <SectionHeader title="Popular destinations" />
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-3 px-5 pt-3.5"
-        >
-          {DESTINATIONS.map((destination) => (
-            <DestinationCard key={destination.id} destination={destination} />
-          ))}
-        </ScrollView>
+        {destinationsQuery.isLoading ? (
+          <View className="h-[172px] items-center justify-center">
+            <ActivityIndicator color={colors.brand} />
+          </View>
+        ) : destinationsQuery.isError ? (
+          <Pressable
+            onPress={() => destinationsQuery.refetch()}
+            className="mx-5 mt-3.5 items-center rounded-2xl border border-line bg-surface px-5 py-6 active:opacity-80"
+          >
+            <Ionicons name="cloud-offline-outline" size={26} color={colors.muted} />
+            <Text className="mt-2 font-psemibold text-[14px] text-ink">
+              Couldn&apos;t load destinations
+            </Text>
+            <Text className="mt-1 text-center font-sans text-[12px] text-muted">
+              Tap to try again.
+            </Text>
+          </Pressable>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-3 px-5 pt-3.5"
+          >
+            {destinations.map((destination) => (
+              <DestinationCard key={destination.id} destination={destination} />
+            ))}
+          </ScrollView>
+        )}
         {/* Page dots */}
         <View className="mt-3 flex-row items-center justify-center gap-1.5">
           <View className="h-1.5 w-1.5 rounded-full bg-brand" />

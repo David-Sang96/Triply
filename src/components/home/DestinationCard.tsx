@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { Text, View } from "react-native";
 
-import type { Destination } from "@/data/home";
+import type { Destination } from "@/lib/destinations";
 import { colors } from "@/theme/colors";
 
 // A compact popular-destination card: photo with a rating badge and the
@@ -11,7 +11,7 @@ export function DestinationCard({ destination }: { destination: Destination }) {
   return (
     <View className="h-[172px] w-[132px] overflow-hidden rounded-2xl">
       <Image
-        source={{ uri: destination.image }}
+        source={{ uri: destination.imageUrl }}
         style={{ width: "100%", height: "100%" }}
         contentFit="cover"
         transition={200}
