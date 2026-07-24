@@ -362,13 +362,13 @@ export function TripDetailView({
             <Pressable
               onPress={onBack}
               hitSlop={8}
-              className="h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
+              className="h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
             >
               <Ionicons name="chevron-back" size={22} color={colors.surface} />
             </Pressable>
 
             <View className="flex-row items-center">
-              <View className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-black/40">
+              <View className="mr-2 h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black">
                 <Ionicons name="heart-outline" size={20} color={colors.surface} />
               </View>
               {trip.customCoverImageUrl ? (
@@ -376,7 +376,7 @@ export function TripDetailView({
                   onPress={toggleCoverSource}
                   disabled={toggleCover.isPending || uploadCover.isPending}
                   hitSlop={8}
-                  className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
+                  className="mr-2 h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
                 >
                   <Ionicons
                     name="swap-horizontal-outline"
@@ -389,7 +389,7 @@ export function TripDetailView({
                 onPress={pickCover}
                 disabled={uploadCover.isPending || toggleCover.isPending}
                 hitSlop={8}
-                className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
+                className="mr-2 h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
               >
                 {uploadCover.isPending ? (
                   <ActivityIndicator size="small" color={colors.surface} />
@@ -401,7 +401,7 @@ export function TripDetailView({
                 onPress={confirmDelete}
                 disabled={deleting}
                 hitSlop={8}
-                className="h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
+                className="h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
               >
                 {deleting ? (
                   <ActivityIndicator size="small" color={colors.surface} />
