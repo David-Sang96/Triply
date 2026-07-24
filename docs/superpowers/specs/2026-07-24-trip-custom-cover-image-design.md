@@ -15,8 +15,9 @@ time without losing it.
 - Replaces only the hero/cover image on the trip detail screen.
 - Does **not** touch the photo carousel (`trips.images`) below the hero —
   that stays as the original Unsplash set.
-- Does **not** delete old custom photos from ImageKit when replaced again
-  (out of scope for this version — see Open Questions).
+- Old custom photos ARE deleted from ImageKit when replaced or the trip is
+  deleted — see the API route's replacement flow below and the resolved
+  entry in Open Questions (single source of truth for that behavior).
 
 ## Upload architecture
 
@@ -40,13 +41,17 @@ no Node-only SDK, so it works on Cloudflare Workers.
 
 ## Data model
 
-`src/server/db/schema.ts`, `trips` table — two new columns, added via a
+`src/server/db/schema.ts`, `trips` table — three new columns, added via a
 versioned migration (`npm run db:generate` then `npm run db:migrate`, run by
 the developer, not by the agent):
 
 - `customCoverImageUrl: text("custom_cover_image_url")` — nullable. The
   ImageKit-hosted URL of the user's uploaded photo. `null` until the user
   uploads one.
+- `customCoverImageFileId: text("custom_cover_image_file_id")` — nullable.
+  ImageKit's own file identifier for the row above, persisted alongside the
+  URL because `deleteCoverImage()` needs the fileId (not the URL) to delete
+  the file — used when a custom cover is replaced or its trip is deleted.
 - `useCustomCover: boolean("use_custom_cover").notNull().default(false)` —
   which cover is currently shown. `true` = show `customCoverImageUrl`,
   `false` = show the original `coverImageUrl` (and its Unsplash attribution).
@@ -66,20 +71,40 @@ routes), and validate `id` against the existing UUID regex.
 - **`POST`** — body is `multipart/form-data` with a `file` field (the
   compressed photo).
   1. Read the file from the form data.
-  2. Upload it to ImageKit: `POST https://upload.imagekit.io/api/v1/files/upload`,
+  2. Reject before uploading anything (DB left unchanged either way): not a
+     `File` → 400 "Missing file"; MIME type not `image/*` → 400 "File must
+     be an image"; size over 8MB → 400 "Image is too large" (the client
+     compresses to ~1600px JPEG, so a legitimate photo is normally well
+     under 1MB — this is a generous ceiling against a buggy/malicious
+     client, not a real-world size expectation).
+  3. Upload it to ImageKit: `POST https://upload.imagekit.io/api/v1/files/upload`,
      Basic auth `${IMAGEKIT_PRIVATE_KEY}:`, form fields `file`, `fileName`
      (e.g. `cover-${Date.now()}.jpg`), `folder: /triply/trips/${id}`,
-     `useUniqueFileName: true`.
-  3. On success, set `customCoverImageUrl` to the returned `url` and
-     `useCustomCover` to `true` in one DB update.
-  4. Return the updated `{ customCoverImageUrl, useCustomCover }`.
-  5. On ImageKit failure, return a 502 with an error message; do not touch
-     the DB row.
+     `useUniqueFileName: true`. On failure, return a 502 with an error
+     message; do not touch the DB row.
+  4. Set `customCoverImageUrl`/`customCoverImageFileId` to the upload result
+     and `useCustomCover` to `true` in one DB update, using `.returning()`
+     to confirm a row was actually updated.
+     - If the update throws, or affects zero rows (e.g. the trip was
+       deleted in the narrow window between the ownership check and here),
+       delete the *just-uploaded* file from ImageKit best-effort — so a
+       failed/no-op save never leaves an orphaned "winner" file with no DB
+       row pointing at it — then return the DB failure (502) or not-found
+       (404) respectively.
+  5. Once the update is confirmed, delete the *previous*
+     `customCoverImageFileId` (if any) from ImageKit best-effort — a
+     failure here is only logged server-side, since the new cover is
+     already saved and shown either way.
+  6. Return the updated `{ customCoverImageUrl, useCustomCover }`.
 
 - **`PATCH`** — body `{ useCustomCover: boolean }`.
-  1. If setting `true` and `customCoverImageUrl` is still `null`, return 400
+  1. Reject a body that isn't valid JSON, isn't an object, or whose
+     `useCustomCover` is missing/not a boolean, with 400
+     `"useCustomCover must be a boolean"` (or `"Invalid JSON body"` for
+     unparseable JSON).
+  2. If setting `true` and `customCoverImageUrl` is still `null`, return 400
      (nothing to switch to).
-  2. Otherwise update `useCustomCover` and return the updated value.
+  3. Otherwise update `useCustomCover` and return the updated value.
 
 ## Client changes
 
