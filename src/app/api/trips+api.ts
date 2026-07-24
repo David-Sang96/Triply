@@ -29,6 +29,8 @@ export async function GET(request: Request) {
       title: trips.title,
       status: trips.status,
       coverImageUrl: trips.coverImageUrl,
+      customCoverImageUrl: trips.customCoverImageUrl,
+      useCustomCover: trips.useCustomCover,
       numDays: trips.numDays,
       numTravelers: trips.numTravelers,
       budgetLevel: trips.budgetLevel,
@@ -68,9 +70,17 @@ export async function POST(request: Request) {
   // interactive transactions — see src/server/db/index.ts), so two concurrent
   // requests can't both pass a separate "count < cap" check and both insert.
   // The WHERE subquery re-counts at insert time, closing that race.
+  //
+  // interests is spliced in as ARRAY[...] rather than a bare ${input.interests}
+  // — the sql tag turns a raw JS array into a row expression "(a, b, c)", not
+  // a Postgres array, and casting a row to text[] is invalid SQL.
+  const interestsSql = sql.join(
+    input.interests.map((interest) => sql`${interest}`),
+    sql`, `,
+  );
   const result = await db.execute<{ id: string }>(sql`
     INSERT INTO ${trips} (user_id, destination, num_days, num_travelers, budget_level, interests, pace, status)
-    SELECT ${userId}, ${input.destination}, ${input.numDays}, ${input.numTravelers}, ${input.budgetLevel}::budget_level, ${input.interests}::text[], ${input.pace ?? null}, 'queued'
+    SELECT ${userId}, ${input.destination}, ${input.numDays}, ${input.numTravelers}, ${input.budgetLevel}::budget_level, ARRAY[${interestsSql}]::text[], ${input.pace ?? null}, 'queued'
     WHERE (
       SELECT count(*) FROM ${trips}
       WHERE ${trips.userId} = ${userId} AND ${trips.countsAgainstCap} = true AND ${trips.status} <> 'failed'
