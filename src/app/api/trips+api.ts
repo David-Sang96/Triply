@@ -29,6 +29,8 @@ export async function GET(request: Request) {
       title: trips.title,
       status: trips.status,
       coverImageUrl: trips.coverImageUrl,
+      customCoverImageUrl: trips.customCoverImageUrl,
+      useCustomCover: trips.useCustomCover,
       numDays: trips.numDays,
       numTravelers: trips.numTravelers,
       budgetLevel: trips.budgetLevel,
