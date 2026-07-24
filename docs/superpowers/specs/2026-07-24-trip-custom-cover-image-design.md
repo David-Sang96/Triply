@@ -152,8 +152,11 @@ for the iOS permission message.
   (logged server-side on failure, never surfaced to the user), since the
   primary action has already succeeded either way. See `customCoverImageFileId`
   in the schema and `deleteCoverImage()` in `src/server/imagekit.ts`.
-- The Home/Trips list screens (`GET /api/trips`, `TripListItem`,
-  `UserTripCard`) are untouched and keep showing the trip's original Unsplash
-  cover even after a custom cover is set — confirmed as intentional: this
-  feature is scoped to the trip detail screen only. Not a bug; revisit only
-  if the list view is explicitly asked to reflect custom covers later.
+- ~~The Home/Trips list screens are untouched and keep showing the trip's
+  original Unsplash cover even after a custom cover is set.~~ **Resolved:**
+  extended to match the detail screen. `GET /api/trips` now selects
+  `customCoverImageUrl`/`useCustomCover`, `TripListItem` carries them, and
+  `UserTripCard` picks the active cover the same way (with the same ImageKit
+  `?tr=w-480,q-70` transform for a smaller thumbnail). `useUploadTripCover`/
+  `useToggleTripCover` invalidate the `["trips"]` list query too, alongside
+  `["trip", id]`, so cards refresh immediately after either mutation.

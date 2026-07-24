@@ -17,26 +17,23 @@
 
 ---
 
-### Task 1: Schema — add cover-override columns
+## Task 1: Schema — add cover-override columns
 
 **Files:**
 - Modify: `src/server/db/schema.ts:80-85`
 
-- [ ] **Step 1: Add the two new columns**
+- [ ] **Step 1: Add the new columns**
 
 In the `trips` table definition, right after the existing `coverImageUnsplashUrl` line, add:
 
 ```ts
-    coverImageUrl: text("cover_image_url"),
-    // Unsplash requires crediting the photographer and linking back to Unsplash
-    // wherever a photo is shown (see src/server/images.ts).
-    coverImagePhotographerName: text("cover_image_photographer_name"),
-    coverImagePhotographerUrl: text("cover_image_photographer_url"),
-    coverImageUnsplashUrl: text("cover_image_unsplash_url"),
     // A user-uploaded photo (via ImageKit) that can replace the Unsplash cover
     // above. useCustomCover picks which one is shown; the Unsplash fields
     // above are kept untouched so the user can switch back to them.
     customCoverImageUrl: text("custom_cover_image_url"),
+    // ImageKit's fileId for the row above — needed to delete the file from
+    // ImageKit when it's replaced by a new upload or the trip is deleted.
+    customCoverImageFileId: text("custom_cover_image_file_id"),
     useCustomCover: boolean("use_custom_cover").notNull().default(false),
 ```
 
@@ -67,7 +64,7 @@ Do not proceed to Task 4 (the API route) being tested end-to-end until they conf
 
 ---
 
-### Task 2: Install new packages
+## Task 2: Install new packages
 
 **Files:**
 - Modify: `package.json`
@@ -106,7 +103,7 @@ Tell the developer: these are new native modules, so the dev client needs a fres
 
 ---
 
-### Task 3: ImageKit upload helper
+## Task 3: ImageKit upload helper
 
 **Files:**
 - Create: `src/server/imagekit.ts`
@@ -116,11 +113,13 @@ Tell the developer: these are new native modules, so the dev client needs a fres
 ```ts
 // Uploads a trip cover photo to ImageKit via its plain REST API (fetch +
 // FormData, HTTP Basic auth with the private key) instead of a Node-only SDK,
-// so this runs on Cloudflare Workers. Returns the ImageKit-hosted URL.
+// so this runs on Cloudflare Workers. Returns the ImageKit-hosted URL and the
+// fileId (needed later to delete this exact file when it's replaced or the
+// trip is deleted).
 export async function uploadCoverImage(
   file: File,
   tripId: string,
-): Promise<string> {
+): Promise<{ url: string; fileId: string }> {
   const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
   if (!privateKey) throw new Error("IMAGEKIT_PRIVATE_KEY is not set");
 
@@ -140,8 +139,8 @@ export async function uploadCoverImage(
     throw new Error(`ImageKit upload failed (${res.status})`);
   }
 
-  const data = (await res.json()) as { url: string };
-  return data.url;
+  const data = (await res.json()) as { url: string; fileId: string };
+  return { url: data.url, fileId: data.fileId };
 }
 ```
 
@@ -159,7 +158,7 @@ git commit -m "feat: add ImageKit cover upload helper"
 
 ---
 
-### Task 4: Cover upload/toggle API route
+## Task 4: Cover upload/toggle API route
 
 **Files:**
 - Create: `src/app/api/trips/[id]/cover+api.ts`
@@ -275,7 +274,7 @@ git commit -m "feat: add trip cover upload/toggle API route"
 
 ---
 
-### Task 5: Client fetch helper — support file uploads
+## Task 5: Client fetch helper — support file uploads
 
 **Files:**
 - Modify: `src/lib/api.ts:36-59`
@@ -358,7 +357,7 @@ git commit -m "feat: support multipart file uploads in the shared fetch helper"
 
 ---
 
-### Task 6: Client trip hooks
+## Task 6: Client trip hooks
 
 **Files:**
 - Modify: `src/lib/trips.ts`
@@ -444,7 +443,7 @@ git commit -m "feat: add trip cover upload/toggle mutations"
 
 ---
 
-### Task 7: Trip screen UI — camera button, toggle, custom cover display
+## Task 7: Trip screen UI — camera button, toggle, custom cover display
 
 **Files:**
 - Modify: `src/components/trip/TripDetailView.tsx`
@@ -726,7 +725,7 @@ git commit -m "feat: add camera button and cover toggle to trip detail screen"
 
 ---
 
-### Task 8: Manual verification (developer, on-device)
+## Task 8: Manual verification (developer, on-device)
 
 The agent cannot run the app or rebuild natively (per `AGENTS.md`), so this
 task is a checklist for the developer to run after Tasks 1-7 are committed,
