@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ApiError } from "@/lib/api";
 import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
 import { useToggleTripCover, useUploadTripCover } from "@/lib/trips";
 import { colors } from "@/theme/colors";
@@ -298,16 +299,24 @@ export function TripDetailView({
     }
 
     uploadCover.mutate(formData, {
-      onError: () =>
-        setCoverError("Couldn't upload that photo. Please try again."),
+      onError: (err) =>
+        setCoverError(
+          err instanceof ApiError
+            ? err.message
+            : "Couldn't upload that photo. Please try again.",
+        ),
     });
   };
 
   const toggleCoverSource = () => {
     setCoverError(null);
     toggleCover.mutate(!trip.useCustomCover, {
-      onError: () =>
-        setCoverError("Couldn't switch photos. Please try again."),
+      onError: (err) =>
+        setCoverError(
+          err instanceof ApiError
+            ? err.message
+            : "Couldn't switch photos. Please try again.",
+        ),
     });
   };
 
