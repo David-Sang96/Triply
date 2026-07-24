@@ -43,6 +43,13 @@
       "when": 1784893061293,
       "tag": "0005_lyrical_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784900928955,
+      "tag": "0006_fresh_swordsman",
+      "breakpoints": true
     }
   ]
 }
