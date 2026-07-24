@@ -69,6 +69,8 @@ export type TripDetail = TripListItem & {
   coverImagePhotographerUrl: string | null;
   coverImageUnsplashUrl: string | null;
   images: TripImage[] | null;
+  customCoverImageUrl: string | null;
+  useCustomCover: boolean;
 };
 
 export type CreateTripInput = {
@@ -136,5 +138,31 @@ export function useDeleteTrip() {
     mutationFn: (id: string) =>
       apiFetch<{ ok: true }>(`/api/trips/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
+  });
+}
+
+export function useUploadTripCover(id: string) {
+  const apiFetch = useApiFetch();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      apiFetch<{ customCoverImageUrl: string; useCustomCover: boolean }>(
+        `/api/trips/${id}/cover`,
+        { method: "POST", formData },
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["trip", id] }),
+  });
+}
+
+export function useToggleTripCover(id: string) {
+  const apiFetch = useApiFetch();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (useCustomCover: boolean) =>
+      apiFetch<{ useCustomCover: boolean }>(`/api/trips/${id}/cover`, {
+        method: "PATCH",
+        json: { useCustomCover },
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["trip", id] }),
   });
 }
