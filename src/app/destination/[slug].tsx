@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
@@ -17,6 +18,23 @@ export default function DestinationScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-canvas">
         <ActivityIndicator color={colors.brand} />
+      </View>
+    );
+  }
+
+  if (destinationQuery.isError) {
+    return (
+      <View className="flex-1 items-center justify-center bg-canvas px-8">
+        <Ionicons name="cloud-offline-outline" size={28} color={colors.muted} />
+        <Text className="mt-2 text-center font-psemibold text-[15px] text-ink">
+          Couldn&apos;t load this destination.
+        </Text>
+        <Pressable
+          onPress={() => destinationQuery.refetch()}
+          className="mt-4 active:opacity-70"
+        >
+          <Text className="font-psemibold text-[14px] text-brand">Try again</Text>
+        </Pressable>
       </View>
     );
   }
