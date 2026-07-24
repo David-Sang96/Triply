@@ -221,6 +221,28 @@ export const placeCache = pgTable("place_cache", {
     .notNull(),
 });
 
+// Curated Home-screen content (hero rotation + "Popular destinations"). Not
+// user-specific — every signed-in user sees the same rows. heroTitle/
+// heroSubtitle are only set on the destinations featured in the hero
+// carousel; every row shows in Popular destinations regardless.
+export const destinations = pgTable("destinations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  country: text("country").notNull(),
+  rating: text("rating").notNull(),
+  imageUrl: text("image_url").notNull(),
+  heroTitle: text("hero_title"),
+  heroSubtitle: text("hero_subtitle"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export type Destination = typeof destinations.$inferSelect;
+export type NewDestination = typeof destinations.$inferInsert;
+
 export const tripsRelations = relations(trips, ({ one, many }) => ({
   user: one(users, { fields: [trips.userId], references: [users.id] }),
   days: many(days),

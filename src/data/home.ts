@@ -15,43 +15,6 @@ export const IMAGES = {
   bali: img("1537996194471-e657df975ab4"),
 };
 
-export type HeroSlide = {
-  id: string;
-  image: string;
-  /** Two-line headline. */
-  title: string;
-  subtitle: string;
-};
-
-// The hero rotates image + text together every 3s. The first slide matches the
-// static design so the screen reads identically before the carousel advances.
-export const HERO_SLIDES: HeroSlide[] = [
-  {
-    id: "fuji",
-    image: img("1578637387939-43c525550085", 1000),
-    title: "Where will your\nnext adventure be?",
-    subtitle: "AI will craft the perfect itinerary for you.",
-  },
-  {
-    id: "santorini",
-    image: img("1570077188670-e3a8d69ac5ff", 1000),
-    title: "Chasing Greek\nisland sunsets?",
-    subtitle: "Let AI plan your Santorini escape.",
-  },
-  {
-    id: "paris",
-    image: img("1502602898657-3e91760cbb34", 1000),
-    title: "Ready to fall\nfor Paris?",
-    subtitle: "Cafés, museums and hidden gems, planned.",
-  },
-  {
-    id: "bali",
-    image: img("1537996194471-e657df975ab4", 1000),
-    title: "Temples and\nBali beaches?",
-    subtitle: "Your island itinerary, made in seconds.",
-  },
-];
-
 export type Trip = {
   id: string;
   image: string;
@@ -81,21 +44,6 @@ export const TRIPS: Trip[] = [
     travelers: "2 Travelers",
     budget: "Budget",
   },
-];
-
-export type Destination = {
-  id: string;
-  image: string;
-  name: string;
-  country: string;
-  rating: string;
-};
-
-export const DESTINATIONS: Destination[] = [
-  { id: "tokyo", image: IMAGES.tokyo, name: "Tokyo", country: "Japan", rating: "4.8" },
-  { id: "kyoto", image: IMAGES.kyoto, name: "Kyoto", country: "Japan", rating: "4.7" },
-  { id: "bali", image: IMAGES.bali, name: "Bali", country: "Indonesia", rating: "4.6" },
-  { id: "santorini", image: IMAGES.santorini, name: "Santorini", country: "Greece", rating: "4.8" },
 ];
 
 export type Inspiration = {
