@@ -145,9 +145,13 @@ for the iOS permission message.
 
 ## Open questions (deferred, not blocking this version)
 
-- Old custom photos are not deleted from ImageKit when replaced by a newer
-  upload. Storage cost is negligible at this app's current scale; can be
-  revisited later (e.g. a cleanup job) if it becomes relevant.
+- ~~Old custom photos are not deleted from ImageKit when replaced by a newer
+  upload.~~ **Resolved:** a new upload now deletes the previous
+  `customCoverImageFileId` from ImageKit after the new one is saved, and
+  deleting a trip deletes its custom cover too. Both are best-effort
+  (logged server-side on failure, never surfaced to the user), since the
+  primary action has already succeeded either way. See `customCoverImageFileId`
+  in the schema and `deleteCoverImage()` in `src/server/imagekit.ts`.
 - The Home/Trips list screens (`GET /api/trips`, `TripListItem`,
   `UserTripCard`) are untouched and keep showing the trip's original Unsplash
   cover even after a custom cover is set — confirmed as intentional: this
