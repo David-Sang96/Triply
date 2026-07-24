@@ -27,7 +27,12 @@ export async function POST(request: Request, { id }: Record<string, string>) {
   if (!existing) return notFound();
 
   const form = await request.formData();
-  const file = (form as any).get("file");
+  // React Native's global FormData type (write-only, no `.get`) shadows the
+  // real one this route runs against on Cloudflare Workers — narrow through
+  // the actual read-capable shape instead of reaching for `any`.
+  const file = (
+    form as unknown as { get(name: string): FormDataEntryValue | null }
+  ).get("file");
   if (!(file instanceof File)) {
     return Response.json({ error: "Missing file" }, { status: 400 });
   }
