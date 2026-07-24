@@ -1,7 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -15,9 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ApiError } from "@/lib/api";
 import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
-import { useToggleTripCover, useUploadTripCover } from "@/lib/trips";
 import { colors } from "@/theme/colors";
 
 import { TripMap, type MapPlace } from "./TripMap";
@@ -106,23 +102,6 @@ function HeroCarousel({ images }: { images: TripImage[] }) {
           </Text>
         </Pressable>
       ) : null}
-    </View>
-  );
-}
-
-// The user's uploaded photo, shown instead of the Unsplash HeroCarousel when
-// trip.useCustomCover is true. Static (no swipe, no attribution) since it's
-// a single photo the user picked themselves.
-function CustomCover({ url }: { url: string }) {
-  return (
-    <View style={{ height: HERO_HEIGHT }} className="w-full">
-      <Image
-        source={{ uri: `${url}?tr=w-1200,q-70` }}
-        style={{ width: "100%", height: HERO_HEIGHT }}
-        contentFit="cover"
-        transition={200}
-      />
-      <View className="absolute inset-0 bg-black/15" pointerEvents="none" />
     </View>
   );
 }
@@ -255,74 +234,6 @@ export function TripDetailView({
       ],
     );
 
-  const uploadCover = useUploadTripCover(trip.id);
-  const toggleCover = useToggleTripCover(trip.id);
-  const [coverError, setCoverError] = useState<string | null>(null);
-
-  const pickCover = async () => {
-    setCoverError(null);
-
-    let formData: FormData;
-    try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setCoverError(
-          "Allow photo access in your phone's settings to add a custom photo.",
-        );
-        return;
-      }
-
-      const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [16, 10],
-        quality: 1,
-      });
-      if (picked.canceled) return;
-
-      const compressed = await ImageManipulator.manipulateAsync(
-        picked.assets[0].uri,
-        [{ resize: { width: 1600 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
-      );
-
-      // Read the local file into a real Blob rather than using RN's
-      // {uri, name, type} FormData shorthand — that object form has been
-      // unreliable on newer React Native versions and silently fails to
-      // send the request at all instead of throwing a clear error.
-      const fileResponse = await fetch(compressed.uri);
-      const blob = await fileResponse.blob();
-
-      formData = new FormData();
-      formData.append("file", blob, "cover.jpg");
-    } catch {
-      setCoverError("Couldn't open that photo. Please try again.");
-      return;
-    }
-
-    uploadCover.mutate(formData, {
-      onError: (err) =>
-        setCoverError(
-          err instanceof ApiError
-            ? err.message
-            : "Couldn't upload that photo. Please try again.",
-        ),
-    });
-  };
-
-  const toggleCoverSource = () => {
-    setCoverError(null);
-    toggleCover.mutate(!trip.useCustomCover, {
-      onError: (err) =>
-        setCoverError(
-          err instanceof ApiError
-            ? err.message
-            : "Couldn't switch photos. Please try again.",
-        ),
-    });
-  };
-
   // Prefer the multi-photo gallery; fall back to the single cover for trips
   // generated before the gallery existed.
   const images: TripImage[] =
@@ -363,57 +274,27 @@ export function TripDetailView({
       >
         {/* Hero */}
         <View className="w-full" style={{ height: HERO_HEIGHT }}>
-          {trip.useCustomCover && trip.customCoverImageUrl ? (
-            <CustomCover url={trip.customCoverImageUrl} />
-          ) : (
-            <HeroCarousel images={images} />
-          )}
+          <HeroCarousel images={images} />
 
           {/* Top actions */}
           <View className="absolute inset-x-0 top-0 flex-row items-center justify-between px-4 pt-2">
             <Pressable
               onPress={onBack}
               hitSlop={8}
-              className="h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
+              className="h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
             >
               <Ionicons name="chevron-back" size={22} color={colors.surface} />
             </Pressable>
 
             <View className="flex-row items-center">
-              <View className="mr-2 h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black">
+              <View className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-black/40">
                 <Ionicons name="heart-outline" size={20} color={colors.surface} />
               </View>
-              {trip.customCoverImageUrl ? (
-                <Pressable
-                  onPress={toggleCoverSource}
-                  disabled={toggleCover.isPending || uploadCover.isPending}
-                  hitSlop={8}
-                  className="mr-2 h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
-                >
-                  <Ionicons
-                    name="swap-horizontal-outline"
-                    size={19}
-                    color={colors.surface}
-                  />
-                </Pressable>
-              ) : null}
-              <Pressable
-                onPress={pickCover}
-                disabled={uploadCover.isPending || toggleCover.isPending}
-                hitSlop={8}
-                className="mr-2 h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
-              >
-                {uploadCover.isPending ? (
-                  <ActivityIndicator size="small" color={colors.surface} />
-                ) : (
-                  <Ionicons name="camera-outline" size={19} color={colors.surface} />
-                )}
-              </Pressable>
               <Pressable
                 onPress={confirmDelete}
                 disabled={deleting}
                 hitSlop={8}
-                className="h-10 w-10 items-center justify-center rounded-full border border-white/40 bg-black active:opacity-80"
+                className="h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
               >
                 {deleting ? (
                   <ActivityIndicator size="small" color={colors.surface} />
@@ -435,13 +316,6 @@ export function TripDetailView({
 
         {/* Body */}
         <View className="px-5 pt-4">
-          {coverError ? (
-            <View className="mb-3 rounded-xl border border-error bg-error/10 px-3 py-2">
-              <Text className="font-sans text-[13px] text-error">
-                {coverError}
-              </Text>
-            </View>
-          ) : null}
           <Text className="font-pbold text-[24px] leading-[30px] text-ink">
             {trip.title ?? trip.destination}
           </Text>
@@ -524,9 +398,7 @@ export function TripDetailView({
           </View>
 
           <Text className="mt-4 text-center font-sans text-[11px] text-faint">
-            {trip.useCustomCover
-              ? "Places via OpenStreetMap"
-              : "Places via OpenStreetMap · Photos via Unsplash"}
+            Places via OpenStreetMap · Photos via Unsplash
           </Text>
         </View>
       </ScrollView>

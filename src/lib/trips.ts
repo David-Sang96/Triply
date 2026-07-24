@@ -26,8 +26,6 @@ export type TripListItem = {
   title: string | null;
   status: TripStatus;
   coverImageUrl: string | null;
-  customCoverImageUrl: string | null;
-  useCustomCover: boolean;
   numDays: number;
   numTravelers: number;
   budgetLevel: BudgetLevel;
@@ -138,37 +136,5 @@ export function useDeleteTrip() {
     mutationFn: (id: string) =>
       apiFetch<{ ok: true }>(`/api/trips/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
-  });
-}
-
-export function useUploadTripCover(id: string) {
-  const apiFetch = useApiFetch();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (formData: FormData) =>
-      apiFetch<{ customCoverImageUrl: string; useCustomCover: boolean }>(
-        `/api/trips/${id}/cover`,
-        { method: "POST", formData },
-      ),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trip", id] });
-      qc.invalidateQueries({ queryKey: ["trips"] });
-    },
-  });
-}
-
-export function useToggleTripCover(id: string) {
-  const apiFetch = useApiFetch();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (useCustomCover: boolean) =>
-      apiFetch<{ useCustomCover: boolean }>(`/api/trips/${id}/cover`, {
-        method: "PATCH",
-        json: { useCustomCover },
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["trip", id] });
-      qc.invalidateQueries({ queryKey: ["trips"] });
-    },
   });
 }

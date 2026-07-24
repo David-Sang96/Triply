@@ -192,21 +192,15 @@ export default function ChatScreen() {
   }, []);
 
   const persisted = history.data ?? [];
-  // Once the persisted thread includes this message, drop the optimistic
-  // bubble instead of rendering a duplicate (computed at render time — no
-  // effect needed). The server saves the user message and the assistant
-  // reply together in one request, so by the time history refetches, the
-  // user message is usually the second-to-last entry (the reply is last) —
-  // check both spots. Looking only at the tail (not the whole history)
-  // avoids matching an earlier, unrelated message with the same text.
+  // Once the persisted thread's latest message is this one, drop the
+  // optimistic bubble instead of rendering a duplicate (computed at render
+  // time — no effect needed). Checking only the last message (not the whole
+  // history) avoids matching an earlier, unrelated message with the same text.
   const lastPersisted = persisted[persisted.length - 1];
-  const secondLastPersisted = persisted[persisted.length - 2];
   const pendingConfirmed =
     pendingUserMsg != null &&
-    ((lastPersisted?.role === "user" && lastPersisted.content === pendingUserMsg) ||
-      (lastPersisted?.role === "assistant" &&
-        secondLastPersisted?.role === "user" &&
-        secondLastPersisted.content === pendingUserMsg));
+    lastPersisted?.role === "user" &&
+    lastPersisted.content === pendingUserMsg;
 
   const greeting = tripId
     ? `Hi! I'm your Triply assistant. Ask me anything about your ${

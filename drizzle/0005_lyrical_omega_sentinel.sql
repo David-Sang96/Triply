@@ -1,1 +1,0 @@
-ALTER TABLE "trips" ADD COLUMN "custom_cover_image_file_id" text;

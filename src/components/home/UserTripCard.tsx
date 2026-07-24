@@ -23,13 +23,6 @@ export function UserTripCard({
   const generating = IN_PROGRESS.includes(trip.status);
   const failed = trip.status === "failed";
 
-  // Same active-cover choice as the trip detail screen: the custom upload
-  // when the trip has one turned on, otherwise the original Unsplash cover.
-  const coverUrl =
-    trip.useCustomCover && trip.customCoverImageUrl
-      ? `${trip.customCoverImageUrl}?tr=w-480,q-70`
-      : trip.coverImageUrl;
-
   return (
     <Pressable
       onPress={onPress}
@@ -37,9 +30,9 @@ export function UserTripCard({
         full ? "w-full" : "w-[240px]"
       }`}
     >
-      {coverUrl ? (
+      {trip.coverImageUrl ? (
         <Image
-          source={{ uri: coverUrl }}
+          source={{ uri: trip.coverImageUrl }}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
           transition={200}

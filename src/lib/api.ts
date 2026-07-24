@@ -33,20 +33,16 @@ export class ApiError extends Error {
   }
 }
 
-type ApiInit = Omit<RequestInit, "body"> & {
-  json?: unknown;
-  formData?: FormData;
-};
+type ApiInit = Omit<RequestInit, "body"> & { json?: unknown };
 
 // Hook returning an authenticated fetch. Injects `Authorization: Bearer <token>`
 // from Clerk and parses JSON, throwing ApiError (with the server message) on a
-// non-2xx response. Pass `formData` instead of `json` to send a file upload —
-// no Content-Type is set for it, so `fetch` fills in the multipart boundary.
+// non-2xx response.
 export function useApiFetch() {
   const { getToken } = useAuth();
 
   return async function apiFetch<T>(path: string, init: ApiInit = {}): Promise<T> {
-    const { json, formData, headers, ...rest } = init;
+    const { json, headers, ...rest } = init;
     const token = await getToken();
 
     let res: Response;
@@ -59,7 +55,7 @@ export function useApiFetch() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...headers,
         },
-        body: json !== undefined ? JSON.stringify(json) : (formData ?? undefined),
+        body: json !== undefined ? JSON.stringify(json) : undefined,
       });
     } catch (networkErr) {
       Sentry.withScope((scope) => {

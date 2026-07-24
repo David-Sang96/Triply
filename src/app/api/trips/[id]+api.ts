@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { trips } from "@/server/db/schema";
-import { deleteCoverImage } from "@/server/imagekit";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,20 +44,8 @@ export async function DELETE(request: Request, { id }: Record<string, string>) {
   const [deleted] = await db
     .delete(trips)
     .where(and(eq(trips.id, id), eq(trips.userId, userId)))
-    .returning({ id: trips.id, customCoverImageFileId: trips.customCoverImageFileId });
+    .returning({ id: trips.id });
 
   if (!deleted) return notFound();
-
-  // Best-effort: the trip is already gone from the DB either way, so a
-  // failure to clean up its custom cover (e.g. ImageKit briefly down)
-  // shouldn't turn a successful delete into an error response.
-  if (deleted.customCoverImageFileId) {
-    try {
-      await deleteCoverImage(deleted.customCoverImageFileId);
-    } catch (err) {
-      console.error("Failed to delete trip's cover from ImageKit:", err);
-    }
-  }
-
   return Response.json({ ok: true });
 }

@@ -43,13 +43,7 @@
         }
       ],
       "@clerk/expo",
-      "expo-secure-store",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow Triply to access your photos so you can set a custom trip cover."
-        }
-      ]
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
