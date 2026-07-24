@@ -167,6 +167,9 @@ in order — each phase depends on the ones before it.
 
 ## Cross-cutting reminders (from the plan's Open Risks)
 
+- [ ] Run `db:generate`/`db:migrate` for the custom trip cover columns added on
+      `feat/trip-custom-cover-image` (`customCoverImageUrl`, `useCustomCover`
+      on `trips`) before that branch is used against the live database
 - [ ] Confirm every server dependency is edge/web-standard (Cloudflare Workers, not Node)
 - [x] Pin the confirmed `@clerk/expo` version (`^3.7.8`, Expo SDK 57)
 - [ ] Always `JSON.parse` Gemini output in try/catch + Zod validate

@@ -148,3 +148,8 @@ for the iOS permission message.
 - Old custom photos are not deleted from ImageKit when replaced by a newer
   upload. Storage cost is negligible at this app's current scale; can be
   revisited later (e.g. a cleanup job) if it becomes relevant.
+- The Home/Trips list screens (`GET /api/trips`, `TripListItem`,
+  `UserTripCard`) are untouched and keep showing the trip's original Unsplash
+  cover even after a custom cover is set — confirmed as intentional: this
+  feature is scoped to the trip detail screen only. Not a bug; revisit only
+  if the list view is explicitly asked to reflect custom covers later.
