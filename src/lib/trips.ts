@@ -26,6 +26,8 @@ export type TripListItem = {
   title: string | null;
   status: TripStatus;
   coverImageUrl: string | null;
+  customCoverImageUrl: string | null;
+  useCustomCover: boolean;
   numDays: number;
   numTravelers: number;
   budgetLevel: BudgetLevel;
@@ -69,8 +71,6 @@ export type TripDetail = TripListItem & {
   coverImagePhotographerUrl: string | null;
   coverImageUnsplashUrl: string | null;
   images: TripImage[] | null;
-  customCoverImageUrl: string | null;
-  useCustomCover: boolean;
 };
 
 export type CreateTripInput = {
@@ -150,7 +150,10 @@ export function useUploadTripCover(id: string) {
         `/api/trips/${id}/cover`,
         { method: "POST", formData },
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trip", id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trip", id] });
+      qc.invalidateQueries({ queryKey: ["trips"] });
+    },
   });
 }
 
@@ -163,6 +166,9 @@ export function useToggleTripCover(id: string) {
         method: "PATCH",
         json: { useCustomCover },
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trip", id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["trip", id] });
+      qc.invalidateQueries({ queryKey: ["trips"] });
+    },
   });
 }
