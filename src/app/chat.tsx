@@ -163,6 +163,11 @@ export default function ChatScreen() {
   // Shown immediately on send, before the server confirms it (removed once the
   // persisted thread includes it).
   const [pendingUserMsg, setPendingUserMsg] = useState<string | null>(null);
+  // How many persisted messages existed when this send started — matching
+  // tail content alone isn't enough to confirm THIS send landed, since an
+  // earlier turn with the exact same text (e.g. sending "hi" twice) can
+  // already sit at the tail before the new turn is saved.
+  const [pendingBaselineCount, setPendingBaselineCount] = useState(0);
   // Set when a reply fails; the user's message is already saved server-side
   // (only the reply is missing), so Retry just resends it as a new turn.
   const [failed, setFailed] = useState<{ text: string; message: string } | null>(
@@ -197,12 +202,15 @@ export default function ChatScreen() {
   // effect needed). The server saves the user message and the assistant
   // reply together in one request, so by the time history refetches, the
   // user message is usually the second-to-last entry (the reply is last) —
-  // check both spots. Looking only at the tail (not the whole history)
-  // avoids matching an earlier, unrelated message with the same text.
+  // check both spots. Requiring the history to have actually grown past
+  // pendingBaselineCount (not just tail content matching) avoids confirming
+  // against an earlier turn with the exact same text, still sitting at the
+  // tail, before this send's own turn has landed.
   const lastPersisted = persisted[persisted.length - 1];
   const secondLastPersisted = persisted[persisted.length - 2];
   const pendingConfirmed =
     pendingUserMsg != null &&
+    persisted.length > pendingBaselineCount &&
     ((lastPersisted?.role === "user" && lastPersisted.content === pendingUserMsg) ||
       (lastPersisted?.role === "assistant" &&
         secondLastPersisted?.role === "user" &&
@@ -228,6 +236,7 @@ export default function ChatScreen() {
 
   const doSend = (text: string) => {
     setPendingUserMsg(text);
+    setPendingBaselineCount(persisted.length);
     setFailed(null);
 
     sendChat.mutate(text, {
