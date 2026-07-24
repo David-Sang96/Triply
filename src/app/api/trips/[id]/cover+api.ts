@@ -51,7 +51,7 @@ export async function POST(request: Request, { id }: Record<string, string>) {
   await db
     .update(trips)
     .set({ customCoverImageUrl: url, useCustomCover: true })
-    .where(eq(trips.id, id));
+    .where(and(eq(trips.id, id), eq(trips.userId, userId)));
 
   return Response.json({ customCoverImageUrl: url, useCustomCover: true });
 }
@@ -91,7 +91,7 @@ export async function PATCH(
   await db
     .update(trips)
     .set({ useCustomCover: body.useCustomCover })
-    .where(eq(trips.id, id));
+    .where(and(eq(trips.id, id), eq(trips.userId, userId)));
 
   return Response.json({ useCustomCover: body.useCustomCover });
 }
