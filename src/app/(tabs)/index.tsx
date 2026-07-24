@@ -179,12 +179,6 @@ export default function HomeScreen() {
             ))}
           </ScrollView>
         )}
-        {/* Page dots */}
-        <View className="mt-3 flex-row items-center justify-center gap-1.5">
-          <View className="h-1.5 w-1.5 rounded-full bg-brand" />
-          <View className="h-1.5 w-1.5 rounded-full bg-line" />
-          <View className="h-1.5 w-1.5 rounded-full bg-line" />
-        </View>
 
         {/* AI Inspirations */}
         <View className="mt-6 px-5">
