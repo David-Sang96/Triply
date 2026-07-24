@@ -36,6 +36,13 @@
       "when": 1784887591437,
       "tag": "0004_daily_jigsaw",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784893061293,
+      "tag": "0005_lyrical_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }
