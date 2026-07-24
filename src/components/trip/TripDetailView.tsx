@@ -512,7 +512,9 @@ export function TripDetailView({
           </View>
 
           <Text className="mt-4 text-center font-sans text-[11px] text-faint">
-            Places via OpenStreetMap · Photos via Unsplash
+            {trip.useCustomCover
+              ? "Places via OpenStreetMap"
+              : "Places via OpenStreetMap · Photos via Unsplash"}
           </Text>
         </View>
       </ScrollView>
