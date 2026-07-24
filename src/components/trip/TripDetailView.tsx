@@ -260,34 +260,42 @@ export function TripDetailView({
 
   const pickCover = async () => {
     setCoverError(null);
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setCoverError(
-        "Allow photo access in your phone's settings to add a custom photo.",
+
+    let formData: FormData;
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setCoverError(
+          "Allow photo access in your phone's settings to add a custom photo.",
+        );
+        return;
+      }
+
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [16, 10],
+        quality: 1,
+      });
+      if (picked.canceled) return;
+
+      const compressed = await ImageManipulator.manipulateAsync(
+        picked.assets[0].uri,
+        [{ resize: { width: 1600 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
       );
+
+      formData = new FormData();
+      formData.append("file", {
+        uri: compressed.uri,
+        name: "cover.jpg",
+        type: "image/jpeg",
+      } as unknown as Blob);
+    } catch {
+      setCoverError("Couldn't open that photo. Please try again.");
       return;
     }
-
-    const picked = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [16, 10],
-      quality: 1,
-    });
-    if (picked.canceled) return;
-
-    const compressed = await ImageManipulator.manipulateAsync(
-      picked.assets[0].uri,
-      [{ resize: { width: 1600 } }],
-      { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
-    );
-
-    const formData = new FormData();
-    formData.append("file", {
-      uri: compressed.uri,
-      name: "cover.jpg",
-      type: "image/jpeg",
-    } as unknown as Blob);
 
     uploadCover.mutate(formData, {
       onError: () =>
@@ -366,7 +374,7 @@ export function TripDetailView({
               {trip.customCoverImageUrl ? (
                 <Pressable
                   onPress={toggleCoverSource}
-                  disabled={toggleCover.isPending}
+                  disabled={toggleCover.isPending || uploadCover.isPending}
                   hitSlop={8}
                   className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
                 >
@@ -379,7 +387,7 @@ export function TripDetailView({
               ) : null}
               <Pressable
                 onPress={pickCover}
-                disabled={uploadCover.isPending}
+                disabled={uploadCover.isPending || toggleCover.isPending}
                 hitSlop={8}
                 className="mr-2 h-10 w-10 items-center justify-center rounded-full bg-black/40 active:opacity-80"
               >
