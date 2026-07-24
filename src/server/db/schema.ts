@@ -83,6 +83,11 @@ export const trips = pgTable(
     coverImagePhotographerName: text("cover_image_photographer_name"),
     coverImagePhotographerUrl: text("cover_image_photographer_url"),
     coverImageUnsplashUrl: text("cover_image_unsplash_url"),
+    // A user-uploaded photo (via ImageKit) that can replace the Unsplash cover
+    // above. useCustomCover picks which one is shown; the Unsplash fields
+    // above are kept untouched so the user can switch back to them.
+    customCoverImageUrl: text("custom_cover_image_url"),
+    useCustomCover: boolean("use_custom_cover").notNull().default(false),
     // Gallery of destination photos for the detail carousel (first is the cover).
     images: jsonb("images").$type<
       {
