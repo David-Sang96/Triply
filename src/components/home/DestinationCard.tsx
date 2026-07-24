@@ -1,15 +1,25 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import type { Destination } from "@/lib/destinations";
 import { colors } from "@/theme/colors";
 
 // A compact popular-destination card: photo with a rating badge and the
-// place name / country overlaid at the bottom.
-export function DestinationCard({ destination }: { destination: Destination }) {
+// place name / country overlaid at the bottom. Tapping opens the
+// destination detail screen.
+export function DestinationCard({
+  destination,
+  onPress,
+}: {
+  destination: Destination;
+  onPress?: () => void;
+}) {
   return (
-    <View className="h-[172px] w-[132px] overflow-hidden rounded-2xl">
+    <Pressable
+      onPress={onPress}
+      className="h-[172px] w-[132px] overflow-hidden rounded-2xl active:opacity-90"
+    >
       <Image
         source={{ uri: destination.imageUrl }}
         style={{ width: "100%", height: "100%" }}
@@ -33,6 +43,6 @@ export function DestinationCard({ destination }: { destination: Destination }) {
           {destination.country}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }

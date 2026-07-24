@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -36,8 +36,12 @@ const CHIP_GAP = 12; // gap-3 between the 3 interest columns
 export default function GenerateScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { destination: prefill } = useLocalSearchParams<{ destination?: string }>();
 
-  const [destination, setDestination] = useState("");
+  // Pre-filled when arriving from a "Popular destinations" card
+  // (destination/[slug].tsx's "Generate a trip to X" button); empty
+  // otherwise, same as before.
+  const [destination, setDestination] = useState(prefill ?? "");
   const [days, setDays] = useState(5);
   const [travelers, setTravelers] = useState(2);
   const [budget, setBudget] = useState<Budget>("Mid-range");

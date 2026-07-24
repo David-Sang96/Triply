@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -166,7 +166,16 @@ export default function HomeScreen() {
             contentContainerClassName="gap-3 px-5 pt-3.5"
           >
             {destinations.map((destination) => (
-              <DestinationCard key={destination.id} destination={destination} />
+              <DestinationCard
+                key={destination.id}
+                destination={destination}
+                onPress={() =>
+                  // Cast needed until the dev server's file watcher
+                  // regenerates typed routes for the just-added
+                  // destination/[slug].tsx — resolves itself once it does.
+                  router.push(`/destination/${destination.slug}` as Href)
+                }
+              />
             ))}
           </ScrollView>
         )}
