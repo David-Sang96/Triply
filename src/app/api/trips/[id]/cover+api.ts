@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { trips } from "@/server/db/schema";
-import { uploadCoverImage } from "@/server/imagekit";
+import { deleteCoverImage, uploadCoverImage } from "@/server/imagekit";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,7 +20,7 @@ export async function POST(request: Request, { id }: Record<string, string>) {
   if (!UUID_RE.test(id)) return notFound();
 
   const [existing] = await db
-    .select({ id: trips.id })
+    .select({ customCoverImageFileId: trips.customCoverImageFileId })
     .from(trips)
     .where(and(eq(trips.id, id), eq(trips.userId, userId)))
     .limit(1);
@@ -38,8 +38,9 @@ export async function POST(request: Request, { id }: Record<string, string>) {
   }
 
   let url: string;
+  let fileId: string;
   try {
-    url = await uploadCoverImage(file, id);
+    ({ url, fileId } = await uploadCoverImage(file, id));
   } catch (err) {
     console.error("ImageKit upload failed:", err);
     return Response.json(
@@ -50,8 +51,22 @@ export async function POST(request: Request, { id }: Record<string, string>) {
 
   await db
     .update(trips)
-    .set({ customCoverImageUrl: url, useCustomCover: true })
+    .set({
+      customCoverImageUrl: url,
+      customCoverImageFileId: fileId,
+      useCustomCover: true,
+    })
     .where(and(eq(trips.id, id), eq(trips.userId, userId)));
+
+  // Best-effort: the new cover is already saved above, so a failure to clean
+  // up the old file (e.g. ImageKit briefly down) shouldn't fail the request.
+  if (existing.customCoverImageFileId) {
+    try {
+      await deleteCoverImage(existing.customCoverImageFileId);
+    } catch (err) {
+      console.error("Failed to delete replaced cover from ImageKit:", err);
+    }
+  }
 
   return Response.json({ customCoverImageUrl: url, useCustomCover: true });
 }
