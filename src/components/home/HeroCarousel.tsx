@@ -50,7 +50,12 @@ export function HeroCarousel({ name, slides, onGenerate }: Props) {
     }).start();
   }, [index, fade]);
 
-  const slide = slides[index] ?? FALLBACK_SLIDE;
+  // Computed with modulo (not a direct slides[index] lookup) so a shrinking
+  // list — e.g. a refetch returning fewer hero-eligible destinations — never
+  // leaves `index` pointing past the end; it's always back in range on the
+  // very next render, no effect-based correction needed.
+  const slide =
+    slides.length > 0 ? slides[index % slides.length] : FALLBACK_SLIDE;
 
   return (
     <View className="h-[236px] w-full overflow-hidden rounded-3xl bg-brand">
