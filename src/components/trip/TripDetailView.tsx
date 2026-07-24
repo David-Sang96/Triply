@@ -287,12 +287,15 @@ export function TripDetailView({
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
       );
 
+      // Read the local file into a real Blob rather than using RN's
+      // {uri, name, type} FormData shorthand — that object form has been
+      // unreliable on newer React Native versions and silently fails to
+      // send the request at all instead of throwing a clear error.
+      const fileResponse = await fetch(compressed.uri);
+      const blob = await fileResponse.blob();
+
       formData = new FormData();
-      formData.append("file", {
-        uri: compressed.uri,
-        name: "cover.jpg",
-        type: "image/jpeg",
-      } as unknown as Blob);
+      formData.append("file", blob, "cover.jpg");
     } catch {
       setCoverError("Couldn't open that photo. Please try again.");
       return;
