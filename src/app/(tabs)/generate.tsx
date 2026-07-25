@@ -54,6 +54,31 @@ export default function GenerateScreen() {
       ? [interestPrefill]
       : ["food"],
   );
+
+  // The two initializers above only apply on first mount. Since this is a
+  // tab screen (Expo Router keeps tabs mounted across navigation, it doesn't
+  // remount on blur/focus), revisiting /generate with different params —
+  // e.g. tapping a different destination or inspiration tile — needs the
+  // form to update too. Adjusting state during render (comparing against
+  // the last-seen param, React's documented pattern for this) rather than
+  // in an effect, since `destination`/`interests` are also independently
+  // user-editable — not purely derived from the params.
+  const [prevPrefill, setPrevPrefill] = useState(prefill);
+  if (prefill !== prevPrefill) {
+    setPrevPrefill(prefill);
+    setDestination(prefill ?? "");
+  }
+
+  const [prevInterestPrefill, setPrevInterestPrefill] = useState(interestPrefill);
+  if (interestPrefill !== prevInterestPrefill) {
+    setPrevInterestPrefill(interestPrefill);
+    setInterests(
+      interestPrefill && INTERESTS.some((i) => i.id === interestPrefill)
+        ? [interestPrefill]
+        : ["food"],
+    );
+  }
+
   const [pace, setPace] = useState("balanced");
   const [showDestError, setShowDestError] = useState(false);
 
