@@ -192,7 +192,16 @@ export default function HomeScreen() {
           contentContainerClassName="gap-3 px-5 pt-3.5"
         >
           {INSPIRATIONS.map((item) => (
-            <InspirationPill key={item.id} item={item} />
+            <InspirationPill
+              key={item.id}
+              item={item}
+              onPress={() =>
+                router.push({
+                  pathname: "/generate",
+                  params: { interest: item.interestId },
+                })
+              }
+            />
           ))}
         </ScrollView>
       </ScrollView>

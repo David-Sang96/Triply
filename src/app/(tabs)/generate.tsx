@@ -36,7 +36,8 @@ const CHIP_GAP = 12; // gap-3 between the 3 interest columns
 export default function GenerateScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { destination: prefill } = useLocalSearchParams<{ destination?: string }>();
+  const { destination: prefill, interest: interestPrefill } =
+    useLocalSearchParams<{ destination?: string; interest?: string }>();
 
   // Pre-filled when arriving from a "Popular destinations" card
   // (destination/[slug].tsx's "Generate a trip to X" button); empty
@@ -45,7 +46,14 @@ export default function GenerateScreen() {
   const [days, setDays] = useState(5);
   const [travelers, setTravelers] = useState(2);
   const [budget, setBudget] = useState<Budget>("Mid-range");
-  const [interests, setInterests] = useState<string[]>(["food"]);
+  // Pre-selected when arriving from an "AI Inspirations" tile (validated
+  // against the real interest list so a bad/unknown id can't sneak in);
+  // defaults to Food otherwise, same as before.
+  const [interests, setInterests] = useState<string[]>(() =>
+    interestPrefill && INTERESTS.some((i) => i.id === interestPrefill)
+      ? [interestPrefill]
+      : ["food"],
+  );
   const [pace, setPace] = useState("balanced");
   const [showDestError, setShowDestError] = useState(false);
 
