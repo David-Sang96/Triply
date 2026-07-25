@@ -51,12 +51,16 @@ export type Inspiration = {
   label: string;
   emoji: string;
   bg: string;
+  // Matches an id in INTERESTS (src/data/generate.ts) — tapping this tile
+  // pre-selects that interest on the Generate form. Not always the same
+  // string as `id` above (e.g. "beach" -> "relaxation").
+  interestId: string;
 };
 
 export const INSPIRATIONS: Inspiration[] = [
-  { id: "food", label: "Food\nAdventures", emoji: "🍜", bg: "#FFF1E6" },
-  { id: "nature", label: "Nature\nEscapes", emoji: "🏔️", bg: "#E9F6EE" },
-  { id: "culture", label: "Cultural\nJourneys", emoji: "🎎", bg: "#FDECEF" },
-  { id: "beach", label: "Beach\nRelaxation", emoji: "🏝️", bg: "#E7F3FB" },
-  { id: "night", label: "Vibrant\nNightlife", emoji: "🌃", bg: "#EFEAFB" },
+  { id: "food", label: "Food\nAdventures", emoji: "🍜", bg: "#FFF1E6", interestId: "food" },
+  { id: "nature", label: "Nature\nEscapes", emoji: "🏔️", bg: "#E9F6EE", interestId: "nature" },
+  { id: "culture", label: "Cultural\nJourneys", emoji: "🎎", bg: "#FDECEF", interestId: "culture" },
+  { id: "beach", label: "Beach\nRelaxation", emoji: "🏝️", bg: "#E7F3FB", interestId: "relaxation" },
+  { id: "night", label: "Vibrant\nNightlife", emoji: "🌃", bg: "#EFEAFB", interestId: "nightlife" },
 ];
