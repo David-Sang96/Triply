@@ -15,6 +15,8 @@ export function InspirationPill({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.label.replace("\n", " ")} — plan a trip with this interest`}
       className="w-[92px] items-center rounded-2xl px-2 py-3 active:opacity-80"
       style={{ backgroundColor: item.bg }}
     >
