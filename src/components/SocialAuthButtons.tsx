@@ -1,4 +1,5 @@
 import { useSSO } from "@clerk/expo";
+import * as Sentry from "@sentry/react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -19,17 +20,26 @@ export function GoogleButton() {
     if (busy) return;
     setBusy(true);
     try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_google",
-      });
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-        router.replace("/");
-      }
-      // No session + no error → user cancelled; do nothing.
+      // Spans the whole native browser round-trip (SSO + session activation) —
+      // a multi-step flow the automatic fetch/XHR instrumentation never sees.
+      await Sentry.startSpan(
+        { name: "Google sign-in", op: "auth.sso" },
+        async () => {
+          const { createdSessionId, setActive } = await startSSOFlow({
+            strategy: "oauth_google",
+          });
+          if (createdSessionId && setActive) {
+            await setActive({ session: createdSessionId });
+            router.replace("/");
+          }
+          // No session + no error → user cancelled; do nothing.
+        },
+      );
     } catch (err) {
       Alert.alert("Google sign-in failed", "Please try again.");
-      console.error(JSON.stringify(err, null, 2));
+      Sentry.logger.error("Google sign-in failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
     } finally {
       setBusy(false);
     }

@@ -67,7 +67,9 @@ export function useApiFetch() {
         scope.setExtra("kind", "network");
         Sentry.captureException(networkErr);
       });
-      throw new ApiError(0, null, "Network error. Please check your connection.");
+      const message = "Network error. Please check your connection.";
+      logFailure(path, rest.method ?? "GET", 0, message);
+      throw new ApiError(0, null, message);
     }
 
     const text = await res.text();
@@ -76,12 +78,10 @@ export function useApiFetch() {
       data = text ? JSON.parse(text) : null;
     } catch {
       // Non-JSON response (e.g. an HTML error page) — surface + report it.
-      const parseError = new ApiError(
-        res.status,
-        text,
-        `Unexpected response from server (${res.status}).`,
-      );
+      const message = `Unexpected response from server (${res.status}).`;
+      const parseError = new ApiError(res.status, text, message);
       report(path, res.status, parseError);
+      logFailure(path, rest.method ?? "GET", res.status, message);
       throw parseError;
     }
 
@@ -94,6 +94,7 @@ export function useApiFetch() {
       // Report unexpected server errors (5xx); skip expected 4xx (validation,
       // cap-reached, rate-limit — those are shown to the user in-app).
       if (res.status >= 500) report(path, res.status, apiError);
+      logFailure(path, rest.method ?? "GET", res.status, message);
       throw apiError;
     }
 
@@ -107,5 +108,17 @@ function report(path: string, status: number, error: unknown): void {
     scope.setTag("endpoint", path);
     scope.setTag("status", String(status));
     Sentry.captureException(error);
+  });
+}
+
+// Log every failed request as a Sentry Log, regardless of status — this is
+// the one chokepoint every API call flows through, so it gives full
+// production visibility even for 4xx responses report() intentionally skips.
+function logFailure(path: string, method: string, status: number, message: string): void {
+  Sentry.logger.warn("API request failed", {
+    endpoint: path,
+    method,
+    status,
+    message,
   });
 }

@@ -1,8 +1,10 @@
+import * as Sentry from "@sentry/react-native";
 import {
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 
 import { useApiFetch } from "./api";
 
@@ -99,7 +101,18 @@ export function useCreateTrip() {
   return useMutation({
     mutationFn: (input: CreateTripInput) =>
       apiFetch<{ id: string }>("/api/trips", { method: "POST", json: input }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
+    onSuccess: (data, input) => {
+      Sentry.logger.info("Trip requested", {
+        trip_id: data.id,
+        destination: input.destination,
+        num_days: input.numDays,
+        num_travelers: input.numTravelers,
+        budget_tier: input.budgetLevel,
+        interest_count: input.interests.length,
+        pace: input.pace ?? "balanced",
+      });
+      qc.invalidateQueries({ queryKey: ["trips"] });
+    },
   });
 }
 
@@ -107,7 +120,7 @@ export function useCreateTrip() {
 // to protect the free-tier request budget.
 export function useTripStatus(id: string, enabled: boolean) {
   const apiFetch = useApiFetch();
-  return useQuery({
+  const query = useQuery({
     queryKey: ["trip", id, "status"],
     enabled,
     queryFn: () =>
@@ -119,6 +132,26 @@ export function useTripStatus(id: string, enabled: boolean) {
       return status && TERMINAL.includes(status) ? false : 3000;
     },
   });
+
+  const status = query.data?.status;
+  const errorMessage = query.data?.errorMessage;
+  // Guards against re-logging on every poll tick / re-render — logs once per
+  // trip id the first time its status resolves to a terminal state.
+  const loggedForId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!status || !TERMINAL.includes(status) || loggedForId.current === id) return;
+    loggedForId.current = id;
+    if (status === "ready") {
+      Sentry.logger.info("Trip generation succeeded", { trip_id: id });
+    } else {
+      Sentry.logger.error("Trip generation failed", {
+        trip_id: id,
+        error_message: errorMessage ?? null,
+      });
+    }
+  }, [status, id, errorMessage]);
+
+  return query;
 }
 
 export function useTrip(id: string, enabled: boolean) {

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useApiFetch } from "./api";
@@ -70,6 +71,17 @@ export function useSendChat(ref: ThreadRef) {
           conversationId: ref.conversationId ?? null,
         },
       }),
+    onSuccess: () => {
+      Sentry.logger.info("Chat message sent", {
+        has_conversation_id: Boolean(ref.conversationId),
+      });
+    },
+    onError: (error) => {
+      Sentry.logger.warn("Chat message failed", {
+        has_conversation_id: Boolean(ref.conversationId),
+        message: error instanceof Error ? error.message : String(error),
+      });
+    },
     onSettled: (data) => {
       qc.invalidateQueries({ queryKey: ["chat", threadKey(ref)] });
       // A brand-new general conversation now has an id: its thread key changes
