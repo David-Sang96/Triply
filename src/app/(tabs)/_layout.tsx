@@ -2,6 +2,7 @@ import { useAuth } from "@clerk/expo";
 import { Redirect } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 
+import { SplashScreenView } from "@/components/SplashScreenView";
 import { colors } from "@/theme/colors";
 
 // Signed-in app shell. Native tabs are mandatory here (see AGENTS.md) — never
@@ -9,7 +10,9 @@ import { colors } from "@/theme/colors";
 export default function TabsLayout() {
   const { isSignedIn, isLoaded } = useAuth();
 
-  if (!isLoaded) return null;
+  // Keeps the boot screen up while Clerk restores the session, instead of a
+  // blank frame between the native splash and the first tab.
+  if (!isLoaded) return <SplashScreenView />;
   if (!isSignedIn) return <Redirect href="/welcome" />;
 
   return (
