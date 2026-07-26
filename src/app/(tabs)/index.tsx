@@ -189,7 +189,12 @@ export default function HomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-3 px-5 pt-3.5"
+          // Extra right padding (vs. the usual px-5) — this is the last
+          // section on the screen, so it renders at the same height as the
+          // floating chat button (bottom-5 right-5, ~78px wide including its
+          // margin). Without it, the last tile can't scroll out from behind
+          // the button.
+          contentContainerClassName="gap-3 pl-5 pr-20 pt-3.5"
         >
           {INSPIRATIONS.map((item) => (
             <InspirationPill
