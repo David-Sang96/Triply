@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useApiFetch } from "./api";
+import { ApiError, useApiFetch } from "./api";
 
 export type ChatRole = "user" | "assistant";
 
@@ -77,9 +77,11 @@ export function useSendChat(ref: ThreadRef) {
       });
     },
     onError: (error) => {
+      // Status is enum-like (an approved telemetry field); the error's
+      // message text is user-facing display copy, not logged here.
       Sentry.logger.warn("Chat message failed", {
         has_conversation_id: Boolean(ref.conversationId),
-        message: error instanceof Error ? error.message : String(error),
+        status: error instanceof ApiError ? error.status : null,
       });
     },
     onSettled: (data) => {

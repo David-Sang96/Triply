@@ -35,11 +35,11 @@ export function GoogleButton() {
           // No session + no error → user cancelled; do nothing.
         },
       );
-    } catch (err) {
+    } catch {
       Alert.alert("Google sign-in failed", "Please try again.");
-      Sentry.logger.error("Google sign-in failed", {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      // Fixed category, not the raw error/exception message — same policy as
+      // src/lib/api.ts, src/lib/chat.ts, src/lib/trips.ts.
+      Sentry.logger.error("Google sign-in failed", { failure_kind: "sso_failed" });
     } finally {
       setBusy(false);
     }

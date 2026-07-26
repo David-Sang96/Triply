@@ -104,7 +104,8 @@ export function useCreateTrip() {
     onSuccess: (data, input) => {
       Sentry.logger.info("Trip requested", {
         trip_id: data.id,
-        destination: input.destination,
+        // Boolean, not the raw destination text the user typed.
+        has_destination: Boolean(input.destination),
         num_days: input.numDays,
         num_travelers: input.numTravelers,
         budget_tier: input.budgetLevel,
@@ -134,7 +135,6 @@ export function useTripStatus(id: string, enabled: boolean) {
   });
 
   const status = query.data?.status;
-  const errorMessage = query.data?.errorMessage;
   // Guards against re-logging on every poll tick / re-render — logs once per
   // trip id the first time its status resolves to a terminal state.
   const loggedForId = useRef<string | null>(null);
@@ -146,10 +146,14 @@ export function useTripStatus(id: string, enabled: boolean) {
     } else {
       Sentry.logger.error("Trip generation failed", {
         trip_id: id,
-        error_message: errorMessage ?? null,
+        // Fixed category, not the server's errorMessage — that's user-facing
+        // display copy (friendlyError() in src/server/inngest/functions.ts),
+        // and the server exposes no machine-readable error code to
+        // categorize further than this.
+        failure_kind: "generation_failed",
       });
     }
-  }, [status, id, errorMessage]);
+  }, [status, id]);
 
   return query;
 }
