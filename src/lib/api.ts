@@ -67,6 +67,7 @@ export function useApiFetch() {
         scope.setExtra("kind", "network");
         Sentry.captureException(networkErr);
       });
+      logFailure(path, rest.method ?? "GET", 0, "network");
       throw new ApiError(0, null, "Network error. Please check your connection.");
     }
 
@@ -82,6 +83,7 @@ export function useApiFetch() {
         `Unexpected response from server (${res.status}).`,
       );
       report(path, res.status, parseError);
+      logFailure(path, rest.method ?? "GET", res.status, "invalid_response");
       throw parseError;
     }
 
@@ -94,6 +96,7 @@ export function useApiFetch() {
       // Report unexpected server errors (5xx); skip expected 4xx (validation,
       // cap-reached, rate-limit — those are shown to the user in-app).
       if (res.status >= 500) report(path, res.status, apiError);
+      logFailure(path, rest.method ?? "GET", res.status, "http_error");
       throw apiError;
     }
 
@@ -107,5 +110,27 @@ function report(path: string, status: number, error: unknown): void {
     scope.setTag("endpoint", path);
     scope.setTag("status", String(status));
     Sentry.captureException(error);
+  });
+}
+
+// Log every failed request as a Sentry Log, regardless of status — this is
+// the one chokepoint every API call flows through, so it gives full
+// production visibility even for 4xx responses report() intentionally skips.
+// `failureKind` is a fixed category, never the server-provided message text —
+// that text is user-facing display copy (ApiError.message), not a value
+// approved for telemetry.
+type ApiFailureKind = "network" | "invalid_response" | "http_error";
+
+function logFailure(
+  path: string,
+  method: string,
+  status: number,
+  failureKind: ApiFailureKind,
+): void {
+  Sentry.logger.warn("API request failed", {
+    endpoint: path,
+    method,
+    status,
+    failure_kind: failureKind,
   });
 }

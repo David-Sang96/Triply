@@ -9,7 +9,7 @@ import {
 } from "@expo-google-fonts/poppins";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as Sentry from "@sentry/react-native";
-import { Stack } from "expo-router";
+import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -25,12 +25,39 @@ if (!publishableKey) {
   throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to the .env file");
 }
 
+// Per-screen route transactions (Time To Initial Display). This SDK version
+// predates Sentry.expoRouterIntegration(), so it's wired manually to Expo
+// Router's nav ref below via registerNavigationContainer.
+const navigationIntegration = Sentry.reactNavigationIntegration({
+  enableTimeToInitialDisplay: true,
+});
+
+// Records a short replay leading up to a captured exception (not every
+// session — see replaysOnErrorSampleRate below). Defaults to masking all
+// text, images, and vectors, so no per-screen masking config is needed.
+const replayIntegration = Sentry.mobileReplayIntegration();
+
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   // PII (e.g. IP address) only in development — keep it off in released builds.
   sendDefaultPii: __DEV__,
   // Sample all transactions in development, a small fraction in production.
   tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  // Send Sentry.logger.* calls to Sentry (see src/lib/api.ts, src/lib/trips.ts).
+  enableLogs: true,
+  // Capture a replay for every session that hits a captured exception, rather
+  // than sampling all sessions — smaller footprint, same debugging value for
+  // the common case. Scaled down in production to manage replay volume/cost
+  // once real traffic exists.
+  replaysOnErrorSampleRate: __DEV__ ? 1.0 : 0.5,
+  // Also sample a small slice of ALL sessions (error or not) — catches UX bugs
+  // that never throw (e.g. a stuck UI element), which replaysOnErrorSampleRate
+  // alone would miss. Kept low: replay quota is usually a plan's tightest
+  // limit, and today's traffic doesn't need more to spot a recurring issue.
+  replaysSessionSampleRate: __DEV__ ? 0.1 : 0.01,
+  // Merges with (doesn't replace) the default integrations, which already
+  // cover app start, fetch/XHR spans, native frames, and JS stalls.
+  integrations: [navigationIntegration, replayIntegration],
 });
 
 SplashScreen.preventAutoHideAsync();
@@ -42,10 +69,15 @@ function RootLayout() {
     Poppins_600SemiBold,
     Poppins_700Bold,
   });
+  const navigationRef = useNavigationContainerRef();
 
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    navigationIntegration.registerNavigationContainer(navigationRef);
+  }, [navigationRef]);
 
   if (!fontsLoaded) return null;
 

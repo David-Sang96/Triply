@@ -1,6 +1,7 @@
+import * as Sentry from "@sentry/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useApiFetch } from "./api";
+import { ApiError, useApiFetch } from "./api";
 
 export type ChatRole = "user" | "assistant";
 
@@ -70,6 +71,19 @@ export function useSendChat(ref: ThreadRef) {
           conversationId: ref.conversationId ?? null,
         },
       }),
+    onSuccess: () => {
+      Sentry.logger.info("Chat message sent", {
+        has_conversation_id: Boolean(ref.conversationId),
+      });
+    },
+    onError: (error) => {
+      // Status is enum-like (an approved telemetry field); the error's
+      // message text is user-facing display copy, not logged here.
+      Sentry.logger.warn("Chat message failed", {
+        has_conversation_id: Boolean(ref.conversationId),
+        status: error instanceof ApiError ? error.status : null,
+      });
+    },
     onSettled: (data) => {
       qc.invalidateQueries({ queryKey: ["chat", threadKey(ref)] });
       // A brand-new general conversation now has an id: its thread key changes

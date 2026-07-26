@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Sentry from "@sentry/react-native";
 import { Image } from "expo-image";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
@@ -281,10 +282,17 @@ export function TripDetailView({
       });
       if (picked.canceled) return;
 
-      const compressed = await ImageManipulator.manipulateAsync(
-        picked.assets[0].uri,
-        [{ resize: { width: 1600 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+      // On-device CPU work (not a network call), so it's invisible to the
+      // automatic fetch/XHR instrumentation — a plausible slow spot on older
+      // Android devices, worth its own span.
+      const compressed = await Sentry.startSpan(
+        { name: "Compress cover image", op: "file.transform" },
+        () =>
+          ImageManipulator.manipulateAsync(
+            picked.assets[0].uri,
+            [{ resize: { width: 1600 } }],
+            { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+          ),
       );
 
       // Read the local file into a real Blob rather than using RN's
