@@ -135,6 +135,7 @@ export async function GET(request: Request) {
   const rows = await db
     .select({
       id: chatMessages.id,
+      turnId: chatMessages.turnId,
       role: chatMessages.role,
       content: chatMessages.content,
       createdAt: chatMessages.createdAt,
@@ -216,11 +217,15 @@ export async function POST(request: Request) {
     conversationId = conversation.id;
   }
 
+  // Shared by both rows this call inserts, so a later "delete this message"
+  // can remove the whole turn (question + reply) by turnId alone.
+  const turnId = crypto.randomUUID();
+
   // Persist the user's turn up front so it is never lost even if Gemini fails.
   try {
     await db
       .insert(chatMessages)
-      .values({ userId, tripId, conversationId, role: "user", content: message });
+      .values({ userId, tripId, conversationId, turnId, role: "user", content: message });
   } catch (err) {
     console.error("Failed to persist chat message:", err);
     return Response.json(
@@ -257,7 +262,7 @@ export async function POST(request: Request) {
 
     await db
       .insert(chatMessages)
-      .values({ userId, tripId, conversationId, role: "assistant", content: reply });
+      .values({ userId, tripId, conversationId, turnId, role: "assistant", content: reply });
 
     if (conversationId && !tripId) {
       await db

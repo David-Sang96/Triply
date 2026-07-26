@@ -13,6 +13,7 @@ import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SplashScreenView } from "@/components/SplashScreenView";
@@ -86,19 +87,23 @@ function RootLayout() {
   if (!fontsLoaded) return <SplashScreenView />;
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#FFFFFF" },
-            }}
-          />
-        </SafeAreaProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    // Required for react-native-gesture-handler's Swipeable (chats.tsx) to
+    // reliably receive pan gestures, especially on Android.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <QueryClientProvider client={queryClient}>
+          <SafeAreaProvider>
+            <StatusBar style="dark" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: "#FFFFFF" },
+              }}
+            />
+          </SafeAreaProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </GestureHandlerRootView>
   );
 }
 
