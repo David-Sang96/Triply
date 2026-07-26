@@ -1,6 +1,8 @@
 import * as Sentry from "@sentry/react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import type { ChatUsage, SendChatResponse } from "@/shared/chat-contract";
+
 import { ApiError, useApiFetch } from "./api";
 
 export type ChatRole = "user" | "assistant";
@@ -28,27 +30,6 @@ function threadKey(ref: ThreadRef) {
   return ref.tripId ? `trip:${ref.tripId}` : (ref.conversationId ?? "new");
 }
 
-// What POST /api/chat sends back. `model` and `usage` exist purely so the
-// client can populate Sentry's gen_ai spans: the route runs on Cloudflare
-// Workers, which has no Sentry SDK, so the numbers have to travel here.
-type SendChatResponse = {
-  reply: string;
-  conversationId: string | null;
-  model?: {
-    requested: string;
-    responded: string;
-    temperature: number;
-    maxOutputTokens: number;
-  };
-  usage?: {
-    inputTokens: number | null;
-    cachedInputTokens: number | null;
-    outputTokens: number | null;
-    reasoningTokens: number | null;
-    totalTokens: number | null;
-  };
-};
-
 const AGENT_NAME = "Triply Assistant";
 
 // Sentry's message shape: {role, parts:[{type, content}]}, stringified because
@@ -57,7 +38,7 @@ function genAiMessages(role: "user" | "assistant", content: string): string {
   return JSON.stringify([{ role, parts: [{ type: "text", content }] }]);
 }
 
-function setUsage(span: Sentry.Span, usage: SendChatResponse["usage"]) {
+function setUsage(span: Sentry.Span, usage: ChatUsage | undefined) {
   if (!usage) return;
   const attrs: Record<string, number> = {};
 

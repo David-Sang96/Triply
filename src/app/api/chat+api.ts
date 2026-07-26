@@ -6,6 +6,7 @@ import { GEMINI_TIMEOUT_MS, isRateLimitError } from "@/server/ai/rate-limit";
 import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { chatConversations, chatMessages, trips } from "@/server/db/schema";
+import type { SendChatSuccess } from "@/shared/chat-contract";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -284,7 +285,7 @@ export async function POST(request: Request) {
     // where Sentry lives — the Workers runtime this route executes in has no
     // Sentry SDK, so it can't emit the gen_ai spans itself.
     const usage = response.usageMetadata;
-    return Response.json({
+    const payload: SendChatSuccess = {
       reply,
       conversationId: tripId ? null : conversationId,
       model: {
@@ -300,7 +301,8 @@ export async function POST(request: Request) {
         reasoningTokens: usage?.thoughtsTokenCount ?? null,
         totalTokens: usage?.totalTokenCount ?? null,
       },
-    });
+    };
+    return Response.json(payload);
   } catch (err) {
     if (isRateLimitError(err)) {
       return Response.json(
