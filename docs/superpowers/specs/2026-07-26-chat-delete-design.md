@@ -83,8 +83,14 @@ since both rows in a turn share the same `turn_id`.
 in the existing `Alert.alert` destructive-confirm pattern already used for
 trip delete (`TripDetailView.tsx`'s `confirmDelete`):
 
-- **Swipe left** reveals a red "Delete" action (`Swipeable` from
-  `react-native-gesture-handler`, `renderRightActions`).
+- **Swipe left** reveals a red "Delete" action, via `renderRightActions` on
+  `react-native-gesture-handler/ReanimatedSwipeable`. Note the `Swipeable`
+  exported from the package barrel is marked deprecated in the installed
+  version (2.32) in favour of this Reanimated-backed one; Reanimated (4.5) is
+  already a dependency, so the non-deprecated component is used directly. It
+  hands `renderRightActions` a Reanimated `SharedValue` progress (driven with
+  `useAnimatedStyle`) plus a `methods.close()` used to snap the row shut before
+  the confirm dialog opens.
 - **Long-press** the row triggers the same confirm dialog directly.
 
 Tapping "Delete" in the dialog calls `useDeleteConversation()`.

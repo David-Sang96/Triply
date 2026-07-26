@@ -7,6 +7,7 @@ export type ChatRole = "user" | "assistant";
 
 export type ChatMessage = {
   id: string;
+  turnId: string;
   role: ChatRole;
   content: string;
   createdAt: string;
@@ -93,5 +94,29 @@ export function useSendChat(ref: ThreadRef) {
       }
       if (!ref.tripId) qc.invalidateQueries({ queryKey: ["conversations"] });
     },
+  });
+}
+
+// Deletes a whole general-assistant conversation (its messages cascade
+// server-side).
+export function useDeleteConversation() {
+  const apiFetch = useApiFetch();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ ok: true }>(`/api/chat/conversations/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
+  });
+}
+
+// Deletes a whole turn (the question and its reply) given either message's
+// id. Works in both general conversations and the trip-scoped thread.
+export function useDeleteMessage(ref: ThreadRef) {
+  const apiFetch = useApiFetch();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (messageId: string) =>
+      apiFetch<{ ok: true }>(`/api/chat/messages/${messageId}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", threadKey(ref)] }),
   });
 }

@@ -192,6 +192,11 @@ export const chatMessages = pgTable(
       () => chatConversations.id,
       { onDelete: "cascade" },
     ),
+    // Shared by a user message and the assistant reply it produced (stamped
+    // once per POST /api/chat call), so "delete this message" can remove the
+    // whole turn correctly — including when a failed reply left the question
+    // unanswered, where deleting-the-adjacent-row would risk the wrong pair.
+    turnId: uuid("turn_id").defaultRandom().notNull(),
     role: chatRole("role").notNull(),
     content: text("content").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -201,6 +206,7 @@ export const chatMessages = pgTable(
   (t) => [
     index("chat_messages_thread_idx").on(t.userId, t.tripId, t.createdAt),
     index("chat_messages_conversation_idx").on(t.conversationId, t.createdAt),
+    index("chat_messages_turn_idx").on(t.turnId),
     check(
       "chat_messages_exactly_one_thread",
       sql`(${t.tripId} is not null) <> (${t.conversationId} is not null)`,

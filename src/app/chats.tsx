@@ -1,10 +1,26 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+// The `Swipeable` exported from the package barrel is deprecated in favour of
+// this Reanimated-backed one, which this project can use directly (Reanimated
+// is already a dependency).
+import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import Reanimated, {
+  useAnimatedStyle,
+  type SharedValue,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useConversations, type Conversation } from "@/lib/chat";
+import { ApiError } from "@/lib/api";
+import { useConversations, useDeleteConversation, type Conversation } from "@/lib/chat";
 import { colors } from "@/theme/colors";
 
 const BOT_ICON = require("@/assets/images/chat-bot.png");
@@ -21,32 +37,97 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
+const DELETE_ACTION_WIDTH = 64;
+
+// Revealed by swiping a row left. `progress` is 0 when closed and 1 when fully
+// open, so the button slides in from off-screen as the row moves.
+function DeleteAction({
+  progress,
+  onPress,
+}: {
+  progress: SharedValue<number>;
+  onPress: () => void;
+}) {
+  const style = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: (1 - Math.min(progress.value, 1)) * DELETE_ACTION_WIDTH },
+    ],
+  }));
+
+  return (
+    <Reanimated.View
+      style={[
+        { width: DELETE_ACTION_WIDTH, marginLeft: 8, justifyContent: "center" },
+        style,
+      ]}
+    >
+      <Pressable
+        onPress={onPress}
+        accessibilityLabel="Delete conversation"
+        className="h-full w-full items-center justify-center rounded-2xl bg-error active:opacity-80"
+      >
+        <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+      </Pressable>
+    </Reanimated.View>
+  );
+}
+
 function ConversationRow({
   conversation,
   onPress,
+  onDelete,
 }: {
   conversation: Conversation;
   onPress: () => void;
+  onDelete: () => void;
 }) {
+  const confirmDelete = () =>
+    Alert.alert(
+      "Delete this conversation?",
+      "This permanently removes the conversation and its messages.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
+      ],
+    );
+
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-2.5 flex-row items-center rounded-2xl border border-line bg-surface p-3 active:opacity-80"
-    >
-      <Image
-        source={BOT_ICON}
-        style={{ width: 40, height: 40, borderRadius: 20 }}
-      />
-      <View className="ml-3 flex-1">
-        <Text className="font-psemibold text-[15px] text-ink" numberOfLines={1}>
-          {conversation.title}
-        </Text>
-        <Text className="mt-0.5 font-sans text-[12px] text-muted">
-          {timeAgo(conversation.updatedAt)}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-    </Pressable>
+    <View className="mb-2.5">
+      <Swipeable
+        renderRightActions={(progress, _translation, methods) => (
+          <DeleteAction
+            progress={progress}
+            onPress={() => {
+              // Snap the row shut before the dialog appears, so cancelling
+              // doesn't leave it stuck open.
+              methods.close();
+              confirmDelete();
+            }}
+          />
+        )}
+        rightThreshold={40}
+      >
+        <Pressable
+          onPress={onPress}
+          onLongPress={confirmDelete}
+          className="flex-row items-center rounded-2xl border border-line bg-surface p-3 active:opacity-80"
+        >
+          <Image
+            source={BOT_ICON}
+            style={{ width: 40, height: 40, borderRadius: 20 }}
+          />
+          <View className="ml-3 flex-1">
+            <Text className="font-psemibold text-[15px] text-ink" numberOfLines={1}>
+              {conversation.title}
+            </Text>
+            <Text className="mt-0.5 font-sans text-[12px] text-muted">
+              {timeAgo(conversation.updatedAt)}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+        </Pressable>
+      </Swipeable>
+    </View>
   );
 }
 
@@ -56,9 +137,19 @@ export default function ChatsScreen() {
   const router = useRouter();
   const conversationsQuery = useConversations();
   const conversations = conversationsQuery.data ?? [];
+  const deleteConversation = useDeleteConversation();
 
   const goBack = () =>
     router.canGoBack() ? router.back() : router.replace("/");
+
+  const onDelete = (id: string) =>
+    deleteConversation.mutate(id, {
+      onError: (err) =>
+        Alert.alert(
+          "Couldn't delete",
+          err instanceof ApiError ? err.message : "Please try again.",
+        ),
+    });
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
@@ -115,6 +206,7 @@ export default function ChatsScreen() {
               onPress={() =>
                 router.push({ pathname: "/chat", params: { conversationId: c.id } })
               }
+              onDelete={() => onDelete(c.id)}
             />
           ))}
         </ScrollView>

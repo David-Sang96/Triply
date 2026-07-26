@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   Keyboard,
@@ -17,7 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ApiError } from "@/lib/api";
-import { useChatHistory, useSendChat } from "@/lib/chat";
+import { useChatHistory, useDeleteMessage, useSendChat } from "@/lib/chat";
 import { colors } from "@/theme/colors";
 
 const NEW_CHAT_GREETING =
@@ -27,15 +28,27 @@ const BOT_ICON = require("@/assets/images/chat-bot.png");
 
 type DisplayMessage = { id: string; role: "user" | "assistant"; content: string };
 
-function Bubble({ message }: { message: DisplayMessage }) {
+// `onLongPress` is undefined for the synthetic greeting and the optimistic
+// pending bubble — neither has a persisted row (and therefore no turn) to
+// delete. Pressable with an undefined onLongPress simply does nothing.
+function Bubble({
+  message,
+  onLongPress,
+}: {
+  message: DisplayMessage;
+  onLongPress?: () => void;
+}) {
   if (message.role === "user") {
     return (
       <View className="mb-3 flex-row justify-end">
-        <View className="max-w-[82%] rounded-2xl rounded-br-md bg-brand px-4 py-2.5">
+        <Pressable
+          onLongPress={onLongPress}
+          className="max-w-[82%] rounded-2xl rounded-br-md bg-brand px-4 py-2.5 active:opacity-90"
+        >
           <Text className="font-sans text-[15px] leading-[21px] text-white">
             {message.content}
           </Text>
-        </View>
+        </Pressable>
       </View>
     );
   }
@@ -45,11 +58,14 @@ function Bubble({ message }: { message: DisplayMessage }) {
         source={BOT_ICON}
         style={{ width: 26, height: 26, borderRadius: 13 }}
       />
-      <View className="ml-2 max-w-[82%] rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5">
+      <Pressable
+        onLongPress={onLongPress}
+        className="ml-2 max-w-[82%] rounded-2xl rounded-bl-md border border-line bg-surface px-4 py-2.5 active:opacity-90"
+      >
         <Text className="font-sans text-[15px] leading-[21px] text-ink">
           {message.content}
         </Text>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -157,6 +173,7 @@ export default function ChatScreen() {
   const threadRef = { tripId: tripId ?? null, conversationId: conversationId ?? null };
   const history = useChatHistory(threadRef);
   const sendChat = useSendChat(threadRef);
+  const deleteMessage = useDeleteMessage(threadRef);
 
   const scrollRef = useRef<ScrollView>(null);
   const [input, setInput] = useState("");
@@ -268,6 +285,29 @@ export default function ChatScreen() {
     if (failed) doSend(failed.text);
   };
 
+  // Deletes the whole turn the message belongs to — the server resolves the
+  // pair by turnId, so tapping either the question or the reply removes both.
+  const confirmDeleteMessage = (messageId: string) =>
+    Alert.alert(
+      "Delete this message?",
+      "This removes both your question and the reply.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            deleteMessage.mutate(messageId, {
+              onError: (err) =>
+                Alert.alert(
+                  "Couldn't delete",
+                  err instanceof ApiError ? err.message : "Please try again.",
+                ),
+            }),
+        },
+      ],
+    );
+
   const goBack = () =>
     router.canGoBack() ? router.back() : router.replace("/");
 
@@ -338,7 +378,17 @@ export default function ChatScreen() {
           }
         >
           {items.map((m) => (
-            <Bubble key={m.id} message={m} />
+            <Bubble
+              key={m.id}
+              message={m}
+              // The greeting and the optimistic pending bubble have no
+              // persisted row yet, so there is nothing to delete.
+              onLongPress={
+                m.id === "greeting" || m.id === "pending"
+                  ? undefined
+                  : () => confirmDeleteMessage(m.id)
+              }
+            />
           ))}
           {sendChat.isPending ? <TypingBubble /> : null}
           {failed ? <FailedBanner message={failed.message} onRetry={retry} /> : null}
