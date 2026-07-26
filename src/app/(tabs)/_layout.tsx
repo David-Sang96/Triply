@@ -28,9 +28,20 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="generate">
-        <NativeTabs.Trigger.Icon sf="sparkles" md="auto_awesome" />
-        <NativeTabs.Trigger.Label>Generate</NativeTabs.Trigger.Label>
+      {/* The trip form is reachable from plenty of places already (hero,
+          empty states, inspiration tiles, destination pages), so this slot
+          holds the assistant instead. It opens the conversation list; a single
+          conversation pushes /chat, which sits outside this group and so
+          covers the tab bar. */}
+      <NativeTabs.Trigger name="assistant">
+        <NativeTabs.Trigger.Icon
+          sf={{
+            default: "bubble.left.and.bubble.right",
+            selected: "bubble.left.and.bubble.right.fill",
+          }}
+          md="chat"
+        />
+        <NativeTabs.Trigger.Label>Assistant</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="trips">

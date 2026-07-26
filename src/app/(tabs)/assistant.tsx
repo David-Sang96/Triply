@@ -131,16 +131,15 @@ function ConversationRow({
   );
 }
 
-// Inbox of the user's general-assistant conversations (like ChatGPT/WhatsApp).
-// Trip-scoped chat isn't listed here — it stays a single thread per trip.
-export default function ChatsScreen() {
+// The Assistant tab: an inbox of the user's general-assistant conversations
+// (like ChatGPT/WhatsApp). Opening one pushes /chat, which lives outside the
+// (tabs) group and so covers the tab bar. Trip-scoped chat isn't listed here —
+// it stays a single thread per trip, reached from the trip itself.
+export default function AssistantScreen() {
   const router = useRouter();
   const conversationsQuery = useConversations();
   const conversations = conversationsQuery.data ?? [];
   const deleteConversation = useDeleteConversation();
-
-  const goBack = () =>
-    router.canGoBack() ? router.back() : router.replace("/");
 
   const onDelete = (id: string) =>
     deleteConversation.mutate(id, {
@@ -155,17 +154,8 @@ export default function ChatsScreen() {
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
       {/* Header */}
       <View className="flex-row items-center justify-between px-3 py-2.5">
-        <View className="flex-row items-center">
-          <Pressable
-            onPress={goBack}
-            hitSlop={8}
-            accessibilityLabel="Go back"
-            className="h-9 w-9 items-center justify-center active:opacity-70"
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.ink} />
-          </Pressable>
-          <Text className="ml-1 font-pbold text-[20px] text-ink">Chats</Text>
-        </View>
+        {/* No back button — this is a tab root, not a pushed screen. */}
+        <Text className="ml-2 font-pbold text-[20px] text-ink">Assistant</Text>
         <Pressable
           onPress={() => router.push("/chat")}
           className="flex-row items-center rounded-full bg-brand px-3.5 py-2 active:opacity-90"
