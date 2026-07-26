@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { InterestChip } from "@/components/generate/InterestChip";
 import { PaceOption } from "@/components/generate/PaceOption";
@@ -35,6 +35,7 @@ const CHIP_GAP = 12; // gap-3 between the 3 interest columns
 // itself is wired up in a later phase.
 export default function GenerateScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { destination: prefill, interest: interestPrefill } =
     useLocalSearchParams<{ destination?: string; interest?: string }>();
@@ -295,6 +296,15 @@ export default function GenerateScreen() {
             No payment required
           </Text>
         </View>
+
+        {/* Breathing room under the submit button — the tab bar used to give
+            it that, and as a pushed screen nothing does. A spacer rather than
+            a contentContainerStyle, which would override the NativeWind
+            contentContainerClassName and drop the horizontal padding with it.
+            SafeAreaView's "bottom" edge alone isn't enough either: Android
+            gesture nav reports insets.bottom as 0, so the flat 24 carries it
+            there, while a home indicator adds its own clearance on top. */}
+        <View style={{ height: insets.bottom + 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
