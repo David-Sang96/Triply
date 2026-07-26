@@ -55,11 +55,11 @@ export default function GenerateScreen() {
       : ["food"],
   );
 
-  // The two initializers above only apply on first mount. Since this is a
-  // tab screen (Expo Router keeps tabs mounted across navigation, it doesn't
-  // remount on blur/focus), revisiting /generate with different params —
-  // e.g. tapping a different destination or inspiration tile — needs the
-  // form to update too. Adjusting state during render (comparing against
+  // The two initializers above only apply on first mount. This is a pushed
+  // stack screen now (it used to be a tab), so it usually does remount — but
+  // navigating here from a screen already showing it, e.g. tapping a
+  // different destination or inspiration tile, reuses the instance and the
+  // form still has to update. Adjusting state during render (comparing against
   // the last-seen param, React's documented pattern for this) rather than
   // in an effect, since `destination`/`interests` are also independently
   // user-editable — not purely derived from the params.

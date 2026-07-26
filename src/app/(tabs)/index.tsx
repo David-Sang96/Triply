@@ -13,9 +13,7 @@ import { UserTripCard } from "@/components/home/UserTripCard";
 import { INSPIRATIONS } from "@/data/home";
 import { useDestinations } from "@/lib/destinations";
 import { useTrips } from "@/lib/trips";
-import { colors, shadows } from "@/theme/colors";
-
-const BOT_ICON = require("@/assets/images/chat-bot.png");
+import { colors } from "@/theme/colors";
 
 export default function HomeScreen() {
   const { user } = useUser();
@@ -189,12 +187,7 @@ export default function HomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          // Extra right padding (vs. the usual px-5) — this is the last
-          // section on the screen, so it renders at the same height as the
-          // floating chat button (bottom-5 right-5, ~78px wide including its
-          // margin). Without it, the last tile can't scroll out from behind
-          // the button.
-          contentContainerClassName="gap-3 pl-5 pr-20 pt-3.5"
+          contentContainerClassName="gap-3 px-5 pt-3.5"
         >
           {INSPIRATIONS.map((item) => (
             <InspirationPill
@@ -210,18 +203,6 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
       </ScrollView>
-
-      {/* Floating chat assistant */}
-      <Pressable
-        onPress={() => router.push("/chats")}
-        className="absolute bottom-5 right-5 h-[58px] w-[58px] rounded-full active:opacity-90"
-        style={shadows.lg}
-      >
-        <Image
-          source={BOT_ICON}
-          style={{ width: 58, height: 58, borderRadius: 29 }}
-        />
-      </Pressable>
     </SafeAreaView>
   );
 }
