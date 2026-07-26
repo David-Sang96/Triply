@@ -116,6 +116,24 @@ Notes that will save time:
 - Save new plan or spec docs under `_plans/`. `PLAN.md` (repo root) is the live
   phase-by-phase checklist.
 
+## What may go into telemetry
+
+Sentry spans, logs and breadcrumbs carry **ids, enum-like or fixed-category
+values, booleans and counts** — never tokens, emails, request/response bodies,
+or server- and exception-provided message text. Failures are reported as a
+fixed `failure_kind` plus the numeric status, not the user-facing copy: that
+text is display material and often echoes user input. `sendDefaultPii` is
+deliberately `__DEV__`-only for the same reason.
+
+**One deliberate exception: AI agent monitoring.** The `gen_ai.*` spans around
+the assistant (`src/lib/chat.ts`) do record the user's message and the model's
+reply, because Sentry's AI Conversations view is what makes a bad answer
+debuggable and it is driven by exactly that content. This is scoped to chat
+turns on those spans — it is not licence to log message text anywhere else. If
+that trade stops being worth it, drop `gen_ai.input.messages` and
+`gen_ai.output.messages`; every other attribute (model, token usage, latency)
+keeps working without them.
+
 ## Commands
 
 - `npm run start` — dev server (already running; do not start it).
