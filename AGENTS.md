@@ -92,6 +92,16 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   *alter* tables, so existing data is preserved. Workflow: edit
   `src/server/db/schema.ts` → `npm run db:generate` (writes SQL to `drizzle/`)
   → `npm run db:migrate` (applies it to Neon).
+- **Never edit a migration that may already have been applied.** Drizzle
+  records a hash of each file, so changing one causes drift; fix it forward
+  with a new migration instead.
+- **A volatile `DEFAULT` rewrites the whole table.** `ADD COLUMN … DEFAULT
+  gen_random_uuid() NOT NULL` can't use Postgres' catalog-only fast path, so it
+  rewrites under `ACCESS EXCLUSIVE`. That is fine on today's small tables — and
+  it is what correctly backfills a distinct value per row. On a large table,
+  stage it instead: add nullable → backfill in batches → add a validated
+  `CHECK (col IS NOT NULL)` → `SET NOT NULL` (which then reuses the check
+  rather than re-scanning) → `SET DEFAULT`.
 - `npm run db:migrate` — apply pending migrations from `drizzle/` to Neon.
   **Writes to the live database.**
 - `npm run db:generate` — generate a versioned SQL migration from schema changes.
