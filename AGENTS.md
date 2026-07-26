@@ -75,9 +75,9 @@ result against it in a loop.** Run this workflow by default:
 2. **Build it** with sizes scaled from screen **width** and vertical positions
    from screen **height**, so the composition survives other aspect ratios.
 3. **Screenshot the running app and compare — repeat until the numbers agree.**
-   ```
+   ```powershell
    adb shell screencap -p /sdcard/shot.png     # run from PowerShell, not Git
-   adb pull /sdcard/shot.png <scratchpad>      # Bash rewrites /sdcard/ paths
+   adb pull /sdcard/shot.png .\shot.png        # Bash rewrites /sdcard/ paths
    ```
    Measure the screenshot with the same script and diff it against the design.
    Iterate on the constants until every metric is within ~1%. Finish with a

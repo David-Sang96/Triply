@@ -23,6 +23,9 @@ const GLOBE = require("@/assets/images/splash-globe.png");
 const DESIGN_W = 853;
 const DESIGN_H = 1844;
 
+// Must stay equal to the expo-splash-screen backgroundColor in app.json.
+const NATIVE_SPLASH_BG = "#D9E7FB";
+
 // Globe artwork (design/world.png, cropped to its visible bounds).
 const GLOBE_W = 497;
 const GLOBE_TOP = 563;
@@ -105,7 +108,10 @@ export function SplashScreenView() {
   const ringSize = sw((RING_RADIUS + DOT_SIZE / 2) * 2);
 
   return (
-    <View style={{ flex: 1 }}>
+    // The background colour matches the native splash in app.json, so the
+    // frames before the gradient image finishes decoding show that same tone
+    // rather than a white flash.
+    <View style={{ flex: 1, backgroundColor: NATIVE_SPLASH_BG }}>
       <Image
         source={BG}
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
