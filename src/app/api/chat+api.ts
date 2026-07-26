@@ -13,6 +13,11 @@ const UUID_RE =
 // How many prior turns to load — bounds both the DB read and the tokens sent
 // to Gemini. Older history simply falls out of context.
 const HISTORY_LIMIT = 30;
+// Named so the values reported to Sentry's AI monitoring come from the same
+// place the request uses, rather than being restated on the client and drifting.
+const CHAT_MODEL = "gemini-flash-latest";
+const CHAT_TEMPERATURE = 0.7;
+const CHAT_MAX_OUTPUT_TOKENS = 800;
 const MAX_TITLE_LENGTH = 40;
 
 function normalizeUuid(raw: string | null | undefined): string | null {
@@ -248,9 +253,13 @@ export async function POST(request: Request) {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
+      model: CHAT_MODEL,
       contents,
-      config: { systemInstruction, temperature: 0.7, maxOutputTokens: 800 },
+      config: {
+        systemInstruction,
+        temperature: CHAT_TEMPERATURE,
+        maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
+      },
     });
     const reply = response.text?.trim();
     if (!reply) {
@@ -271,7 +280,27 @@ export async function POST(request: Request) {
         .where(eq(chatConversations.id, conversationId));
     }
 
-    return Response.json({ reply, conversationId: tripId ? null : conversationId });
+    // Token counts and the resolved model ride back to the client, which is
+    // where Sentry lives — the Workers runtime this route executes in has no
+    // Sentry SDK, so it can't emit the gen_ai spans itself.
+    const usage = response.usageMetadata;
+    return Response.json({
+      reply,
+      conversationId: tripId ? null : conversationId,
+      model: {
+        requested: CHAT_MODEL,
+        responded: response.modelVersion ?? CHAT_MODEL,
+        temperature: CHAT_TEMPERATURE,
+        maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
+      },
+      usage: {
+        inputTokens: usage?.promptTokenCount ?? null,
+        cachedInputTokens: usage?.cachedContentTokenCount ?? null,
+        outputTokens: usage?.candidatesTokenCount ?? null,
+        reasoningTokens: usage?.thoughtsTokenCount ?? null,
+        totalTokens: usage?.totalTokenCount ?? null,
+      },
+    });
   } catch (err) {
     if (isRateLimitError(err)) {
       return Response.json(

@@ -28,6 +28,59 @@ function threadKey(ref: ThreadRef) {
   return ref.tripId ? `trip:${ref.tripId}` : (ref.conversationId ?? "new");
 }
 
+// What POST /api/chat sends back. `model` and `usage` exist purely so the
+// client can populate Sentry's gen_ai spans: the route runs on Cloudflare
+// Workers, which has no Sentry SDK, so the numbers have to travel here.
+type SendChatResponse = {
+  reply: string;
+  conversationId: string | null;
+  model?: {
+    requested: string;
+    responded: string;
+    temperature: number;
+    maxOutputTokens: number;
+  };
+  usage?: {
+    inputTokens: number | null;
+    cachedInputTokens: number | null;
+    outputTokens: number | null;
+    reasoningTokens: number | null;
+    totalTokens: number | null;
+  };
+};
+
+const AGENT_NAME = "Triply Assistant";
+
+// Sentry's message shape: {role, parts:[{type, content}]}, stringified because
+// span attributes only hold primitives.
+function genAiMessages(role: "user" | "assistant", content: string): string {
+  return JSON.stringify([{ role, parts: [{ type: "text", content }] }]);
+}
+
+function setUsage(span: Sentry.Span, usage: SendChatResponse["usage"]) {
+  if (!usage) return;
+  const attrs: Record<string, number> = {};
+
+  if (usage.inputTokens != null) attrs["gen_ai.usage.input_tokens"] = usage.inputTokens;
+  if (usage.cachedInputTokens != null)
+    attrs["gen_ai.usage.input_tokens.cached"] = usage.cachedInputTokens;
+
+  // Gemini reports candidate and thought tokens as disjoint counts
+  // (prompt + candidates + thoughts === total), but Sentry defines reasoning
+  // as a *subset* of output. Passing Gemini's numbers straight through would
+  // show reasoning exceeding output and under-report output cost, so they are
+  // summed back together here.
+  if (usage.outputTokens != null || usage.reasoningTokens != null) {
+    attrs["gen_ai.usage.output_tokens"] =
+      (usage.outputTokens ?? 0) + (usage.reasoningTokens ?? 0);
+  }
+  if (usage.reasoningTokens != null)
+    attrs["gen_ai.usage.output_tokens.reasoning"] = usage.reasoningTokens;
+
+  if (usage.totalTokens != null) attrs["gen_ai.usage.total_tokens"] = usage.totalTokens;
+  for (const [k, v] of Object.entries(attrs)) span.setAttribute(k, v);
+}
+
 // The user's general-assistant conversations, most recently active first.
 export function useConversations() {
   const apiFetch = useApiFetch();
@@ -63,15 +116,66 @@ export function useSendChat(ref: ThreadRef) {
   const apiFetch = useApiFetch();
   const qc = useQueryClient();
   return useMutation({
+    // Wrapped in the two spans Sentry's AI Agents dashboard looks for: an
+    // invoke_agent span for the turn, and a nested gen_ai.chat span for the
+    // model call. Both are timed from the client, so their duration includes
+    // the network round-trip — the true model latency is only visible once the
+    // Workers runtime has its own Sentry SDK.
     mutationFn: (message: string) =>
-      apiFetch<{ reply: string; conversationId: string | null }>("/api/chat", {
-        method: "POST",
-        json: {
-          message,
-          tripId: ref.tripId ?? null,
-          conversationId: ref.conversationId ?? null,
+      Sentry.startSpan(
+        {
+          op: "gen_ai.invoke_agent",
+          name: `invoke_agent ${AGENT_NAME}`,
+          attributes: {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.agent.name": AGENT_NAME,
+            "gen_ai.pipeline.name": ref.tripId ? "trip-chat" : "assistant-chat",
+          },
         },
-      }),
+        (agentSpan) =>
+          Sentry.startSpan(
+            {
+              op: "gen_ai.chat",
+              name: "chat gemini",
+              attributes: {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": "gcp.gemini",
+                "gen_ai.agent.name": AGENT_NAME,
+                "gen_ai.input.messages": genAiMessages("user", message),
+              },
+            },
+            async (chatSpan) => {
+              const res = await apiFetch<SendChatResponse>("/api/chat", {
+                method: "POST",
+                json: {
+                  message,
+                  tripId: ref.tripId ?? null,
+                  conversationId: ref.conversationId ?? null,
+                },
+              });
+
+              if (res.model) {
+                for (const span of [agentSpan, chatSpan]) {
+                  span.setAttribute("gen_ai.request.model", res.model.requested);
+                }
+                chatSpan.setAttribute("gen_ai.response.model", res.model.responded);
+                chatSpan.setAttribute("gen_ai.request.temperature", res.model.temperature);
+                chatSpan.setAttribute(
+                  "gen_ai.request.max_tokens",
+                  res.model.maxOutputTokens,
+                );
+              }
+
+              const output = genAiMessages("assistant", res.reply);
+              chatSpan.setAttribute("gen_ai.output.messages", output);
+              agentSpan.setAttribute("gen_ai.output.messages", output);
+              setUsage(chatSpan, res.usage);
+              setUsage(agentSpan, res.usage);
+
+              return res;
+            },
+          ),
+      ),
     onSuccess: () => {
       Sentry.logger.info("Chat message sent", {
         has_conversation_id: Boolean(ref.conversationId),

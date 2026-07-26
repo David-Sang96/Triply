@@ -101,7 +101,10 @@ user-facing message.
 - Attribute names in `snake_case`, per the Sentry docs' recommendation.
 - Never log tokens, emails, full request/response bodies, or server-/
   exception-provided message text — only ids, enum-like/fixed-category fields
-  (status, budget tier, failure_kind), and counts.
+  (status, budget tier, failure_kind), and counts. *(Later amended: the
+  `gen_ai.*` AI-monitoring spans deliberately record chat message text. See
+  "What may go into telemetry" in `AGENTS.md`, which is now the live rule —
+  this doc is the historical design record.)*
 
 ## Out of scope (explicitly deferred)
 
