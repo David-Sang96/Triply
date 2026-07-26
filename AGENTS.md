@@ -61,6 +61,45 @@ other tools; rationale is in `_plans/triply-implementation-plan.md`.*
 Installed today: NativeWind, Sentry, Clerk, Neon + Drizzle, Inngest. Still
 planned: Gemini, Nominatim, Pexels, ImageKit.
 
+## Building a screen from a design (do this without being asked)
+
+Designs live in `design/*.png`. Whenever the task is "build this screen/UI"
+and a design image exists, **do not eyeball it — measure it, then verify the
+result against it in a loop.** Run this workflow by default:
+
+1. **Measure the design, don't guess.** Open the PNG with `jimp` (a
+   devDependency) and pull real numbers: element bounding boxes, cap heights,
+   gradient samples, the most-common ink colour of each text run. Treat the
+   design's pixel canvas as the coordinate space and express every value as a
+   fraction of it.
+2. **Build it** with sizes scaled from screen **width** and vertical positions
+   from screen **height**, so the composition survives other aspect ratios.
+3. **Screenshot the running app and compare — repeat until the numbers agree.**
+   ```powershell
+   adb shell screencap -p /sdcard/shot.png     # run from PowerShell, not Git
+   adb pull /sdcard/shot.png .\shot.png        # Bash rewrites /sdcard/ paths
+   ```
+   Measure the screenshot with the same script and diff it against the design.
+   Iterate on the constants until every metric is within ~1%. Finish with a
+   side-by-side image as a visual check.
+
+Notes that will save time:
+
+- **Never start, restart, or reload the app to do this** — see the
+  non-negotiable rules. Metro fast refresh applies edits to the running app on
+  its own. If a screen is only reachable transiently (a boot screen), gate it
+  behind a temporary `const PREVIEW_X = true` in its parent, loop, then remove
+  the flag.
+- **Let fonts finish loading before trusting a screenshot.** A capture taken
+  seconds after launch shows the Roboto fallback and will send you chasing a
+  font bug that isn't there.
+- **Compare text with a true pixel bbox, not a percentage-of-peak threshold** —
+  a density cutoff biases heavier weights narrower. Use the *most common* ink
+  colour for fills; the single darkest pixel is an anti-aliasing outlier.
+- Check that a colour filter for one element can't also match another (a
+  subtitle blue can easily fall inside a "title navy" test and silently
+  swallow it).
+
 ## Project layout & conventions
 
 - App code lives in **`src/app/`** — NOT the repo-root `app/`. Entry is

@@ -15,6 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { SplashScreenView } from "@/components/SplashScreenView";
 import { queryClient } from "@/lib/query";
 
 import "../../global.css";
@@ -79,7 +80,10 @@ function RootLayout() {
     navigationIntegration.registerNavigationContainer(navigationRef);
   }, [navigationRef]);
 
-  if (!fontsLoaded) return null;
+  // The native splash (expo-splash-screen) still covers the screen at this
+  // point — hideAsync only runs once the fonts are in — so this render is what
+  // is revealed underneath it, already painted and using Poppins.
+  if (!fontsLoaded) return <SplashScreenView />;
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
