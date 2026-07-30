@@ -41,9 +41,30 @@ function buildPrompt(p: TripParams): string {
   ].join("\n");
 }
 
+// The two models the itinerary experiment picks between (see generateTrip in
+// src/server/inngest/functions.ts). Pinned to exact versions on purpose: the
+// `gemini-flash-latest` alias moves to a new model when Google ships one, which
+// would silently change an arm mid-experiment and make the comparison
+// meaningless. Both ids were confirmed available on this project's API key —
+// re-check with a models.list call before changing them.
+export const ITINERARY_MODELS = {
+  /** Cheapest, for the bulk of traffic. */
+  flashLite: "gemini-3.5-flash-lite",
+  /** Stronger and dearer, for the comparison slice. */
+  flash: "gemini-3.6-flash",
+} as const;
+
+export type ItineraryModel =
+  (typeof ITINERARY_MODELS)[keyof typeof ITINERARY_MODELS];
+
 // Calls Gemini with structured JSON output, then parses + validates. Throws on
 // empty output or invalid JSON so Inngest retries the step.
-export async function generateItinerary(p: TripParams): Promise<Itinerary> {
+export async function generateItinerary(
+  p: TripParams,
+  // Defaults to the floating alias, which is right for callers outside the
+  // experiment: they want "the current Flash model", not a pinned version.
+  model: ItineraryModel | "gemini-flash-latest" = "gemini-flash-latest",
+): Promise<Itinerary> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
@@ -54,9 +75,7 @@ export async function generateItinerary(p: TripParams): Promise<Itinerary> {
   const days = Math.min(Math.max(p.numDays, 1), MAX_DAYS);
 
   const response = await ai.models.generateContent({
-    // Alias for the current Flash model. Avoids hard-pinning a version that
-    // Google later retires for new accounts (which 404'd gemini-2.5-flash).
-    model: "gemini-flash-latest",
+    model,
     contents: buildPrompt(p),
     config: {
       responseMimeType: "application/json",

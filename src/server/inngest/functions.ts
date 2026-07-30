@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
+import { experiment } from "inngest";
 
-import { generateItinerary } from "@/server/ai/gemini";
+import { generateItinerary, ITINERARY_MODELS } from "@/server/ai/gemini";
 import { TIME_OF_DAY } from "@/server/ai/itinerary-schema";
 import { isRateLimitError } from "@/server/ai/rate-limit";
 import { db } from "@/server/db";
@@ -151,7 +152,7 @@ export const generateTrip = inngest.createFunction(
       });
     },
   },
-  async ({ event, step }) => {
+  async ({ event, step, group }) => {
     const { tripId } = event.data as { tripId: string };
 
     // 1. Load params + mark generating. If the trip was deleted, stop quietly.
@@ -173,9 +174,30 @@ export const generateTrip = inngest.createFunction(
     });
     if (!params) return { skipped: "trip-missing" };
 
-    // 2. Gemini itinerary (structured JSON, validated).
-    const itinerary = await step.run("generate-itinerary", () =>
-      generateItinerary(params),
+    // 2. Gemini itinerary (structured JSON, validated), as an A/B experiment
+    // between the cheap and the stronger Flash model. 90% of runs take the
+    // cheap arm; the remaining 10% give a quality yardstick to compare it
+    // against. Weights are relative, not percentages — 90/10 happens to be
+    // both. The selection is memoized by Inngest, so a retry of a later step
+    // never re-rolls the model, and the variant name shows on every step in
+    // the run in the Inngest dashboard.
+    const { result: itinerary, variant: model } = await group.experiment(
+      "itinerary-model",
+      {
+        variants: {
+          // Each arm has its own step id: an already-completed run keeps its
+          // own arm's cached result, and the dashboard shows which ran.
+          flash_lite: () =>
+            step.run("generate-itinerary-flash-lite", () =>
+              generateItinerary(params, ITINERARY_MODELS.flashLite),
+            ),
+          flash: () =>
+            step.run("generate-itinerary-flash", () =>
+              generateItinerary(params, ITINERARY_MODELS.flash),
+            ),
+        },
+        select: experiment.weighted({ flash_lite: 90, flash: 10 }),
+      },
     );
 
     // 3. Enrich places with coordinates, throttled ≥1s and cached.
@@ -275,6 +297,8 @@ export const generateTrip = inngest.createFunction(
       ]);
     });
 
-    return { tripId, days: itinerary.days.length };
+    // `model` is the variant name, so a run's arm is visible in the run output
+    // as well as on its steps — enough to compare arms without a schema change.
+    return { tripId, days: itinerary.days.length, model };
   },
 );
