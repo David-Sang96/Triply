@@ -41,8 +41,8 @@ const BG = require("@/assets/images/profile-bg.png");
 const ART_ASPECT = 1024 / 1536; // the source artwork's own ratio
 const ART_TOP_RATIO = -0.168; // 67dp above the top edge on the design's 400dp width
 
-// The page tint below the artwork, sampled from the design's lower half.
-const PAGE_BG = "#F5FAFE";
+// bg-[#F5FAFE] below is the page tint under the artwork, sampled from the
+// design's lower half.
 
 export default function ProfileScreen() {
   const { user } = useUser();
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: PAGE_BG }}>
+    <View className="flex-1 bg-[#F5FAFE]">
       {/* Decorative watercolour wash. Hidden from screen readers. */}
       <Image
         source={BG}
@@ -104,7 +104,7 @@ export default function ProfileScreen() {
         contentFit="cover"
       />
 
-      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+      <SafeAreaView className="flex-1" edges={["top"]}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerClassName="px-[20px] pb-[12px] pt-[6px]"

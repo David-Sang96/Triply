@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 // Travel preferences shown on the Profile screen. These live on the device
 // only — there is no user_preferences table yet, so nothing here is sent to
@@ -32,6 +32,19 @@ export const DEFAULT_PREFERENCES: Preferences = {
 };
 
 const STORE_KEY = "triply.preferences.v1";
+
+// Writes are chained rather than fired off independently: two quick taps would
+// otherwise race, and whichever request happened to finish last would win. The
+// queue is module-level so every caller of usePreferences shares it — they all
+// write the same key. A failed write only costs the choice on the next launch,
+// so it is swallowed and the chain stays alive for the next one.
+let writeQueue: Promise<unknown> = Promise.resolve();
+
+function persist(next: Preferences) {
+  writeQueue = writeQueue
+    .then(() => SecureStore.setItemAsync(STORE_KEY, JSON.stringify(next)))
+    .catch(() => {});
+}
 
 // A stored value is only trusted if it is still one of the options above — an
 // older build could have written a choice that no longer exists.
@@ -76,15 +89,13 @@ export function usePreferences() {
     };
   }, []);
 
-  const update = useCallback(<K extends keyof Preferences>(key: K, value: Preferences[K]) => {
+  const update = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
     setPreferences((current) => {
       const next = { ...current, [key]: value };
-      // Fire-and-forget: the UI already reflects `next`, and a write failure
-      // only means the choice is forgotten on the next launch.
-      SecureStore.setItemAsync(STORE_KEY, JSON.stringify(next)).catch(() => {});
+      persist(next);
       return next;
     });
-  }, []);
+  };
 
   return { preferences, update };
 }

@@ -54,14 +54,16 @@ export function InfoScreen({ title, subtitle, sections, footer }: Props) {
           <Text className="pb-3 font-sans text-[13px] text-faint">{subtitle}</Text>
         ) : null}
 
-        {sections.map((section) => (
-          <View key={section.heading} className="pb-5">
+        {/* Indices as keys: the copy is a fixed literal per screen, never
+            reordered, and two identical paragraphs would collide on content. */}
+        {sections.map((section, sectionIndex) => (
+          <View key={sectionIndex} className="pb-5">
             <Text className="pb-1.5 font-psemibold text-[15px] text-ink">
               {section.heading}
             </Text>
-            {section.body.map((paragraph) => (
+            {section.body.map((paragraph, paragraphIndex) => (
               <Text
-                key={paragraph}
+                key={paragraphIndex}
                 className="pb-2 font-sans text-[14px] leading-[21px] text-muted"
               >
                 {paragraph}
