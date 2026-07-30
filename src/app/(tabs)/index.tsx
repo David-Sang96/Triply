@@ -138,7 +138,12 @@ export default function HomeScreen() {
 
         {/* Popular destinations */}
         <View className="mt-6 px-5">
-          <SectionHeader title="Popular destinations" />
+          <SectionHeader
+            title="Popular destinations"
+            // Same typed-routes cast as the destination cards below — the new
+            // destinations.tsx route is not in the generated types yet.
+            onSeeAll={() => router.push("/destinations" as Href)}
+          />
         </View>
         {destinationsQuery.isLoading ? (
           <View className="h-[172px] items-center justify-center">

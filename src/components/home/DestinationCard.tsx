@@ -11,14 +11,20 @@ import { colors } from "@/theme/colors";
 export function DestinationCard({
   destination,
   onPress,
+  full,
 }: {
   destination: Destination;
   onPress?: () => void;
+  /** Fills its parent's width, for the two-column grid on the all-destinations
+   * screen; default is the fixed-width card used by the Home horizontal rail. */
+  full?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      className="h-[172px] w-[132px] overflow-hidden rounded-2xl active:opacity-90"
+      className={`overflow-hidden rounded-2xl active:opacity-90 ${
+        full ? "h-[200px] w-full" : "h-[172px] w-[132px]"
+      }`}
     >
       <Image
         source={{ uri: destination.imageUrl }}
