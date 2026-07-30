@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { type Href, useRouter } from "expo-router";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DestinationCard } from "@/components/home/DestinationCard";
 import { useDestinations } from "@/lib/destinations";
@@ -12,6 +12,7 @@ import { colors } from "@/theme/colors";
 // with data instead of a spinner.
 export default function DestinationsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const destinationsQuery = useDestinations();
   const destinations = destinationsQuery.data ?? [];
 
@@ -56,7 +57,7 @@ export default function DestinationsScreen() {
       ) : destinations.length > 0 ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerClassName="px-5 pb-8"
+          contentContainerClassName="px-5"
         >
           <Text className="font-sans text-[13px] text-muted">
             {destinations.length}{" "}
@@ -81,6 +82,16 @@ export default function DestinationsScreen() {
               </View>
             ))}
           </View>
+
+          {/* Breathing room under the last row. Same total as generate.tsx
+              (pb-10 + insets.bottom + 24) and for the same reasons: as a pushed
+              screen there is no tab bar underneath, and Android gesture nav
+              reports insets.bottom as 0, so the flat 64 carries it there while a
+              home indicator adds its own clearance on top. A spacer rather than
+              contentContainerStyle, which would override the NativeWind
+              contentContainerClassName and drop the horizontal padding with it.
+              Measured on device: ~100px of clear space under the last row. */}
+          <View style={{ height: insets.bottom + 64 }} />
         </ScrollView>
       ) : (
         <View className="items-center px-8 pt-24">
