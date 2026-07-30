@@ -9,6 +9,11 @@ export type Destination = {
   country: string;
   rating: string;
   imageUrl: string;
+  // Unsplash credit for imageUrl. Null on rows seeded with a placeholder
+  // photo; the detail screen then renders no credit line.
+  photographerName: string | null;
+  photographerUrl: string | null;
+  unsplashUrl: string | null;
   heroTitle: string | null;
   heroSubtitle: string | null;
   description: string | null;

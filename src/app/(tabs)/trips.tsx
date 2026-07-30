@@ -17,6 +17,13 @@ export default function TripsScreen() {
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
       <View className="px-5 pb-3 pt-2">
         <Text className="font-pbold text-[22px] text-ink">My Trips</Text>
+        {/* Count only once the list is actually known — showing "0 trips"
+            while loading or after a failed fetch would be a lie. */}
+        {tripsQuery.isSuccess ? (
+          <Text className="mt-0.5 font-sans text-[13px] text-muted">
+            {trips.length} {trips.length === 1 ? "trip" : "trips"}
+          </Text>
+        ) : null}
       </View>
 
       {tripsQuery.isLoading ? (

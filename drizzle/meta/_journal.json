@@ -64,6 +64,13 @@
       "when": 1785046093417,
       "tag": "0008_dry_bloodstorm",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785408133553,
+      "tag": "0009_curly_spot",
+      "breakpoints": true
     }
   ]
 }

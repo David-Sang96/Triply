@@ -238,6 +238,13 @@ export const destinations = pgTable("destinations", {
   country: text("country").notNull(),
   rating: text("rating").notNull(),
   imageUrl: text("image_url").notNull(),
+  // Attribution for imageUrl, required by Unsplash's API terms whenever their
+  // photo is displayed (same rule the trip covers follow above). Nullable
+  // because a row can still be seeded with a placeholder photo, which has no
+  // photographer to credit — the UI then shows no credit line.
+  photographerName: text("photographer_name"),
+  photographerUrl: text("photographer_url"),
+  unsplashUrl: text("unsplash_url"),
   heroTitle: text("hero_title"),
   heroSubtitle: text("hero_subtitle"),
   // Short blurb shown on the destination detail screen (tapped from a

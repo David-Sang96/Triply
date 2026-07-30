@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { Destination } from "@/lib/destinations";
@@ -19,6 +19,26 @@ export function DestinationDetailView({
   onBack: () => void;
   onGenerate: () => void;
 }) {
+  // Narrowed once into a local: TypeScript does not carry a null check on
+  // `destination.photographerName` into the onPress closures below.
+  // Unsplash's format credits the photographer and links both their profile and
+  // Unsplash itself. photographerUrl is only missing on a hand-edited row, and
+  // falling back to the photo page keeps a working link rather than dropping the
+  // credit — which is the part their terms actually require.
+  const credit =
+    destination.photographerName && destination.unsplashUrl
+      ? {
+          name: destination.photographerName,
+          photoUrl: destination.unsplashUrl,
+          profileUrl: destination.photographerUrl ?? destination.unsplashUrl,
+        }
+      : null;
+
+  const openLink = (url: string) =>
+    // Rejects when no installed app can open the link — nothing to recover
+    // from, and an unhandled rejection would warn in dev.
+    void Linking.openURL(url).catch(() => {});
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas">
       <ScrollView
@@ -53,6 +73,35 @@ export function DestinationDetailView({
               {destination.rating}
             </Text>
           </View>
+
+          {/* Photo attribution, required by Unsplash whenever their photo is
+              shown (same pill as TripDetailView). Absent on rows still using a
+              placeholder photo, which has no photographer to credit. */}
+          {credit ? (
+            <View className="absolute bottom-4 right-4 flex-row items-center rounded-full bg-black/45 px-2 py-0.5">
+              {/* hitSlop grows both targets vertically without overlapping each
+                  other horizontally — the text itself is only 10px tall. */}
+              <Pressable
+                onPress={() => openLink(credit.profileUrl)}
+                hitSlop={{ top: 10, bottom: 10, left: 4, right: 2 }}
+                accessibilityRole="link"
+                accessibilityLabel={`Photo by ${credit.name}, open their Unsplash profile`}
+                className="active:opacity-70"
+              >
+                <Text className="text-[10px] text-white/90">{credit.name}</Text>
+              </Pressable>
+              <Text className="text-[10px] text-white/60"> / </Text>
+              <Pressable
+                onPress={() => openLink(credit.photoUrl)}
+                hitSlop={{ top: 10, bottom: 10, left: 2, right: 4 }}
+                accessibilityRole="link"
+                accessibilityLabel="View this photo on Unsplash"
+                className="active:opacity-70"
+              >
+                <Text className="text-[10px] text-white/90">Unsplash</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         {/* Body */}

@@ -15,6 +15,9 @@ import { useDestinations } from "@/lib/destinations";
 import { useTrips } from "@/lib/trips";
 import { colors } from "@/theme/colors";
 
+// How many destinations the Home rail shows before "See all".
+const HOME_DESTINATION_COUNT = 10;
+
 export default function HomeScreen() {
   const { user } = useUser();
   const router = useRouter();
@@ -24,8 +27,11 @@ export default function HomeScreen() {
   const firstName = user?.firstName ?? "there";
   const avatarUrl = user?.imageUrl;
   const trips = tripsQuery.data ?? [];
-  const destinations = destinationsQuery.data ?? [];
-  const heroSlides = destinations
+  const allDestinations = destinationsQuery.data ?? [];
+  // The rail is a teaser, not the catalogue — "See all" opens the full list.
+  // Capping it also keeps a long list from mounting 50 remote images here.
+  const destinations = allDestinations.slice(0, HOME_DESTINATION_COUNT);
+  const heroSlides = allDestinations
     .filter((d) => d.heroTitle && d.heroSubtitle)
     .map((d) => ({
       id: d.id,
@@ -138,7 +144,12 @@ export default function HomeScreen() {
 
         {/* Popular destinations */}
         <View className="mt-6 px-5">
-          <SectionHeader title="Popular destinations" />
+          <SectionHeader
+            title="Popular destinations"
+            // Same typed-routes cast as the destination cards below — the new
+            // destinations.tsx route is not in the generated types yet.
+            onSeeAll={() => router.push("/destinations" as Href)}
+          />
         </View>
         {destinationsQuery.isLoading ? (
           <View className="h-[172px] items-center justify-center">
