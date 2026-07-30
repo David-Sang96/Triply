@@ -19,6 +19,13 @@ export function DestinationDetailView({
   onBack: () => void;
   onGenerate: () => void;
 }) {
+  // Narrowed once into a local: TypeScript does not carry a null check on
+  // `destination.photographerName` into the onPress closure below.
+  const credit =
+    destination.photographerName && destination.unsplashUrl
+      ? { name: destination.photographerName, url: destination.unsplashUrl }
+      : null;
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas">
       <ScrollView
@@ -57,13 +64,17 @@ export function DestinationDetailView({
           {/* Photo attribution, required by Unsplash whenever their photo is
               shown (same pill as TripDetailView). Absent on rows still using a
               placeholder photo, which has no photographer to credit. */}
-          {destination.photographerName && destination.unsplashUrl ? (
+          {credit ? (
             <Pressable
-              onPress={() => Linking.openURL(destination.unsplashUrl as string)}
+              // Rejects when no installed app can open the link — nothing to
+              // recover from, and an unhandled rejection would warn in dev.
+              onPress={() => void Linking.openURL(credit.url).catch(() => {})}
+              accessibilityRole="link"
+              accessibilityLabel={`Photo by ${credit.name} on Unsplash`}
               className="absolute bottom-4 right-4 rounded-full bg-black/45 px-2 py-0.5 active:opacity-80"
             >
               <Text className="text-[10px] text-white/90">
-                {destination.photographerName} / Unsplash
+                {credit.name} / Unsplash
               </Text>
             </Pressable>
           ) : null}

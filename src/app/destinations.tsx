@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { type Href, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -102,9 +102,10 @@ export default function DestinationsScreen() {
                 destination={destination}
                 full
                 onPress={() =>
-                  // Cast matches the Home screen: typed routes only learn about
-                  // destination/[slug].tsx once Metro regenerates them.
-                  router.push(`/destination/${destination.slug}` as Href)
+                  router.push({
+                    pathname: "/destination/[slug]",
+                    params: { slug: destination.slug },
+                  })
                 }
               />
             </View>

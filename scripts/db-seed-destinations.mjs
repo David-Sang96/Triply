@@ -14,7 +14,8 @@ import { neon } from "@neondatabase/serverless";
 // re-run costs no API calls for them; pass `--refresh` to re-fetch everything.
 //
 // Rate limit: an Unsplash *demo* key allows 50 requests/hour, and a first full
-// run needs about one request per destination. If the key runs out, the
+// run needs about two requests per destination (the search plus the download
+// ping their terms ask for). If the key runs out, the
 // remaining rows fall back to a deterministic picsum.photos placeholder (a real
 // photo, but not of that place) and the script says which slugs to fill in —
 // just run it again in an hour to finish them.
@@ -471,17 +472,22 @@ function withUtm(url) {
   return u.toString();
 }
 
-// True once Unsplash has refused a request for rate-limit reasons — no point
-// spending the remaining calls, so the rest of the run uses placeholders.
+// Either of these ends the fetching for this run — there is nothing left to
+// spend, so the remaining rows keep whatever photo they already have.
 let rateLimited = false;
+let keyRejected = false;
 
 async function unsplashJson(path) {
   const res = await fetch(`https://api.unsplash.com${path}`, {
     headers: { Authorization: `Client-ID ${accessKey}` },
   });
-  // Unsplash answers 403 when the hourly quota is gone.
+  // Unsplash answers 403 both when the hourly quota is gone and when the key
+  // itself is rejected. Only the quota case reports a remaining count, so a 403
+  // without one means the key is the problem — worth saying, because "re-run in
+  // an hour" is useless advice for a bad key.
   if (res.status === 403) {
-    rateLimited = true;
+    if (res.headers.get("x-ratelimit-remaining") === "0") rateLimited = true;
+    else keyRejected = true;
     return null;
   }
   if (!res.ok) return null;
@@ -496,13 +502,29 @@ function toPhoto(raw) {
     photographerName: raw.user?.name ?? "Unsplash",
     photographerUrl: withUtm(raw.user?.links?.html ?? "https://unsplash.com"),
     unsplashUrl: withUtm(raw.links?.html ?? "https://unsplash.com"),
+    downloadLocation: raw.links?.download_location ?? null,
   };
+}
+
+// Unsplash asks for a ping to the photo's download endpoint when a photo is
+// picked for use, which images.ts also does for trip covers. Here that moment is
+// the row being stored — pinging per display would mean shipping the key to the
+// app. It doubles the requests a full run needs, so it happens only for photos
+// actually written, and never for reused ones.
+async function pingDownload(downloadLocation) {
+  try {
+    await fetch(downloadLocation, {
+      headers: { Authorization: `Client-ID ${accessKey}` },
+    });
+  } catch {
+    // Best-effort: the photo and its credit are already stored.
+  }
 }
 
 // A real photo of the place, with the credit needed to display it. Returns
 // null when there is no key, the quota is gone, or the search finds nothing.
 async function fetchPhoto(d) {
-  if (!accessKey || rateLimited) return null;
+  if (!accessKey || rateLimited || keyRejected) return null;
 
   if (d.photoId) {
     // Hand-picked photo: look it up by id so it keeps its credit.
@@ -553,7 +575,6 @@ for (const [index, d] of DESTINATIONS.entries()) {
   } else {
     photo = await fetchPhoto(d);
     if (photo) fetched++;
-    else placeholders.push(d.slug);
   }
 
   // With no new photo, fall back to what the row already has (and only then to
@@ -589,6 +610,12 @@ for (const [index, d] of DESTINATIONS.entries()) {
       description = EXCLUDED.description,
       sort_order = EXCLUDED.sort_order
   `;
+
+  // Report on what the row ends up with rather than on what this run fetched: a
+  // row keeping a real photo from an earlier run is not waiting on anything.
+  if (isPlaceholder(imageUrl)) placeholders.push(d.slug);
+
+  if (photo?.downloadLocation) await pingDownload(photo.downloadLocation);
 }
 
 console.log(
@@ -599,6 +626,12 @@ if (rateLimited) {
   console.warn(
     "⚠️  Unsplash refused further requests (hourly quota). Re-run this script " +
       "in an hour to fill the rest — rows that already have a photo are skipped.",
+  );
+}
+if (keyRejected) {
+  console.warn(
+    "⚠️  Unsplash rejected the access key (403 with no quota left to report) — " +
+      "check UNSPLASH_ACCESS_KEY. Re-running will not help until it is fixed.",
   );
 }
 if (placeholders.length > 0) {
