@@ -2,17 +2,59 @@ import { useClerk, useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { colors } from "@/theme/colors";
+import { OptionSheet } from "@/components/profile/OptionSheet";
+import { SettingsCard } from "@/components/profile/SettingsCard";
+import { SettingsRow } from "@/components/profile/SettingsRow";
+import {
+  BUDGETS,
+  CURRENCIES,
+  LANGUAGES,
+  usePreferences,
+} from "@/lib/preferences";
+import { colors, shadows } from "@/theme/colors";
 
-// Placeholder — the full profile screen is built in a later phase. Sign-out is
-// wired up so the account can be switched during development.
+const BG = require("@/assets/images/profile-bg.png");
+
+// Measured from design/profile-screen.png. Its 853 x 1844 canvas is a
+// 400 x 865 dp screen upscaled 2.1325x, so a design pixel / 2.1325 is a dp.
+// Sizes are written as explicit px because NativeWind treats 1rem as 14px on
+// native, which makes Tailwind's spacing steps 12.5% smaller than their web
+// values (`h-12` is 42dp, not 48).
+//
+// The artwork spans the full screen width, so the palm, mountain and castle run
+// off the right edge exactly as they do in the design — there is no gutter on
+// either side. Only the vertical offset is a free parameter; it was solved by
+// matching the balloon and the mountain peak in design/profile-screen-bg.png
+// against the same features in the composed design (both land within ~7dp), and
+// it is a fraction of screen WIDTH so the scene keeps its proportions.
+const ART_ASPECT = 1024 / 1536; // the source artwork's own ratio
+const ART_TOP_RATIO = -0.168; // 67dp above the top edge on the design's 400dp width
+
+// The page tint below the artwork, sampled from the design's lower half.
+const PAGE_BG = "#F5FAFE";
+
 export default function ProfileScreen() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const { preferences, update } = usePreferences();
+
+  // Which preference row's sheet is open, if any.
+  const [editing, setEditing] = useState<"language" | "currency" | "budget" | null>(
+    null,
+  );
 
   const name =
     user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "traveler";
@@ -24,49 +66,193 @@ export default function ProfileScreen() {
     router.replace("/welcome");
   };
 
+  // Deletion is not built yet, so the flow stops at a clear message rather than
+  // calling anything. It needs an API route plus a Clerk user delete.
+  const onDeleteAccount = () => {
+    Alert.alert(
+      "Delete your account?",
+      "This permanently removes your trips, chats and saved preferences. It cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Not available yet",
+              "Account deletion is still being built. To close your account now, contact support.",
+            ),
+        },
+      ],
+    );
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
-      <View className="px-5 pb-3 pt-2">
-        <Text className="font-pbold text-[22px] text-ink">Profile</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: PAGE_BG }}>
+      {/* Decorative watercolour wash. Hidden from screen readers. */}
+      <Image
+        source={BG}
+        accessible={false}
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: width * ART_TOP_RATIO,
+          height: width / ART_ASPECT,
+        }}
+        contentFit="cover"
+      />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerClassName="items-center px-6 pt-6"
-      >
-        <View className="h-24 w-24 overflow-hidden rounded-full bg-brand-soft">
-          {avatarUrl ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-            />
-          ) : (
-            <View className="h-full w-full items-center justify-center">
-              <Ionicons name="person" size={44} color={colors.brand} />
-            </View>
-          )}
-        </View>
-
-        <Text className="mt-4 font-pbold text-[20px] text-ink">{name}</Text>
-        {email ? (
-          <Text className="mt-1 font-sans text-[14px] text-muted">{email}</Text>
-        ) : null}
-
-        <Text className="mt-2 text-center font-sans text-[13px] text-faint">
-          More profile settings are coming soon.
-        </Text>
-
-        <Pressable
-          onPress={onSignOut}
-          className="mt-8 h-[52px] w-full flex-row items-center justify-center rounded-xl border border-line bg-surface active:opacity-80"
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="px-[20px] pb-[12px] pt-[6px]"
         >
-          <Ionicons name="log-out-outline" size={18} color={colors.error} />
-          <Text className="ml-2 font-psemibold text-[15px] text-error">
-            Sign out
-          </Text>
-        </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+          <Text className="font-pbold text-[26px] text-ink">Profile</Text>
+
+          {/* No top margin: the title's line box already leaves the 17dp the
+              design has between its baseline and the avatar. */}
+          <View className="flex-row items-center gap-[15px]">
+            <View
+              className="h-[95px] w-[95px] overflow-hidden rounded-full border-2 border-white bg-brand-soft"
+              style={shadows.md}
+            >
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                />
+              ) : (
+                <View className="h-full w-full items-center justify-center">
+                  <Ionicons name="person" size={40} color={colors.brand} />
+                </View>
+              )}
+            </View>
+
+            <View className="flex-1">
+              <Text className="font-pbold text-[18px] text-ink" numberOfLines={1}>
+                {name}
+              </Text>
+              {email ? (
+                <Text
+                  className="mt-[2px] font-sans text-[12px] text-muted"
+                  numberOfLines={1}
+                >
+                  {email}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          <View className="mt-[22px] gap-[15px]">
+            <SettingsCard icon="options-outline" title="Preferences">
+              <SettingsRow
+                icon="globe-outline"
+                label="Language"
+                value={preferences.language}
+                onPress={() => setEditing("language")}
+              />
+              <SettingsRow
+                icon="wallet-outline"
+                label="Currency"
+                value={preferences.currency}
+                divided
+                onPress={() => setEditing("currency")}
+              />
+              <SettingsRow
+                icon="pricetag-outline"
+                label="Travel Budget"
+                value={preferences.budget}
+                divided
+                onPress={() => setEditing("budget")}
+              />
+            </SettingsCard>
+
+            <SettingsCard icon="help-buoy-outline" title="Support">
+              <SettingsRow
+                icon="help-circle-outline"
+                label="Help Center"
+                onPress={() => router.push("/help-center")}
+              />
+              <SettingsRow
+                icon="shield-checkmark-outline"
+                label="Privacy Policy"
+                divided
+                onPress={() => router.push("/privacy-policy")}
+              />
+              <SettingsRow
+                icon="information-circle-outline"
+                label="About Triply"
+                divided
+                onPress={() => router.push("/about")}
+              />
+            </SettingsCard>
+
+            <SettingsCard icon="person-outline" title="Account">
+              {/* The card already adds 4dp below; the design leaves 11dp under
+                  the last button. */}
+              <View className="gap-[8px] pb-[7px] pt-[6px]">
+                <DangerButton
+                  icon="log-out-outline"
+                  label="Sign Out"
+                  onPress={onSignOut}
+                />
+                <DangerButton
+                  icon="trash-outline"
+                  label="Delete Account"
+                  onPress={onDeleteAccount}
+                />
+              </View>
+            </SettingsCard>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+
+      <OptionSheet
+        title={editing === "language" ? "Language" : null}
+        options={LANGUAGES}
+        value={preferences.language}
+        onSelect={(next) => update("language", next)}
+        onClose={() => setEditing(null)}
+      />
+      <OptionSheet
+        title={editing === "currency" ? "Currency" : null}
+        options={CURRENCIES}
+        value={preferences.currency}
+        onSelect={(next) => update("currency", next)}
+        onClose={() => setEditing(null)}
+      />
+      <OptionSheet
+        title={editing === "budget" ? "Travel Budget" : null}
+        options={BUDGETS}
+        value={preferences.budget}
+        onSelect={(next) => update("budget", next)}
+        onClose={() => setEditing(null)}
+      />
+    </View>
+  );
+}
+
+// The two outlined red buttons in the Account card: 37dp tall, centred content.
+function DangerButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: "log-out-outline" | "trash-outline";
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      className="h-[37px] flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error active:opacity-70"
+    >
+      <Ionicons name={icon} size={18} color={colors.error} />
+      <Text className="font-psemibold text-[12px] text-error">{label}</Text>
+    </Pressable>
   );
 }
