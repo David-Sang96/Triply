@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { Destination } from "@/lib/destinations";
@@ -53,6 +53,20 @@ export function DestinationDetailView({
               {destination.rating}
             </Text>
           </View>
+
+          {/* Photo attribution, required by Unsplash whenever their photo is
+              shown (same pill as TripDetailView). Absent on rows still using a
+              placeholder photo, which has no photographer to credit. */}
+          {destination.photographerName && destination.unsplashUrl ? (
+            <Pressable
+              onPress={() => Linking.openURL(destination.unsplashUrl as string)}
+              className="absolute bottom-4 right-4 rounded-full bg-black/45 px-2 py-0.5 active:opacity-80"
+            >
+              <Text className="text-[10px] text-white/90">
+                {destination.photographerName} / Unsplash
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Body */}
