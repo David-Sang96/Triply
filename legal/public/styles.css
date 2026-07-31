@@ -522,6 +522,45 @@ h1 {
   line-height: 1.6;
 }
 
+/* Contact card at the top of the support page. */
+
+.contact {
+  max-width: 720px;
+  margin-top: 40px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--band);
+}
+
+.contact__label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contact__email {
+  margin-top: 8px;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  word-break: break-word;
+}
+
+.contact__email a { text-decoration: none; }
+.contact__email a:hover { text-decoration: underline; }
+
+.contact__note {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 15.5px;
+  line-height: 1.65;
+}
+
+.contact__note strong { color: var(--navy); }
+
 /* Ready for the real policy text: these rules style plain prose as-is. */
 .prose {
   max-width: 720px;

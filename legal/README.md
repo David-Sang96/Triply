@@ -15,8 +15,9 @@ legal/
   wrangler.jsonc          Cloudflare Workers config (assets-only, no Worker script)
   public/                 <- everything in here is what gets served
     index.html            landing page
-    privacy.html          Privacy Policy (drafted — has [PLACEHOLDERS] to fill)
-    terms.html            Terms of Service (drafted — has [PLACEHOLDERS] to fill)
+    privacy.html          Privacy Policy
+    terms.html            Terms of Service
+    support.html          support page: contact address + common questions
     404.html              not-found page
     styles.css            all styling for every page
     favicon.svg
@@ -46,8 +47,8 @@ finds the CSS and images fine. Keep the paths relative when editing: switching
 back to root-absolute ones (`/styles.css`) breaks every preview whose root is not
 `legal/public`.
 
-On Cloudflare the pages are also reachable at the clean URLs `/privacy` and
-`/terms` — use those for the App Store and Play Console listings. To preview
+On Cloudflare the pages are also reachable at the clean URLs `/privacy`, `/terms`,
+and `/support` — use those for the App Store and Play Console listings. To preview
 exactly that, including the 404 page:
 
 ```bash
