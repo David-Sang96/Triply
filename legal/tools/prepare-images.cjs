@@ -52,8 +52,13 @@ function encodeWebp(img, outPath) {
      outPath],
     { input: data, maxBuffer: 1 << 28 },
   );
-  if (res.error && res.error.code === 'ENOENT') {
-    throw new Error('ffmpeg was not found on PATH; it encodes the WebP output. Install it with: scoop install ffmpeg');
+  if (res.error) {
+    if (res.error.code === 'ENOENT') {
+      throw new Error('ffmpeg was not found on PATH; it encodes the WebP output. Install it with: scoop install ffmpeg');
+    }
+    // Any other spawn failure leaves status null, which would otherwise be
+    // reported as a bare "ffmpeg failed" with empty stderr — surface the cause.
+    throw res.error;
   }
   if (res.status !== 0) throw new Error(`ffmpeg failed for ${outPath}:\n${res.stderr}`);
 }
@@ -83,7 +88,17 @@ async function cut(name, outName, targetW) {
     push(x + 1, y); push(x - 1, y); push(x, y + 1); push(x, y - 1);
   }
 
+  // Alpha is recovered from how far the shadow darkened the backdrop, so the
+  // backdrop has to be the lighter of the two for that ratio to mean anything.
+  // A zero or negative span would divide into NaN and write garbage alpha.
   const span = bg.g - SHADOW.g;
+  if (span <= 0) {
+    throw new Error(
+      `${name}.png: backdrop rgb(${bg.r},${bg.g},${bg.b}) is not lighter than the ` +
+        `assumed shadow colour, so shadow alpha cannot be recovered.`,
+    );
+  }
+
   let minx = W, miny = H, maxx = -1, maxy = -1;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
@@ -91,11 +106,14 @@ async function cut(name, outName, targetW) {
       const i = p * 4;
       if (seen[p]) {
         const a = Math.max(0, Math.min(1, (bg.g - data[i + 1]) / span));
+        const alpha = Math.round(a * 255);
         data[i] = SHADOW.r;
         data[i + 1] = SHADOW.g;
         data[i + 2] = SHADOW.b;
-        data[i + 3] = Math.round(a * 255);
-        if (a === 0) continue; // fully transparent: not part of the trim box
+        data[i + 3] = alpha;
+        // Test the value actually written: a tiny non-zero `a` still rounds to a
+        // fully transparent pixel, which must not stretch the trim box.
+        if (alpha === 0) continue;
       }
       if (x < minx) minx = x;
       if (y < miny) miny = y;

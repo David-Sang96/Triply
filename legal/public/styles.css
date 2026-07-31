@@ -546,7 +546,9 @@ h1 {
   font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  word-break: break-word;
+  /* Long addresses wrap instead of overflowing the card. `word-break:
+     break-word` is the deprecated spelling of exactly this. */
+  overflow-wrap: anywhere;
 }
 
 .contact__email a { text-decoration: none; }
