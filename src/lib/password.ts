@@ -18,8 +18,34 @@
 const WEAK_WORD =
   /(?:^|[^a-z])(pass|passwd|password|qwerty|asdf|asdfgh|letmein|admin|welcome|test|testing|triply|iloveyou|dragon|monkey|secret|hello|login)(?:[^a-z]|$)/i;
 
-// Keyboard walks and digit runs, which zxcvbn scores as nearly free to guess.
-const WEAK_SEQUENCE = /1234|2345|3456|4567|5678|6789|7890|0000|1111|abcd|qwer/i;
+// Runs along a keyboard row or the alphabet, which zxcvbn scores as nearly free
+// to guess. Built from the rows rather than written out by hand: a hand-typed
+// list kept missing cases (reverse runs like "9876", the bottom row "zxcv"),
+// and this covers every four-character window in both directions.
+const KEYBOARD_ROWS = [
+  // Both digit orders: the keyboard row ends "...7890", while counting starts
+  // "0123...". Neither alone catches both "7890" and "0123".
+  "1234567890",
+  "0123456789",
+  "qwertyuiop",
+  "asdfghjkl",
+  "zxcvbnm",
+  "abcdefghijklmnopqrstuvwxyz",
+];
+const WEAK_SEQUENCE = new RegExp(
+  KEYBOARD_ROWS.flatMap((row) => {
+    const runs: string[] = [];
+    for (let i = 0; i + 4 <= row.length; i++) {
+      const run = row.slice(i, i + 4);
+      runs.push(run, [...run].reverse().join(""));
+    }
+    return runs;
+  }).join("|"),
+  "i",
+);
+
+// Note: runs of one repeated character ("0000") are left to REPEATED_RUN below,
+// which catches them generally.
 
 // The same character four or more times in a row ("aaaa", "!!!!").
 const REPEATED_RUN = /(.)\1{3,}/;
@@ -66,9 +92,15 @@ export function passwordStrength(
 
   const lower = pw.toLowerCase();
   const ownWords = personal
-    .flatMap((p) => p.toLowerCase().split(/[\s@._-]+/))
-    // Short fragments ("li", "co") would match far too much.
-    .filter((p) => p.length >= 4);
+    // An email's domain is not a personal detail. Keeping it would flag any
+    // password containing "gmail", and — now that three-letter fragments count
+    // — every password containing "com" ("become", "welcome") as if it held
+    // the user's own name.
+    .map((p) => p.split("@")[0])
+    .flatMap((p) => p.toLowerCase().split(/[\s._-]+/))
+    // Three is the shortest real given name ("Ava", "Lee"); two would match
+    // far too much.
+    .filter((p) => p.length >= 3);
   if (ownWords.some((w) => lower.includes(w))) {
     score = Math.min(score, 1);
     hint = "Avoid your own name or email address in the password.";
