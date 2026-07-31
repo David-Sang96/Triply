@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 
@@ -34,6 +34,10 @@ type Props = {
 export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
   const router = useRouter();
   const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
+  // The SafeAreaView only claims the top edge, so the scroll view runs under the
+  // navigation bar. Its inset is added to the content padding instead of the
+  // container, which keeps the list scrolling the full height of the screen.
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
@@ -55,7 +59,8 @@ export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="px-5 pb-10 pt-1"
+        contentContainerClassName="px-5 pt-1"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       >
         {subtitle ? (
           <Text className="pb-3 font-sans text-[13px] text-faint">{subtitle}</Text>
