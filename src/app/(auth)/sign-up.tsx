@@ -9,6 +9,7 @@ import * as WebBrowser from "expo-web-browser";
 
 import { AuthField } from "@/components/AuthField";
 import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
+import { passwordStrength } from "@/lib/password";
 
 // TODO: point these at the real policy pages once they exist.
 const TERMS_URL = "https://triply.app/terms";
@@ -28,14 +29,10 @@ function errMessage(err: unknown, fallback: string): string {
   );
 }
 
-function passwordStrength(pw: string): { score: number; label: string } {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
-  if (/\d/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw) || pw.length >= 12) score++;
-  const label = ["Too short", "Weak", "Fair", "Good", "Strong"][score];
-  return { score, label };
+// Clerk's own error code for a failed attempt, so a password complaint can be
+// shown against the password field instead of at the foot of the form.
+function clerkErrorCode(err: unknown): string | undefined {
+  return (err as { errors?: { code?: string }[] })?.errors?.[0]?.code;
 }
 
 type FieldErrors = {
@@ -85,6 +82,10 @@ export default function SignUp() {
   const [confirm, setConfirm] = useState("");
   const [code, setCode] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  // Clerk's verdict on the password, which the local meter cannot predict.
+  const [passwordServerError, setPasswordServerError] = useState<string | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [resending, setResending] = useState(false);
@@ -107,7 +108,7 @@ export default function SignUp() {
     submitted || touched[k] ? allErrors[k] : undefined;
 
   const codeRef = useRef<TextInput>(null);
-  const strength = passwordStrength(password);
+  const strength = passwordStrength(password, [fullName, emailAddress]);
   // gray, red, amber, lime, green — indexed by strength score (0–4)
   const strengthColor = ["#94A3B8", "#EF4444", "#F59E0B", "#84CC16", "#16A34A"][
     strength.score
@@ -130,6 +131,7 @@ export default function SignUp() {
   const onCreate = async () => {
     if (!isLoaded || busy) return;
     setFormError(null);
+    setPasswordServerError(null);
     setSubmitted(true);
     if (Object.values(allErrors).some(Boolean)) return;
 
@@ -149,7 +151,16 @@ export default function SignUp() {
       setSecondsLeft(299);
       setStep("verify");
     } catch (err) {
-      setFormError(errMessage(err, "Could not create your account."));
+      const message = errMessage(err, "Could not create your account.");
+      // Clerk enforces its password rules server-side (guessability, breach
+      // lists), so it can refuse a password the local meter liked. Show that
+      // against the password field, where the fix is, rather than at the foot
+      // of the form under the Terms checkbox.
+      if (clerkErrorCode(err)?.startsWith("form_password")) {
+        setPasswordServerError(message);
+      } else {
+        setFormError(message);
+      }
     } finally {
       setBusy(false);
     }
@@ -348,10 +359,12 @@ export default function SignUp() {
                 onChangeText={(v) => {
                   setPassword(v);
                   touch("password");
+                  // The server's verdict was about the old value.
+                  setPasswordServerError(null);
                 }}
                 placeholder="At least 8 characters"
                 secure
-                error={errFor("password")}
+                error={errFor("password") ?? passwordServerError ?? undefined}
               />
               {password.length > 0 ? (
                 <View className="mt-2">
@@ -377,6 +390,12 @@ export default function SignUp() {
                       />
                     ))}
                   </View>
+                  {/* Why the score was capped — the actionable part. */}
+                  {strength.hint ? (
+                    <Text className="mt-1.5 text-[12px] text-slate-500">
+                      {strength.hint}
+                    </Text>
+                  ) : null}
                 </View>
               ) : null}
             </View>
