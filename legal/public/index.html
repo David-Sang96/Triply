@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triply — Plan the perfect trip in seconds</title>
+<meta name="description" content="Tell Triply where you're going and what you love. Get a complete, day-by-day itinerary with realistic costs, routes, and local picks — ready to refine by chat.">
+<meta name="theme-color" content="#218aef">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Icon sprite: referenced with <use> so each glyph is defined once. -->
+<svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <!-- Placeholder marks. Before launch, swap the two store buttons for the
+       official Apple and Google Play badge artwork, which the store terms require. -->
+  <symbol id="i-apple" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M17.1 12.6c0-2.2 1.3-3.4 2.2-4-.8-1.2-2.1-1.7-3-1.8-1.3-.1-2.4.7-3.1.7-.7 0-1.7-.7-2.8-.7-2.1 0-4.1 1.7-4.1 4.9 0 1.8.5 3.6 1.5 5.1.8 1.3 1.7 2.3 2.5 2.3.8 0 1.5-.5 2.5-.5 1 0 1.6.5 2.5.5.9 0 1.8-1.1 2.6-2.4.4-.7.8-1.5 1.1-2.3-1.3-.6-1.9-1.6-1.9-1.8z"/>
+    <path fill="currentColor" d="M14.6 5.3c.6-.8 1-1.7 1-2.6-.9.1-1.9.6-2.5 1.3-.6.7-1 1.6-1 2.5.9.1 1.9-.4 2.5-1.2z"/>
+  </symbol>
+  <symbol id="i-play" viewBox="0 0 24 24">
+    <path fill="#02c3ff" d="M4.3 2.3 13.4 12l-9.1 9.7A2 2 0 0 1 3.8 20V4c0-.7.2-1.3.5-1.7z"/>
+    <path fill="#00f075" d="M4.3 2.3c.5-.4 1.3-.4 2 0l12.2 6.9-4.8 3.2z"/>
+    <path fill="#ff3a43" d="M4.3 21.7c.5.4 1.3.4 2 0l12.2-6.9-4.8-3.2z"/>
+    <path fill="#fece04" d="M18.5 9.2l2 1.1c1.4.8 1.4 2.6 0 3.4l-2 1.1-4.8-3.2z"/>
+  </symbol>
+  <symbol id="i-star" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.4-5.8-3-5.8 3 1.1-6.4L2.6 9.4l6.5-.9z"/>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24">
+    <path fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" d="M5.5 12.5 10 17l8.5-9"/>
+  </symbol>
+</svg>
+
+<div class="banner">
+  <div class="wrap banner__inner">
+    <span class="banner__tag">NEW</span>
+    <p>The AI assistant now plans multi-week trips — <a href="#how-it-works">see how it works →</a></p>
+  </div>
+</div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a class="brand" href="./">
+      <span class="brand__mark" aria-hidden="true">🌍</span>
+      <span>Triply</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="support.html">Support</a>
+    </nav>
+    <div class="header__cta">
+      <!-- TODO: point at the real store listings once the app is published. -->
+      <a class="store store--sm" href="#" aria-label="Download Triply on the App Store">
+        <svg class="store__logo" aria-hidden="true"><use href="#i-apple"/></svg>
+        <span class="store__lines"><span class="store__small">Download on the</span><span class="store__big">App Store</span></span>
+      </a>
+      <a class="store store--sm" href="#" aria-label="Get Triply on Google Play">
+        <svg class="store__logo" aria-hidden="true"><use href="#i-play"/></svg>
+        <span class="store__lines"><span class="store__small">GET IT ON</span><span class="store__big">Google Play</span></span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="wrap hero__inner">
+      <div class="hero__copy">
+        <p class="pill"><span class="pill__dot" aria-hidden="true"></span>AI Travel Companion</p>
+        <h1>Plan the perfect trip in <span class="accent">seconds</span>, not weekends.</h1>
+        <p class="lead">Tell Triply where you're going and what you love. Get a complete, day-by-day itinerary with realistic costs, routes, and local picks — ready to refine by chat.</p>
+        <div class="store-row">
+          <a class="store" href="#" aria-label="Download Triply on the App Store">
+            <svg class="store__logo" aria-hidden="true"><use href="#i-apple"/></svg>
+            <span class="store__lines"><span class="store__small">Download on the</span><span class="store__big">App Store</span></span>
+          </a>
+          <a class="store" href="#" aria-label="Get Triply on Google Play">
+            <svg class="store__logo" aria-hidden="true"><use href="#i-play"/></svg>
+            <span class="store__lines"><span class="store__small">GET IT ON</span><span class="store__big">Google Play</span></span>
+          </a>
+        </div>
+      </div>
+      <div class="hero__shot">
+        <img src="assets/hero-phones.webp" width="981" height="1212" fetchpriority="high"
+             alt="Two phones showing the Triply sign-in screen and a home screen with saved trips.">
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="wrap">
+      <h2 class="section__title">Your whole trip, handled</h2>
+      <p class="section__lead">From the first idea to the final day, Triply does the heavy lifting so you can focus on the fun part.</p>
+      <ul class="cards">
+        <li class="card">
+          <span class="card__icon" aria-hidden="true">⚡</span>
+          <h3>Instant itineraries</h3>
+          <p>Pick a destination, dates, and your pace. Triply builds a full day-by-day plan with morning, afternoon, and evening activities.</p>
+        </li>
+        <li class="card">
+          <span class="card__icon" aria-hidden="true">💬</span>
+          <h3>Refine by chat</h3>
+          <p>Want it cheaper, slower, or more food-focused? Just ask. Your assistant reshapes the plan in plain language.</p>
+        </li>
+        <li class="card">
+          <span class="card__icon" aria-hidden="true">🗺️</span>
+          <h3>Mapped &amp; budgeted</h3>
+          <p>Every activity comes with a location on the map and a realistic per-person cost, so there are no surprises.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="wrap">
+      <dl class="stats">
+        <div class="stats__item"><dt>60s</dt><dd>From idea to full itinerary</dd></div>
+        <div class="stats__item"><dt>1,000+</dt><dd>Destinations worldwide</dd></div>
+        <div class="stats__item"><dt>3&times;</dt><dd>Activities planned per day</dd></div>
+        <div class="stats__item"><dt>Free</dt><dd>To start planning</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="split" id="how-it-works">
+    <div class="wrap split__inner">
+      <div class="split__shot">
+        <img src="assets/trips-phone.webp" width="537" height="1130" loading="lazy"
+             alt="The Triply trips screen listing saved multi-day itineraries.">
+      </div>
+      <div class="split__copy">
+        <h2 class="split__title">From "where to?" to packed in three steps</h2>
+        <p class="section__lead section__lead--flush">No spreadsheets, no twenty open tabs. Triply turns a few taps into a trip you can actually follow.</p>
+        <ol class="steps">
+          <li>
+            <span class="steps__num" aria-hidden="true">1</span>
+            <div>
+              <h3>Tell us your trip</h3>
+              <p>Sign in with Google or Apple, then share your destination, dates, budget, and what you're into.</p>
+            </div>
+          </li>
+          <li>
+            <span class="steps__num" aria-hidden="true">2</span>
+            <div>
+              <h3>Get an instant plan</h3>
+              <p>Triply's AI builds a realistic day-by-day itinerary with morning, afternoon, and evening activities — each mapped and priced.</p>
+            </div>
+          </li>
+          <li>
+            <span class="steps__num" aria-hidden="true">3</span>
+            <div>
+              <h3>Refine until it's yours</h3>
+              <p>Chat with your assistant to swap activities, slow the pace, or trim the budget. Save it and go.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="split split--band">
+    <div class="wrap split__inner">
+      <div class="split__copy">
+        <h2 class="split__title">Your trip, shaped by conversation</h2>
+        <p class="section__lead section__lead--flush">Not quite right? Just say so. Triply's assistant knows your whole itinerary, so you can tweak it the way you'd ask a friend who's been there.</p>
+        <ul class="checks">
+          <li>
+            <span class="checks__mark" aria-hidden="true"><svg><use href="#i-check"/></svg></span>
+            <div>
+              <h3>Ask anything</h3>
+              <p>"Where should I go in April?" or "What's the food like in Lisbon?" — get quick, practical answers.</p>
+            </div>
+          </li>
+          <li>
+            <span class="checks__mark" aria-hidden="true"><svg><use href="#i-check"/></svg></span>
+            <div>
+              <h3>Reshape on the fly</h3>
+              <p>Make a day cheaper, swap a museum for a hike, or slow the pace — the plan updates instantly.</p>
+            </div>
+          </li>
+          <li>
+            <span class="checks__mark" aria-hidden="true"><svg><use href="#i-check"/></svg></span>
+            <div>
+              <h3>Stays in context</h3>
+              <p>It remembers your destinations, travel style, and budget, so suggestions actually fit your trip.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="split__shot">
+        <img src="assets/assistant-phones.webp" width="1000" height="1140" loading="lazy"
+             alt="The Triply assistant answering a question about where to travel in April.">
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--testimonials">
+    <div class="wrap">
+      <h2 class="section__title">Loved by travelers</h2>
+      <p class="section__lead">People use Triply to plan weekend escapes, multi-week adventures, and everything between.</p>
+      <!-- PLACEHOLDER COPY from the design mock. Replace with real, permissioned
+           quotes before this page goes live — invented reviews are not legal to
+           publish as testimonials. -->
+      <ul class="cards quotes">
+        <li class="card">
+          <p class="quotes__stars" role="img" aria-label="Rated 5 out of 5"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg></p>
+          <blockquote>"Planned a 5-day Istanbul trip on my commute home. The map and per-day costs meant zero guesswork once I landed."</blockquote>
+          <figure class="who">
+            <span class="who__avatar" aria-hidden="true">SA</span>
+            <figcaption><span class="who__name">Sara A.</span><span class="who__role">Weekend traveler</span></figcaption>
+          </figure>
+        </li>
+        <li class="card">
+          <p class="quotes__stars" role="img" aria-label="Rated 5 out of 5"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg></p>
+          <blockquote>"I told it to make day three cheaper and more food-focused — it just did it. Felt like texting a friend who knows the city."</blockquote>
+          <figure class="who">
+            <span class="who__avatar" aria-hidden="true">MK</span>
+            <figcaption><span class="who__name">Marcus K.</span><span class="who__role">Solo backpacker</span></figcaption>
+          </figure>
+        </li>
+        <li class="card">
+          <p class="quotes__stars" role="img" aria-label="Rated 5 out of 5"><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg><svg class="star" aria-hidden="true"><use href="#i-star"/></svg></p>
+          <blockquote>"We planned a two-week trip for four people in one sitting. The pacing was spot on and nothing felt rushed."</blockquote>
+          <figure class="who">
+            <span class="who__avatar" aria-hidden="true">JL</span>
+            <figcaption><span class="who__name">Jenna L.</span><span class="who__role">Family trip planner</span></figcaption>
+          </figure>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="wrap">
+      <div class="cta">
+        <h2>Ready for your next adventure?</h2>
+        <p>Start planning your first trip with Triply today — it's free to get going.</p>
+        <div class="store-row store-row--center">
+          <a class="store" href="#" aria-label="Download Triply on the App Store">
+            <svg class="store__logo" aria-hidden="true"><use href="#i-apple"/></svg>
+            <span class="store__lines"><span class="store__small">Download on the</span><span class="store__big">App Store</span></span>
+          </a>
+          <a class="store" href="#" aria-label="Get Triply on Google Play">
+            <svg class="store__logo" aria-hidden="true"><use href="#i-play"/></svg>
+            <span class="store__lines"><span class="store__small">GET IT ON</span><span class="store__big">Google Play</span></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <a class="brand brand--sm" href="./">
+      <span class="brand__mark" aria-hidden="true">🌍</span>
+      <span>Triply</span>
+    </a>
+    <nav class="footer__nav" aria-label="Legal and support">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="support.html">Support</a>
+      <a href="mailto:support@triply.app">support@triply.app</a>
+    </nav>
+    <p class="footer__legal">© 2026 Triply. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>
