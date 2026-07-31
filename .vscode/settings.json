@@ -3,9 +3,5 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  },
-  // The legal/ site links its files from the site root (/styles.css), which is
-  // how Cloudflare serves it: wrangler.jsonc sets assets.directory to ./public.
-  // Live Server has to use the same root, or the CSS and images 404.
-  "liveServer.settings.root": "/legal/public"
+  }
 }

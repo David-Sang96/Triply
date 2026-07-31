@@ -30,19 +30,23 @@ legal/
 
 ## Preview locally
 
-Any static file server works. It must be served over HTTP, not opened as a
-`file://` path, because the pages link to `/styles.css` from the site root.
+Any static file server works, and so does VS Code Live Server or opening the
+files directly. Every path in the HTML is **relative**, so the pages do not care
+what the server root is:
 
 ```bash
 cd legal/public
-python -m http.server 8099        # then open http://127.0.0.1:8099/
+python -m http.server 8099        # http://127.0.0.1:8099/
 ```
 
-With a plain file server the footer links (`/privacy`, `/terms`) will 404 — those
-extensionless URLs are resolved by Cloudflare, not by the server. Open
-`/privacy.html` directly, or use the command below instead.
+Live Server from the repo root also works — `http://127.0.0.1:5500/legal/public/index.html`
+finds the CSS and images fine. Keep the paths relative when editing: switching
+back to root-absolute ones (`/styles.css`) breaks every preview whose root is not
+`legal/public`.
 
-To preview exactly how Cloudflare will serve it (clean URLs, the 404 page):
+On Cloudflare the pages are also reachable at the clean URLs `/privacy` and
+`/terms` — use those for the App Store and Play Console listings. To preview
+exactly that, including the 404 page:
 
 ```bash
 cd legal
