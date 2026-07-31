@@ -584,6 +584,16 @@ h1 {
   font-size: 0.9em;
 }
 
+/* Tables scroll inside their own box so a narrow screen never squeezes three
+   columns of prose into unreadable slivers, and the page never scrolls sideways. */
+.prose__scroll {
+  margin-top: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose__scroll table { margin-top: 0; min-width: 480px; }
+
 .prose table { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 15px; }
 .prose th, .prose td { padding: 12px 14px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
 .prose th { background: var(--band); color: var(--navy); font-weight: 700; }

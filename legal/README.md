@@ -15,12 +15,14 @@ legal/
   wrangler.jsonc          Cloudflare Workers config (assets-only, no Worker script)
   public/                 <- everything in here is what gets served
     index.html            landing page
-    privacy.html          Privacy Policy (shell — text still to be written)
-    terms.html            Terms of Service (shell — text still to be written)
+    privacy.html          Privacy Policy (drafted — has [PLACEHOLDERS] to fill)
+    terms.html            Terms of Service (drafted — has [PLACEHOLDERS] to fill)
     404.html              not-found page
     styles.css            all styling for every page
     favicon.svg
     assets/               phone screenshots used on the landing page
+  REVIEWER-NOTES.md       what the two legal drafts assume, and the evidence
+                          in src/ behind each claim. Not published
   tools/
     prepare-images.cjs    regenerates public/assets from the raw screenshots
   ui-inspiration.png      the design this page was measured against
@@ -87,8 +89,11 @@ Replace `auth.png` / `trips.png` / `assistant.png` and re-run to refresh them.
 
 ## Before this goes live
 
-- **Write the two legal documents.** `privacy.html` and `terms.html` are
-  finished shells with a styled `.prose` block and a visible placeholder note.
+- **Finish the two legal documents.** `privacy.html` and `terms.html` are drafted
+  from what the code actually does, but every `[PLACEHOLDER]` needs a real value
+  and both need a lawyer's review. `REVIEWER-NOTES.md` lists each placeholder,
+  every assumption made, and the file and line in `src/` that backs each claim.
+  Both pages carry a visible "not yet reviewed by a lawyer" banner until then.
 - **Replace the testimonials.** The three quotes on the landing page are
   placeholder copy carried over from the design mock. Invented reviews cannot be
   published as real testimonials.
@@ -96,7 +101,8 @@ Replace `auth.png` / `trips.png` / `assistant.png` and re-run to refresh them.
   hand-drawn stand-ins. Apple and Google both require their own badge artwork.
 - **Fill in the store links.** Every store button is `href="#"` until the app is
   published.
-- **Confirm the contact address and domain.** `support@triply.com` also comes
-  from the mock.
 - **Retake the screenshots without the debug button.** The floating grey gear
   (the dev settings button) is visible in the current app screenshots.
+
+Contact addresses are settled: `privacy@triply.app` and `support@triply.app`,
+matching `src/app/privacy-policy.tsx` and `src/app/help-center.tsx`.

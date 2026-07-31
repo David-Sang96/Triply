@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy Policy — Triply</title>
-<meta name="description" content="How Triply collects, uses, and protects your information.">
+<meta name="description" content="What Triply collects, who it is shared with, how long it is kept, and how to delete it.">
 <meta name="theme-color" content="#218aef">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
@@ -33,7 +33,7 @@
     <nav class="nav" aria-label="Main">
       <a href="./#features">Features</a>
       <a href="./#how-it-works">How it works</a>
-      <a href="mailto:support@triply.com">Support</a>
+      <a href="mailto:support@triply.app">Support</a>
     </nav>
     <div class="header__cta">
       <a class="store store--sm" href="#" aria-label="Download Triply on the App Store">
@@ -53,35 +53,376 @@
   <div class="doc__head">
     <p class="doc__eyebrow">Legal</p>
     <h1>Privacy Policy</h1>
-    <p class="doc__meta">Last updated: <!-- TODO: real date --><em>pending</em></p>
+    <p class="doc__meta">Last updated: <strong>[EFFECTIVE DATE]</strong> · Applies to the Triply mobile app and this website.</p>
   </div>
 
   <p class="doc__note">
-    <strong>This page is a shell, not a policy.</strong> The layout, navigation, and
-    prose styling are finished and ready — the policy text itself is still to come.
-    Drop the real sections inside the <code>.prose</code> block below (headings,
-    paragraphs, lists, and tables are all already styled) and set the
-    “Last updated” date above.
+    <strong>Draft — not yet reviewed by a lawyer.</strong> Everything below describes
+    what the app actually does today. Items in <code>[SQUARE BRACKETS]</code> still
+    need to be filled in, and this text should be checked by a qualified lawyer
+    before Triply is released.
   </p>
 
-  <!-- Replace everything inside .prose with the real policy. The markup below is
-       a skeleton that shows the styles each element gets. -->
   <div class="prose">
-    <h2>1. Information we collect</h2>
-    <p>Section text goes here.</p>
+
+    <h2>1. Summary</h2>
+    <p>
+      Triply is an AI trip planner. You tell it where you want to go, and it writes a
+      day-by-day itinerary. To do that, it stores your account details, the trips you
+      create, and your conversations with the assistant.
+    </p>
+    <p>Three things are worth knowing up front:</p>
     <ul>
-      <li>Bullet list item.</li>
-      <li>Bullet list item.</li>
+      <li>Triply does not sell your personal data, and does not show ads.</li>
+      <li>
+        Your trip details are sent to Google Gemini to write the itinerary. Your name,
+        email address, and account number are <strong>not</strong> included in that request.
+      </li>
+      <li>
+        You can delete your account from inside the app at any time. Doing so erases
+        your trips, your conversations, and any photo you uploaded.
+      </li>
     </ul>
 
-    <h2>2. How we use your information</h2>
-    <p>Section text goes here.</p>
+    <h2>2. Who is responsible for your data</h2>
+    <p>
+      Triply is published by <strong>[FULL LEGAL NAME]</strong>, an individual developer
+      based in <strong>[COUNTRY]</strong>, at <strong>[POSTAL ADDRESS]</strong>. In data
+      protection law, this is the "data controller" — the person who decides what data is
+      collected and why.
+    </p>
+    <p>
+      For any privacy question, or to make one of the requests in section 11, email
+      <a href="mailto:privacy@triply.app">privacy@triply.app</a>.
+    </p>
 
-    <h3>Sub-heading</h3>
-    <p>Section text goes here.</p>
+    <h2>3. Who may use Triply</h2>
+    <p>
+      Triply is for people aged 18 and over. It is not designed for children, and we do
+      not knowingly collect data from anyone under 18. See section 12.
+    </p>
 
-    <h2>3. Contact us</h2>
-    <p>Questions about this policy? Email <a href="mailto:support@triply.com">support@triply.com</a>.</p>
+    <h2>4. What we collect</h2>
+
+    <h3>4.1 Account details</h3>
+    <p>
+      You sign in with an email address and password, or with your Google account. Sign-in
+      is handled by <strong>Clerk</strong>, an authentication service. Clerk stores your
+      password — it never reaches Triply's own servers, and we never see it.
+    </p>
+    <p>Once your account exists, Triply copies four things from Clerk into its own database:</p>
+    <ul>
+      <li>your account number (an identifier issued by Clerk);</li>
+      <li>your primary email address;</li>
+      <li>your first and last name, if your sign-in provider supplied them;</li>
+      <li>the web address of your profile picture, if you have one.</li>
+    </ul>
+    <p>
+      That copy is kept up to date when you change your details, and is deleted when you
+      delete your account.
+    </p>
+
+    <h3>4.2 Trips you create</h3>
+    <p>When you plan a trip, Triply stores what you asked for and what was generated:</p>
+    <ul>
+      <li>your destination, the number of days, the number of travellers, a budget level, your chosen interests, and your preferred pace;</li>
+      <li>the generated title, summary, day themes, and activities — including each place name, its description, an estimated cost, and its map coordinates;</li>
+      <li>the web address of the cover photo and the photographer's credit;</li>
+      <li>the current status of the trip, and a short error message if generation failed.</li>
+    </ul>
+    <p>
+      The map coordinates belong to the <em>places in your itinerary</em>, not to you.
+      Triply never asks for or records your own location — the app requests no location
+      permission at all.
+    </p>
+
+    <h3>4.3 Your conversations with the assistant</h3>
+    <p>
+      Triply stores every message you send to the assistant and every reply it gives, so
+      the conversation is still there when you come back. Each general conversation is
+      given a short title, taken automatically from the first message you sent in it.
+    </p>
+
+    <h3>4.4 Photos you upload</h3>
+    <p>
+      You can replace a trip's cover photo with one of your own. If you do, the app asks
+      for permission to read your photo library, shrinks the image on your device, and
+      uploads it to <strong>ImageKit</strong>, an image hosting service. Triply stores the
+      resulting web address and file identifier so the photo can be shown and later
+      deleted. Only the photo you pick is uploaded — Triply cannot see the rest of your
+      library.
+    </p>
+
+    <h3>4.5 Crash and performance reports</h3>
+    <p>
+      Triply uses <strong>Sentry</strong> to find out when the app breaks or runs slowly.
+      Sentry receives:
+    </p>
+    <ul>
+      <li>error and crash reports, including the technical stack trace;</li>
+      <li>device and app information the Sentry software collects by default, such as the device model, operating system version, and app version;</li>
+      <li>event logs made of identifiers, counts, and fixed labels — for example which endpoint failed, the HTTP status number, and a category such as <code>network</code>. The wording of an error message is deliberately left out, because that text often repeats what you typed;</li>
+      <li>a short screen recording of the moments before a crash. Recordings mask all text, images, and drawings by default, so the contents of your screen are covered up. Roughly 1 in 100 ordinary sessions is also recorded, to find problems that never produce an error.</li>
+    </ul>
+    <p>
+      <strong>One deliberate exception.</strong> When you use the assistant, the message
+      you sent and the reply you received <em>are</em> attached to the performance data
+      sent to Sentry. This is the only way to tell why the assistant gave a poor answer.
+      If you would rather not have a conversation recorded this way, do not send it.
+    </p>
+    <p>
+      In released versions of the app, Sentry is configured <em>not</em> to attach your IP
+      address. Triply also does not tell Sentry which account an event belongs to.
+    </p>
+
+    <h3>4.6 Kept on your device only</h3>
+    <p>
+      Your language, currency, and default budget choices are saved in your phone's secure
+      storage and are never sent to Triply's servers. They are erased if you delete your
+      account on that device.
+    </p>
+    <p>
+      Your sign-in token is also held in your phone's secure storage (the iOS Keychain or
+      the Android Keystore).
+    </p>
+
+    <h3>4.7 What we do not collect</h3>
+    <ul>
+      <li><strong>No payment details.</strong> Triply is free and has no payment system, so there is nothing to collect.</li>
+      <li><strong>No location tracking.</strong> The app requests no location permission.</li>
+      <li><strong>No contacts, calendar, microphone, or health data.</strong></li>
+      <li><strong>No advertising or cross-app tracking identifiers.</strong> There is no advertising software in the app.</li>
+      <li><strong>No cookies on this website.</strong> These pages run no scripts, load nothing from other servers, and set no cookies.</li>
+    </ul>
+
+    <h2>5. Why we use it</h2>
+    <div class="prose__scroll">
+    <table>
+      <thead>
+        <tr><th>Purpose</th><th>Data used</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Letting you sign in and keeping your account secure</td><td>Account details (4.1)</td></tr>
+        <tr><td>Generating an itinerary and showing it back to you</td><td>Trip details (4.2)</td></tr>
+        <tr><td>Answering your questions and keeping conversation history</td><td>Messages (4.3)</td></tr>
+        <tr><td>Showing your chosen cover photo</td><td>Uploaded photos (4.4)</td></tr>
+        <tr><td>Enforcing the limit of five saved trips per account</td><td>A count of your trips (4.2)</td></tr>
+        <tr><td>Fixing crashes, slow screens, and poor assistant answers</td><td>Diagnostics (4.5)</td></tr>
+        <tr><td>Replying to your support and privacy requests</td><td>Your email address and what you write to us</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      We do not use your data to make automated decisions that have a legal effect on you,
+      and we do not build advertising profiles.
+    </p>
+
+    <h2>6. Our legal grounds</h2>
+    <p>
+      If the laws of the European Union or the United Kingdom apply to you, our grounds for
+      using your data are:
+    </p>
+    <ul>
+      <li><strong>Performing our contract with you</strong> — everything needed to run the account and generate the trips you ask for (sections 4.1 to 4.4).</li>
+      <li><strong>Our legitimate interests</strong> — keeping the service working, secure, and free of abuse, which covers the diagnostics in section 4.5 and the usage limits in our Terms.</li>
+      <li><strong>Complying with the law</strong> — where we must keep or disclose something.</li>
+    </ul>
+
+    <h2>7. Who else receives your data</h2>
+    <p>
+      Triply is built on other companies' services. Each one receives only what it needs to
+      do its job. None of them is permitted to use your data for their own advertising.
+    </p>
+    <div class="prose__scroll">
+    <table>
+      <thead>
+        <tr><th>Service</th><th>What it does</th><th>What it receives</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Clerk</td>
+          <td>Sign-in and account management</td>
+          <td>Your email address, password, name, profile picture, and sign-in activity</td>
+        </tr>
+        <tr>
+          <td>Neon</td>
+          <td>Hosts the database</td>
+          <td>Everything Triply stores (sections 4.1 to 4.4)</td>
+        </tr>
+        <tr>
+          <td>Cloudflare</td>
+          <td>Runs Triply's server code and serves this website</td>
+          <td>Requests from the app, which pass through it</td>
+        </tr>
+        <tr>
+          <td>Google (Gemini)</td>
+          <td>Writes itineraries and answers assistant questions</td>
+          <td>Trip details, and your assistant messages — see section 8</td>
+        </tr>
+        <tr>
+          <td>Inngest</td>
+          <td>Runs background jobs, such as trip generation and account clean-up</td>
+          <td>Your account number, email address, name, and profile picture web address when your account is created, changed, or deleted; the trip identifier when a trip is generated</td>
+        </tr>
+        <tr>
+          <td>Photon (komoot)</td>
+          <td>Turns place names into map coordinates</td>
+          <td>The place name and destination city from a generated itinerary. Nothing that identifies you</td>
+        </tr>
+        <tr>
+          <td>Unsplash</td>
+          <td>Supplies destination photos</td>
+          <td>The destination search word. Your device loads photos from Unsplash directly, so Unsplash sees your IP address as with any image on the internet</td>
+        </tr>
+        <tr>
+          <td>ImageKit</td>
+          <td>Stores and delivers cover photos</td>
+          <td>Photos you upload</td>
+        </tr>
+        <tr>
+          <td>Sentry</td>
+          <td>Crash and performance reporting</td>
+          <td>The diagnostics in section 4.5, including assistant conversations</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      We may also disclose data if the law requires it, or to protect our rights or
+      someone's safety. If Triply is ever transferred to someone else, we will say so
+      here before your data moves.
+    </p>
+
+    <h2>8. How the AI features use your data</h2>
+    <p>This is the part people most often ask about, so it is set out in full.</p>
+    <h3>Generating an itinerary</h3>
+    <p>
+      Only the trip settings are sent to Google Gemini: the destination, the number of
+      days, the number of travellers, the budget level, your interests, and your pace.
+      Your name, email address, and account number are deliberately excluded, so nothing
+      identifying you crosses that boundary.
+    </p>
+    <h3>Talking to the assistant</h3>
+    <p>
+      Your message is sent to Google Gemini, together with up to the last 30 messages in
+      that conversation. If you are asking about a specific trip, a summary of that
+      itinerary is sent as well. The assistant is instructed never to ask you for personal
+      identity details, and asking it to remember such details is not a supported use of
+      Triply.
+    </p>
+    <p>
+      <strong>Please do not type sensitive information into the assistant.</strong> Anything
+      you send is stored in your conversation history, sent to Google, and — as explained in
+      section 4.5 — attached to diagnostics in Sentry.
+    </p>
+    <p>
+      Google's handling of this data is governed by its own terms. Triply currently uses
+      Google's free service tier, and Google states that prompts sent on free tiers of the
+      Gemini API may be reviewed by humans and used to improve its models.
+      <strong>[CONFIRM: whether Triply is on the free or paid Gemini tier at launch, and
+      restate this sentence to match Google's terms for that tier.]</strong>
+    </p>
+
+    <h2>9. Where your data is held</h2>
+    <p>
+      Triply's providers operate globally, so your data may be stored or processed outside
+      your own country, including in the United States and the European Union. Where
+      transfers out of the European Economic Area or the United Kingdom need a legal
+      safeguard, we rely on the standard contractual terms offered by each provider.
+      <strong>[CONFIRM: the hosting region chosen for the Neon database and the Clerk
+      instance, and name it here.]</strong>
+    </p>
+
+    <h2>10. How long we keep it</h2>
+    <ul>
+      <li>
+        <strong>Your account, trips, conversations, and photos</strong> are kept until you
+        delete them, or until you delete your account. There is no automatic expiry.
+      </li>
+      <li>
+        <strong>Deleting your account</strong> removes your record and everything attached
+        to it from Triply's database straight away, and deletes uploaded photos from
+        ImageKit. See section 11.
+      </li>
+      <li>
+        <strong>Cached map lookups</strong> — the coordinates found for a place name — are
+        kept without a time limit so the same place is not looked up twice. These records
+        contain place names only and are not linked to any account.
+      </li>
+      <li>
+        <strong>Diagnostics in Sentry</strong> and <strong>sign-in records in Clerk</strong>
+        are kept for as long as those services retain them under our plan, and are removed
+        on their own schedule.
+        <strong>[CONFIRM: the retention period on your Sentry and Clerk plans.]</strong>
+      </li>
+      <li>
+        <strong>Support emails</strong> are kept for <strong>[RETENTION PERIOD]</strong>.
+      </li>
+    </ul>
+
+    <h2>11. Your choices and rights</h2>
+    <p>These controls are built into the app and work immediately:</p>
+    <ul>
+      <li><strong>Delete one message.</strong> Removing a message in a conversation removes both your question and the reply.</li>
+      <li><strong>Delete a whole conversation</strong> from the assistant screen.</li>
+      <li><strong>Delete a trip</strong> from the trip screen. Its days, activities, and any photo you uploaded for it go with it.</li>
+      <li><strong>Sign out</strong> from Profile → Account.</li>
+      <li>
+        <strong>Delete your account</strong> from Profile → Account. This deletes your
+        sign-in account, then erases your record and everything linked to it — trips, days,
+        activities, all conversations and messages — and deletes uploaded photos from
+        ImageKit. The preferences saved on that device are erased too. It cannot be undone.
+      </li>
+      <li><strong>Change your name, email address, or profile picture</strong> through your sign-in provider; Triply's copy is updated automatically.</li>
+      <li><strong>Photo library permission</strong> can be withdrawn at any time in your phone's settings. Only the custom cover feature stops working.</li>
+    </ul>
+    <p>
+      Depending on where you live, you may also have the right to ask for a copy of your
+      data, to correct it, to have it erased, to restrict or object to how it is used, and
+      to complain to your data protection authority. There is no self-service export button
+      in the app yet, so email
+      <a href="mailto:privacy@triply.app">privacy@triply.app</a> and we will handle the
+      request by hand within <strong>[RESPONSE TIME, e.g. 30 days]</strong>. We may need to
+      confirm that you own the account before acting.
+    </p>
+
+    <h2>12. Children</h2>
+    <p>
+      Triply is not for anyone under 18. We do not knowingly collect data from children. The
+      app does not currently ask your age, so if you believe a child has created an account,
+      email <a href="mailto:privacy@triply.app">privacy@triply.app</a> and we will delete it.
+    </p>
+
+    <h2>13. How your data is protected</h2>
+    <ul>
+      <li>All traffic between the app and Triply's servers uses HTTPS.</li>
+      <li>Every request that touches your data must carry a valid sign-in token, which is checked on the server before anything is read or written.</li>
+      <li>Requests are scoped to the account in that token, so one account cannot read or delete another's trips or messages.</li>
+      <li>Your sign-in token is stored in your phone's secure storage, not in ordinary app storage.</li>
+      <li>Messages arriving from Clerk are rejected unless their cryptographic signature is valid.</li>
+      <li>Passwords are held by Clerk and never reach Triply's own servers.</li>
+    </ul>
+    <p>
+      No service can promise perfect security. If a breach ever affects your data, we will
+      notify you and any regulator we are required to inform.
+    </p>
+
+    <h2>14. Changes to this policy</h2>
+    <p>
+      If this policy changes, the date at the top of the page changes with it. For a change
+      that materially affects you, we will give notice in the app before it takes effect.
+    </p>
+
+    <h2>15. Contact</h2>
+    <p>
+      Privacy questions and requests: <a href="mailto:privacy@triply.app">privacy@triply.app</a><br>
+      Everything else: <a href="mailto:support@triply.app">support@triply.app</a>
+    </p>
+    <p>
+      Postal address: <strong>[POSTAL ADDRESS]</strong>. See also our
+      <a href="terms.html">Terms of Service</a>.
+    </p>
+
   </div>
 
 </main>
@@ -95,8 +436,8 @@
     <nav class="footer__nav" aria-label="Legal and support">
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms of Service</a>
-      <a href="mailto:support@triply.com">Support</a>
-      <a href="mailto:support@triply.com">support@triply.com</a>
+      <a href="mailto:support@triply.app">Support</a>
+      <a href="mailto:support@triply.app">support@triply.app</a>
     </nav>
     <p class="footer__legal">© 2026 Triply. All rights reserved.</p>
   </div>
