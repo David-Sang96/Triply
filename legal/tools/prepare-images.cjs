@@ -9,11 +9,19 @@
  * drop shadow fades into that backdrop, so its darkness is converted back into
  * alpha rather than being cut off as a grey ring.
  *
- * Run from the repo root (uses the jimp devDependency):
+ * Output is WebP, not PNG. These renders carry a soft alpha shadow, and a
+ * palette PNG can only hold one transparent colour — it would flatten the
+ * shadow that the flood-fill above works to preserve. Lossy WebP keeps the
+ * full 8-bit alpha and is ~80% smaller than the lossless PNG.
+ *
+ * Run from the repo root (uses the jimp devDependency; needs ffmpeg on PATH for
+ * the WebP encode — `scoop install ffmpeg`):
  *   node legal/tools/prepare-images.cjs
  */
 
+const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const { Jimp, intToRGBA } = require('jimp');
 
 const SRC = path.join(__dirname, '..');
@@ -23,6 +31,8 @@ const OUT = path.join(__dirname, '..', 'public', 'assets');
 const SHADOW = { r: 70, g: 80, b: 96 };
 /** Max sum-of-channel distance from the backdrop still counted as backdrop or shadow. */
 const TOL = 46;
+/** Lossy WebP quality. 88 is visually indistinguishable here; 100 doubles the bytes. */
+const QUALITY = 88;
 
 /** name, output name, max output width (never upscaled). */
 const IMAGES = [
@@ -30,6 +40,23 @@ const IMAGES = [
   ['trips', 'trips-phone', 720],
   ['assistant', 'assistant-phones', 1000],
 ];
+
+/** Encodes a jimp image as lossy WebP, alpha intact, by piping raw RGBA to ffmpeg. */
+function encodeWebp(img, outPath) {
+  const { width, height, data } = img.bitmap;
+  const res = spawnSync(
+    'ffmpeg',
+    ['-y', '-loglevel', 'error',
+     '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${width}x${height}`, '-i', 'pipe:0',
+     '-c:v', 'libwebp', '-quality', String(QUALITY), '-compression_level', '6',
+     outPath],
+    { input: data, maxBuffer: 1 << 28 },
+  );
+  if (res.error && res.error.code === 'ENOENT') {
+    throw new Error('ffmpeg was not found on PATH; it encodes the WebP output. Install it with: scoop install ffmpeg');
+  }
+  if (res.status !== 0) throw new Error(`ffmpeg failed for ${outPath}:\n${res.stderr}`);
+}
 
 async function cut(name, outName, targetW) {
   const img = await Jimp.read(path.join(SRC, `${name}.png`));
@@ -80,8 +107,10 @@ async function cut(name, outName, targetW) {
   img.crop({ x: minx, y: miny, w: maxx - minx + 1, h: maxy - miny + 1 });
   const trimmed = `${img.bitmap.width}x${img.bitmap.height}`;
   if (targetW < img.bitmap.width) img.resize({ w: targetW });
-  await img.write(path.join(OUT, `${outName}.png`), { deflateLevel: 9 });
-  console.log(`${name}.png -> assets/${outName}.png  trimmed=${trimmed} out=${img.bitmap.width}x${img.bitmap.height}`);
+  const outPath = path.join(OUT, `${outName}.webp`);
+  encodeWebp(img, outPath);
+  const kb = Math.round(fs.statSync(outPath).size / 1024);
+  console.log(`${name}.png -> assets/${outName}.webp  trimmed=${trimmed} out=${img.bitmap.width}x${img.bitmap.height} ${kb}KB`);
 }
 
 (async () => {
