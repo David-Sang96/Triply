@@ -1,0 +1,14 @@
+{
+  // Assets-only Worker: there is no "main" script, so Cloudflare just serves the
+  // files in ./public from its edge. Static asset requests are free and
+  // unmetered on the Workers free plan.
+  "name": "triply-legal",
+  "compatibility_date": "2026-07-31",
+  "assets": {
+    "directory": "./public",
+    // /privacy and /privacy/ both resolve to public/privacy.html
+    "html_handling": "auto-trailing-slash",
+    // unknown paths render public/404.html with a 404 status
+    "not_found_handling": "404-page"
+  }
+}
