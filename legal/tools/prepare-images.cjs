@@ -122,6 +122,16 @@ async function cut(name, outName, targetW) {
     }
   }
 
+  // Nothing opaque survived, so there is no phone to trim to. Bail out here:
+  // the bounds are still at their initial values, and the crop below would be
+  // handed a negative width and height.
+  if (maxx < minx || maxy < miny) {
+    throw new Error(
+      `${name}.png: every pixel matched the rgb(${bg.r},${bg.g},${bg.b}) backdrop, ` +
+        `so nothing is left to crop — is the source a blank image?`,
+    );
+  }
+
   img.crop({ x: minx, y: miny, w: maxx - minx + 1, h: maxy - miny + 1 });
   const trimmed = `${img.bitmap.width}x${img.bitmap.height}`;
   if (targetW < img.bitmap.width) img.resize({ w: targetW });
