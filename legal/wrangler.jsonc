@@ -4,6 +4,10 @@
   // unmetered on the Workers free plan.
   "name": "triply-legal",
   "compatibility_date": "2026-07-31",
+  // Off by default-override: a branch push would otherwise publish a second,
+  // publicly reachable copy of the site at a preview URL. The production
+  // workers.dev URL stays enabled — only per-version previews are disabled.
+  "preview_urls": false,
   "assets": {
     "directory": "./public",
     // /privacy and /privacy/ both resolve to public/privacy.html
