@@ -46,6 +46,20 @@ function persist(next: Preferences) {
     .catch(() => {});
 }
 
+/**
+ * Forgets the stored preferences. Called when an account is deleted, so the
+ * next person to sign in on this device does not inherit its choices. Goes
+ * through the same queue as the writes, so a pending write cannot land after
+ * the delete and resurrect the values.
+ */
+export function clearPreferences(): Promise<void> {
+  const done = writeQueue
+    .then(() => SecureStore.deleteItemAsync(STORE_KEY))
+    .catch(() => {});
+  writeQueue = done;
+  return done;
+}
+
 // A stored value is only trusted if it is still one of the options above — an
 // older build could have written a choice that no longer exists.
 function coerce(raw: string | null): Preferences {
