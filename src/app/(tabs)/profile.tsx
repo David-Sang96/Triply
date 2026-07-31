@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -16,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { OptionSheet } from "@/components/profile/OptionSheet";
 import { SettingsCard } from "@/components/profile/SettingsCard";
 import { SettingsRow } from "@/components/profile/SettingsRow";
+import { useDeleteAccount } from "@/lib/account";
 import {
   BUDGETS,
   CURRENCIES,
@@ -50,6 +52,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { preferences, update } = usePreferences();
+  const deleteAccount = useDeleteAccount();
 
   // Which preference row's sheet is open, if any.
   const [editing, setEditing] = useState<"language" | "currency" | "budget" | null>(
@@ -66,8 +69,9 @@ export default function ProfileScreen() {
     router.replace("/welcome");
   };
 
-  // Deletion is not built yet, so the flow stops at a clear message rather than
-  // calling anything. It needs an API route plus a Clerk user delete.
+  // Irreversible, so it asks first. The mutation deletes the Clerk user; the
+  // trips, chats and uploaded images follow via the user.deleted webhook, and
+  // the device's saved preferences are cleared in the hook.
   const onDeleteAccount = () => {
     Alert.alert(
       "Delete your account?",
@@ -77,11 +81,19 @@ export default function ProfileScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () =>
-            Alert.alert(
-              "Not available yet",
-              "Account deletion is still being built. To close your account now, contact support.",
-            ),
+          onPress: async () => {
+            try {
+              await deleteAccount.mutateAsync();
+              router.replace("/welcome");
+            } catch (err) {
+              Alert.alert(
+                "Couldn't delete your account",
+                err instanceof Error
+                  ? err.message
+                  : "Something went wrong. Please try again.",
+              );
+            }
+          },
         },
       ],
     );
@@ -198,11 +210,13 @@ export default function ProfileScreen() {
                   icon="log-out-outline"
                   label="Sign Out"
                   onPress={onSignOut}
+                  disabled={deleteAccount.isPending}
                 />
                 <DangerButton
                   icon="trash-outline"
                   label="Delete Account"
                   onPress={onDeleteAccount}
+                  busy={deleteAccount.isPending}
                 />
               </View>
             </SettingsCard>
@@ -236,23 +250,42 @@ export default function ProfileScreen() {
 }
 
 // The two outlined red buttons in the Account card: 37dp tall, centred content.
+// `busy` swaps the icon for a spinner (deletion takes a round trip); `disabled`
+// only greys the button out. Both block the press, so a second tap cannot fire
+// a delete that is already running.
 function DangerButton({
   icon,
   label,
   onPress,
+  busy,
+  disabled,
 }: {
   icon: "log-out-outline" | "trash-outline";
   label: string;
   onPress: () => void;
+  busy?: boolean;
+  disabled?: boolean;
 }) {
+  const inactive = busy || disabled;
+
   return (
     <Pressable
       onPress={onPress}
+      disabled={inactive}
       accessibilityRole="button"
-      className="h-[37px] flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error active:opacity-70"
+      accessibilityState={{ disabled: inactive, busy }}
+      className={`h-[37px] flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error ${
+        inactive ? "opacity-50" : "active:opacity-70"
+      }`}
     >
-      <Ionicons name={icon} size={18} color={colors.error} />
-      <Text className="font-psemibold text-[12px] text-error">{label}</Text>
+      {busy ? (
+        <ActivityIndicator size="small" color={colors.error} />
+      ) : (
+        <Ionicons name={icon} size={18} color={colors.error} />
+      )}
+      <Text className="font-psemibold text-[12px] text-error">
+        {busy ? "Deleting…" : label}
+      </Text>
     </Pressable>
   );
 }

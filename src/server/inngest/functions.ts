@@ -13,6 +13,7 @@ import {
   type TimeOfDay,
 } from "@/server/db/schema";
 import { getDestinationImages } from "@/server/images";
+import { deleteCoverImage } from "@/server/imagekit";
 import { geocodePlace, type GeoResult } from "@/server/places/geocode";
 
 import { inngest } from "./client";
@@ -93,7 +94,13 @@ export const syncUserUpdated = inngest.createFunction(
   },
 );
 
-// clerk/user.deleted → remove the row.
+// clerk/user.deleted → erase everything belonging to that user.
+//
+// Fired by the Clerk webhook (src/app/api/webhooks/clerk+api.ts), whether the
+// account was deleted from the app's Delete Account button, from the Clerk
+// dashboard, or by the Backend API. Every path lands here, so this job is the
+// single place that owns data removal.
+//
 // Deleting a row that is already gone is a no-op, so this is safe to retry.
 export const syncUserDeleted = inngest.createFunction(
   {
@@ -103,11 +110,41 @@ export const syncUserDeleted = inngest.createFunction(
   async ({ event, step }) => {
     const data = event.data as ClerkUserDeleted;
 
+    // Read the ImageKit ids first: the delete below cascades the trips away,
+    // and with them the only record of which uploaded files to remove.
+    const fileIds = await step.run("collect-uploaded-covers", async () => {
+      const rows = await db
+        .select({ fileId: trips.customCoverImageFileId })
+        .from(trips)
+        .where(eq(trips.userId, data.id));
+      return rows
+        .map((row) => row.fileId)
+        .filter((fileId): fileId is string => Boolean(fileId));
+    });
+
+    // One statement is enough: every user-owned table cascades from users.id —
+    // trips → days → activities, chat_conversations → chat_messages, and the
+    // trip-scoped chat_messages rows (see the foreign keys in schema.ts).
     await step.run("delete-user", async () => {
       await db.delete(users).where(eq(users.id, data.id));
     });
 
-    return { userId: data.id };
+    // Best-effort, and deliberately after the row delete: the account is gone
+    // either way, so ImageKit being briefly down must not make Inngest retry
+    // the whole job. Re-deleting an already-deleted file just 404s, which is
+    // swallowed here too, so a retry of this step is harmless.
+    await step.run("delete-uploaded-covers", async () => {
+      for (const fileId of fileIds) {
+        try {
+          await deleteCoverImage(fileId);
+        } catch (err) {
+          console.error("Failed to delete a cover from ImageKit:", err);
+        }
+      }
+      return { attempted: fileIds.length };
+    });
+
+    return { userId: data.id, coversAttempted: fileIds.length };
   },
 );
 

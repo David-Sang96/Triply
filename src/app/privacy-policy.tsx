@@ -35,7 +35,7 @@ export default function PrivacyPolicyScreen() {
         {
           heading: "Your choices",
           body: [
-            "You can sign out at any time from Profile → Account. Account deletion is being built; until it ships, email the address below and we will remove your data.",
+            "You can sign out at any time from Profile → Account, and delete your account from the same place. Deleting removes your trips, days and activities, your assistant conversations, any photos you uploaded, and the preferences stored on your device. It cannot be undone.",
           ],
         },
         {
