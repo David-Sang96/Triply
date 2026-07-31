@@ -13,33 +13,56 @@ the same as "legally sufficient in your jurisdiction".
 
 ## 1. Confirmed decisions
 
-These were decided by the developer and are already written into both documents:
+Decided by the developer and written into both documents:
 
 | Item | Decision |
 |---|---|
 | Contact domain | `triply.app` — `privacy@triply.app` and `support@triply.app`, matching `src/app/privacy-policy.tsx:43` and `src/app/help-center.tsx:38`. The landing page's `support@triply.com`, which came from the design mock, was corrected. |
-| Publisher | An individual developer, not a company. Both documents name `[FULL LEGAL NAME]`. |
+| Publisher | An individual developer, not a company. |
 | Governing law | Singapore, with exclusive jurisdiction in the Singapore courts, subject to consumer-law rights to sue locally. |
 | Minimum age | 18+. |
 
-## 2. Placeholders still to fill
+## 2. Values written in — check each one
 
-Search both files for `[` — every placeholder is in square brackets.
+**There are no placeholders left in either document.** Where a value could not be
+read from the code, a reasonable one was chosen so the pages are publishable as
+they stand. Each choice below is a decision, not a fact — change any you disagree
+with.
 
-- `[EFFECTIVE DATE]` — both files. Use the date you publish, not today's date.
-- `[FULL LEGAL NAME]` — both files. The name that appears on official documents.
-- `[POSTAL ADDRESS]` — both files, three places. A contactable address is a
-  legal requirement in most jurisdictions and is also required by the app
-  stores. If you do not want a home address public, use a registered agent or a
-  business mailbox.
-- `[COUNTRY]` — privacy §2, where you are based as data controller.
-- `[LIABILITY CAP, e.g. SGD 100]` — terms §15. A cap far below any plausible
-  loss can be struck out as unreasonable; take advice on the figure.
-- `[RETENTION PERIOD]` for support email — privacy §10.
-- `[RESPONSE TIME, e.g. 30 days]` for data requests — privacy §11.
-- `[CONFIRM: free or paid Gemini tier]` — privacy §8. See item 4 below.
-- `[CONFIRM: Sentry and Clerk retention]` — privacy §10.
-- `[CONFIRM: Neon and Clerk hosting region]` — privacy §9.
+| Value | Where | Why this value |
+|---|---|---|
+| `David Sang` | privacy §2, terms §1 | Taken from the repository's git identity and the Android package name `com.david_sang.TRIPLY`. **Confirm the exact legal spelling** — this is the name a user would sue or complain about. |
+| `31 July 2026` | "Last updated" on both pages | The date the drafts were written. **Bump it to the day you actually publish**, and again on every later edit. |
+| `SGD 100` | terms §15 liability cap | A nominal figure to match a free service, in the currency of the governing law. A cap far below any plausible loss can be struck out as unreasonable, so take advice before relying on it. |
+| `24 months` | privacy §10, support email retention | A common support-mailbox period. Set it to whatever you will actually do — a stated period you ignore is worse than a longer honest one. |
+| `30 days` | privacy §11, response to data requests | The GDPR deadline, so it is safe to promise if GDPR reaches you. It is a commitment you must be able to meet. |
+| free Gemini tier | privacy §8 | Asserted from `src/server/ai/gemini.ts:11-12` ("The Gemini free tier may train on prompts") and the user-facing "free-tier limit reached" copy. **If you move to a paid tier, this paragraph must change** — Google's data terms differ sharply, and this is the most consequential sentence in the policy. |
+
+### No postal address — deliberate
+
+This is the one item that could not be filled honestly, so both documents now
+give an email contact and no street address. **A fabricated address in a legal
+document would be worse than none**: users rely on it to serve notice, and a
+false one is itself a legal problem.
+
+That is defensible as it stands — GDPR Article 13 requires the controller's
+"contact details", which an email address satisfies, and Singapore's PDPA
+likewise asks for a contactable person. But check two things:
+
+- Some consumer-protection regimes (notably the EU) expect a geographic address
+  from a trader selling to their residents. Triply is free, which weakens the
+  argument that you are a trader, but it does not eliminate it.
+- Apple and Google both require a real address in your developer account. That
+  is separate from the policy text, so it does not have to appear here.
+
+If you decide to add one, use a registered agent or a business mailbox rather
+than a home address, and put it in privacy §2, privacy §15, and terms §20.
+
+### The "not yet reviewed by a lawyer" banner
+
+Still on both pages, because it is true — it is a disclosure, not a placeholder.
+Delete the `<p class="doc__note">…</p>` block from each file once a lawyer has
+signed the text off.
 
 ## 3. Assumptions to correct if wrong
 
