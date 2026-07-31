@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 
@@ -34,6 +34,10 @@ type Props = {
 export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
   const router = useRouter();
   const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
+  // The SafeAreaView only claims the top edge, so the scroll view runs under the
+  // navigation bar. Its inset is added to the content padding instead of the
+  // container, which keeps the list scrolling the full height of the screen.
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
@@ -96,6 +100,15 @@ export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
             {footer}
           </Text>
         ) : null}
+
+        {/* Clears the system navigation bar, which this screen scrolls under. A
+            spacer rather than contentContainerStyle: an inline style on that prop
+            replaces the compiled contentContainerClassName instead of merging
+            with it, which silently drops the horizontal padding.
+            The fixed 24 is not decoration — Android reports a 0 bottom inset
+            unless the window is edge-to-edge, so relying on the inset alone
+            leaves the last row touching the gesture bar on some devices. */}
+        <View style={{ height: insets.bottom + 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
