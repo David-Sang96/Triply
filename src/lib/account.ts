@@ -23,10 +23,23 @@ export function useDeleteAccount() {
         method: "DELETE",
       }),
     onSuccess: async () => {
+      // The account is already gone by this point, so nothing here may turn a
+      // successful deletion into a failure — anything thrown from onSuccess
+      // rejects mutateAsync, and the caller would show a "couldn't delete"
+      // alert for an account that no longer exists.
+      //
       // Storage first, then the session: signing out unmounts the signed-in
       // tree, and this must not be left half-done if that re-render is quick.
+      // clearPreferences swallows its own failures, so only signOut needs a
+      // guard.
       await clearPreferences();
-      await signOut();
+      try {
+        await signOut();
+      } catch (err) {
+        // The Clerk session is invalid anyway now the user is deleted, and the
+        // signed-in layout redirects to /welcome once it notices.
+        console.error("Sign-out after account deletion failed:", err);
+      }
       // The cached trips/chats belong to an account that no longer exists.
       qc.clear();
     },
