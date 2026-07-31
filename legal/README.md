@@ -18,6 +18,7 @@ legal/
     privacy.html          Privacy Policy
     terms.html            Terms of Service
     support.html          support page: contact address + common questions
+    delete-account.html   account deletion instructions (required by Google Play)
     404.html              not-found page
     styles.css            all styling for every page
     favicon.svg

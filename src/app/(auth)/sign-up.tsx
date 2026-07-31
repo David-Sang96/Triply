@@ -9,11 +9,9 @@ import * as WebBrowser from "expo-web-browser";
 
 import { AuthField } from "@/components/AuthField";
 import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
+import { links } from "@/lib/links";
 import { passwordStrength } from "@/lib/password";
 
-// TODO: point these at the real policy pages once they exist.
-const TERMS_URL = "https://triply.app/terms";
-const PRIVACY_URL = "https://triply.app/privacy";
 const openPolicy = (url: string) => WebBrowser.openBrowserAsync(url);
 
 function errMessage(err: unknown, fallback: string): string {
@@ -436,14 +434,14 @@ export default function SignUp() {
             <Text className="ml-2 flex-1 text-[13px] leading-5 text-slate-500">
               <Text onPress={toggleTerms}>I agree to the </Text>
               <Text
-                onPress={() => openPolicy(TERMS_URL)}
+                onPress={() => openPolicy(links.terms)}
                 className="font-psemibold text-[#208AEF]"
               >
                 Terms of Service
               </Text>
               <Text onPress={toggleTerms}> and </Text>
               <Text
-                onPress={() => openPolicy(PRIVACY_URL)}
+                onPress={() => openPolicy(links.privacy)}
                 className="font-psemibold text-[#208AEF]"
               >
                 Privacy Policy

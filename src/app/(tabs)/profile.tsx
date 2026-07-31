@@ -2,6 +2,7 @@ import { useClerk, useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -18,6 +19,7 @@ import { OptionSheet } from "@/components/profile/OptionSheet";
 import { SettingsCard } from "@/components/profile/SettingsCard";
 import { SettingsRow } from "@/components/profile/SettingsRow";
 import { useDeleteAccount } from "@/lib/account";
+import { links } from "@/lib/links";
 import {
   BUDGETS,
   CURRENCIES,
@@ -193,6 +195,12 @@ export default function ProfileScreen() {
                 label="Privacy Policy"
                 divided
                 onPress={() => router.push("/privacy-policy")}
+              />
+              <SettingsRow
+                icon="document-text-outline"
+                label="Terms of Service"
+                divided
+                onPress={() => WebBrowser.openBrowserAsync(links.terms)}
               />
               <SettingsRow
                 icon="information-circle-outline"

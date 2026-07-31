@@ -1,15 +1,17 @@
 import { InfoScreen } from "@/components/profile/InfoScreen";
+import { links } from "@/lib/links";
 
 // Reached from Profile → Support → Privacy Policy.
 //
-// This copy describes what the app actually does today, but it is a draft and
-// has not been through legal review — the subtitle says so on screen. Replace
-// it (and the contact address) before any public release.
+// A summary, sized for a phone screen. The full policy is the published web page
+// (legal/public/privacy.html) that the link at the bottom opens — Google Play
+// requires a privacy policy both in the store listing and inside the app.
+// Keep the two in agreement: if what the app stores changes, both need editing.
 export default function PrivacyPolicyScreen() {
   return (
     <InfoScreen
       title="Privacy Policy"
-      subtitle="Draft — pending legal review"
+      link={{ label: "Read the full Privacy Policy", url: links.privacy }}
       sections={[
         {
           heading: "What we store",
@@ -21,7 +23,7 @@ export default function PrivacyPolicyScreen() {
         {
           heading: "What we send to other services",
           body: [
-            "Trip descriptions are sent to Google Gemini to write the itinerary, and place names are sent to OpenStreetMap to look up coordinates. Neither request includes your name, email address or account id.",
+            "Trip descriptions are sent to Google Gemini to write the itinerary, and place names are sent to Photon, an OpenStreetMap-based service, to look up coordinates. Neither request includes your name, email address or account id.",
             "Photos are searched on Unsplash and delivered through ImageKit. Uploaded images are stored by ImageKit.",
           ],
         },
@@ -36,6 +38,7 @@ export default function PrivacyPolicyScreen() {
           heading: "Your choices",
           body: [
             "You can sign out at any time from Profile → Account, and delete your account from the same place. Deleting removes your trips, days and activities, your assistant conversations, any photos you uploaded, and the preferences stored on your device. It cannot be undone.",
+            "You can also delete a single message, a whole conversation, or one trip without closing your account.",
           ],
         },
         {

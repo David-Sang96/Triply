@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -16,6 +17,12 @@ type Props = {
   /** Short line under the title, e.g. when the policy was last updated. */
   subtitle?: string;
   sections: InfoSection[];
+  /**
+   * Opens a web page in the in-app browser, under the sections. Used by the
+   * Privacy Policy screen to reach the full published policy, which is longer
+   * than this screen summarises.
+   */
+  link?: { label: string; url: string };
   /** Rendered under the last section — used for the About screen's credits. */
   footer?: string;
 };
@@ -24,7 +31,7 @@ type Props = {
  * The read-only text screens reached from the Profile screen's Support card.
  * Uses the same back/centred-title bar as the other pushed screens.
  */
-export function InfoScreen({ title, subtitle, sections, footer }: Props) {
+export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
   const router = useRouter();
   const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -71,6 +78,18 @@ export function InfoScreen({ title, subtitle, sections, footer }: Props) {
             ))}
           </View>
         ))}
+
+        {link ? (
+          <Pressable
+            onPress={() => WebBrowser.openBrowserAsync(link.url)}
+            accessibilityRole="link"
+            accessibilityLabel={`${link.label}, opens in a browser`}
+            className="mb-5 flex-row items-center gap-1.5 active:opacity-60"
+          >
+            <Text className="font-psemibold text-[14px] text-brand">{link.label}</Text>
+            <Ionicons name="open-outline" size={15} color={colors.brand} />
+          </Pressable>
+        ) : null}
 
         {footer ? (
           <Text className="font-sans text-[12px] leading-[18px] text-faint">

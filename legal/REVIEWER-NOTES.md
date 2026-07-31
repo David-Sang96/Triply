@@ -184,6 +184,13 @@ explicitly because that is the company receiving the request.
   §4 — declare Contact Info (email, name), User Content (photos, messages),
   Identifiers (account id), and Diagnostics, all linked to the user's identity.
   Declare "Data Used to Track You: No".
-- Google Play's Data safety form needs the same list, plus the deletion route:
-  the app has in-app account deletion, which Play requires.
+- Google Play's Data safety form needs the same list, plus **two** deletion
+  routes. Play requires account deletion to be reachable from inside the app
+  *and* "externally through a designated web resource". The in-app path is
+  Profile → Account → Delete Account; the web resource is
+  `https://<domain>/delete-account`, which is the URL to paste into the form's
+  account-deletion field.
+- Both stores need the privacy policy in two places too: the store listing field
+  and inside the app. The in-app half is `src/app/privacy-policy.tsx`, which
+  summarises and then links to the published page.
 - Confirm the age rating matches the 18+ minimum in terms §2.
