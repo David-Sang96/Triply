@@ -59,8 +59,7 @@ export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="px-5 pt-1"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+        contentContainerClassName="px-5 pb-10 pt-1"
       >
         {subtitle ? (
           <Text className="pb-3 font-sans text-[13px] text-faint">{subtitle}</Text>
@@ -101,6 +100,15 @@ export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
             {footer}
           </Text>
         ) : null}
+
+        {/* Clears the system navigation bar, which this screen scrolls under. A
+            spacer rather than contentContainerStyle: an inline style on that prop
+            replaces the compiled contentContainerClassName instead of merging
+            with it, which silently drops the horizontal padding.
+            The fixed 24 is not decoration — Android reports a 0 bottom inset
+            unless the window is edge-to-edge, so relying on the inset alone
+            leaves the last row touching the gesture bar on some devices. */}
+        <View style={{ height: insets.bottom + 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
