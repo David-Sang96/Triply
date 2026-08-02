@@ -156,8 +156,49 @@ preview URL.
 Note the origin it prints. That value goes into `EXPO_PUBLIC_API_URL` (step 3),
 and into `CLERK_AUTHORIZED_PARTIES`.
 
-Then point the production Clerk webhook and the Inngest Cloud app URL at
-`<origin>/api/inngest` and the Clerk webhook route.
+### 5b. Wire the sign-up chain — do not skip this
+
+A `users` row is created in exactly one place: the Clerk webhook. Nothing
+creates it lazily.
+
+```
+Clerk user.created
+  -> POST <origin>/api/webhooks/clerk   (src/app/api/webhooks/clerk+api.ts)
+  -> inngest.send('clerk/user.created')
+  -> syncUserCreated                    (src/server/inngest/functions.ts:47)
+  -> INSERT INTO users
+```
+
+`trips.userId` has a foreign key to `users.id` (`src/server/db/schema.ts:69`).
+So if that chain is broken in production, a new user can sign in, and every
+read works, but the first `POST /api/trips` dies on a foreign-key violation.
+The insert is not wrapped in try/catch (`src/app/api/trips+api.ts:81`), so the
+user sees an unhandled 500 with no error body.
+
+In development this chain runs over ngrok into the local Inngest dev server.
+Production needs its own wiring:
+
+1. **Inngest Cloud** — create the production app, copy `INNGEST_SIGNING_KEY`
+   and `INNGEST_EVENT_KEY` into the EAS `production` environment as
+   **sensitive** variables. Do not set `INNGEST_DEV`.
+2. **Sync the app URL** in Inngest Cloud to `<origin>/api/inngest`.
+3. **Clerk webhook** — in the Clerk dashboard, add an endpoint pointing at
+   `<origin>/api/webhooks/clerk`, subscribed to `user.created`, `user.updated`
+   and `user.deleted`. Copy that endpoint's signing secret into
+   `CLERK_WEBHOOK_SIGNING_SECRET`. It is a *different* secret from the ngrok
+   one you use locally.
+4. **Test it before sharing the build.** Sign up with a fresh email, then check
+   the `users` table with `npm run db:studio`. If no row appears, the chain is
+   broken and every new user will hit the 500 above.
+
+There is also a race window even when the wiring is correct: the app can reach
+the API before the webhook job commits the row. It is small, but a slow webhook
+turns the user's first trip into a 500.
+
+### 5c. Variables never read
+
+`IMAGEKIT_PUBLIC_KEY` and `IMAGEKIT_URL_ENDPOINT` are listed in `.env.example`
+but no code reads them. They are safe to skip.
 
 ### 6. Migrate the production database
 
