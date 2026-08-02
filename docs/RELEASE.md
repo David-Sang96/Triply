@@ -106,11 +106,26 @@ hold a secret:
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk **production** publishable key       |
 | `EXPO_PUBLIC_SENTRY_DSN`            | Sentry DSN                                 |
 
-**Build-machine variable:**
+**Build-machine variable — required, not optional:**
 
 | Name                | Why                                              |
 | ------------------- | ------------------------------------------------ |
 | `SENTRY_AUTH_TOKEN` | uploads source maps, so crash traces are readable |
+
+Without it **the Android release build fails**, it does not merely skip the
+upload. `@sentry/react-native/sentry.gradle` runs sentry-cli on every release
+build and a missing token exits non-zero:
+
+```
+error: Auth token is required for this request.
+> Task :app:createBundleReleaseJsAndAssets_SentryUpload_... FAILED
+```
+
+Use an **organization** auth token (Sentry → Settings → Developer Settings →
+Auth Tokens, scopes `project:releases` + `org:read`), not a personal one — a
+personal token dies with the account that made it. Store it with **Secret**
+visibility in the `preview` and `production` environments. Secret is fine here
+precisely because no API route reads it; only the build machine does.
 
 **Server variables** — needed by the EAS Hosting deployment, never by the app:
 
