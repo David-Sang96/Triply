@@ -86,12 +86,16 @@ Two ways to fix it:
 | `production`  | `production`    |
 
 Create the variables in the EAS dashboard (Project → Environment variables), or
-from the CLI:
+from the CLI with `eas env:create`. Check them with `eas env:list`.
 
-```powershell
-eas env:create --environment production --name EXPO_PUBLIC_API_URL --value https://<your-app>.expo.app --visibility plaintext
-eas env:create --environment production --name CLERK_SECRET_KEY --value <secret> --visibility secret
-```
+**Visibility matters.** EAS offers three levels, and **EAS Hosting cannot read
+`secret` ones** — a deployment using them fails. So:
+
+| Visibility  | Use it for                                              |
+| ----------- | ------------------------------------------------------- |
+| Plain text  | anything `EXPO_PUBLIC_*` — it ends up in the app anyway  |
+| Sensitive   | **every server secret** — hidden in the UI and in logs, but still readable by the deployment |
+| Secret      | build-time only, e.g. `SENTRY_AUTH_TOKEN`. Never for a variable an API route needs. |
 
 **Client variables** — these get baked into the app binary, so they must never
 hold a secret:
@@ -132,10 +136,22 @@ any build that real people will use, then update the three Clerk variables above
 
 ### 5. Deploy the backend
 
+**First time only — the chicken-and-egg.** Two variables need the deployed
+origin, but you only learn the origin by deploying. So on the very first deploy:
+set every other variable, deploy, note the origin, then set
+`EXPO_PUBLIC_API_URL` and `CLERK_AUTHORIZED_PARTIES` and deploy a second time.
+The first deployment's API routes will error until that second deploy — that is
+expected, not a bug.
+
 ```powershell
 npx expo export --platform web
-eas deploy --prod
+eas deploy --environment production --prod
 ```
+
+`--environment production` is what injects the server variables from step 3 into
+the API routes. Without it the routes run with no configuration. `--prod`
+promotes the deployment to the stable production URL instead of a one-off
+preview URL.
 
 Note the origin it prints. That value goes into `EXPO_PUBLIC_API_URL` (step 3),
 and into `CLERK_AUTHORIZED_PARTIES`.
