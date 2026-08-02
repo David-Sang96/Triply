@@ -17,6 +17,25 @@ function notFound(): Response {
   return Response.json({ error: "Not found" }, { status: 404 });
 }
 
+// True when the leading bytes match a format the app can plausibly have
+// produced or a user can have picked. Covers what a phone gallery yields:
+// JPEG, PNG, GIF, WebP and HEIC/HEIF. Needs the first 12 bytes — WebP and
+// HEIC both carry their marker after a leading length/RIFF header.
+function looksLikeImage(head: Uint8Array): boolean {
+  const startsWith = (...sig: number[]) =>
+    sig.every((byte, i) => head[i] === byte);
+  const ascii = (offset: number, text: string) =>
+    [...text].every((ch, i) => head[offset + i] === ch.charCodeAt(0));
+
+  if (startsWith(0xff, 0xd8, 0xff)) return true; // JPEG
+  if (startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return true; // PNG
+  if (ascii(0, "GIF87a") || ascii(0, "GIF89a")) return true; // GIF
+  if (ascii(0, "RIFF") && ascii(8, "WEBP")) return true; // WebP
+  if (ascii(4, "ftyp")) return true; // HEIC/HEIF and other ISO-BMFF images
+
+  return false;
+}
+
 // POST /trips/:id/cover — upload a custom cover photo. The Unsplash cover
 // fields are left untouched so the user can switch back to them later.
 export async function POST(request: Request, { id }: Record<string, string>) {
@@ -41,16 +60,17 @@ export async function POST(request: Request, { id }: Record<string, string>) {
   if (!(file instanceof File)) {
     return Response.json({ error: "Missing file" }, { status: 400 });
   }
-  // Fall back to the filename when the part carries no content type. React
-  // Native produces exactly that for a Blob read from a file:// URI, which
-  // made every gallery upload fail this check. The client now sets the type
-  // explicitly, but older installs are still out there and cannot be updated
-  // without a new build. ImageKit validates the actual bytes, so this stays a
-  // cheap guard rather than the last line of defence.
-  const declaredType =
-    file.type ||
-    (/\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name) ? "image/" : "");
-  if (!declaredType.startsWith("image/")) {
+  // Check the bytes, not the metadata. This used to test
+  // `file.type.startsWith("image/")`, and every gallery upload failed it:
+  // React Native reads the picked photo into a Blob from a file:// URI and
+  // attaches no MIME type, so the multipart part arrived with an empty
+  // content type. Filename extensions are no better — whether a filename
+  // survives the client's FormData at all is a platform detail.
+  //
+  // A magic-number check depends on nothing the client says about the file,
+  // so it works for every install, old or new, and is a stronger guard than
+  // the header it replaces.
+  if (!looksLikeImage(new Uint8Array(await file.slice(0, 12).arrayBuffer()))) {
     return Response.json({ error: "File must be an image" }, { status: 400 });
   }
   if (file.size > MAX_FILE_BYTES) {
