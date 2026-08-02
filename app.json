@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "triply",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
@@ -28,7 +28,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-globe.png",
+          "image": "./assets/images/splash-blank.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#D9E7FB"
