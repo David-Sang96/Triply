@@ -18,10 +18,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.davidsang.triply",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "package": "com.davidsang.triply"
     },
     "web": {
       "output": "server",

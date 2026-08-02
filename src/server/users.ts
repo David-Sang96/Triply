@@ -19,23 +19,26 @@ import { users } from "@/server/db/schema";
 // when it is missing. The insert uses `onConflictDoNothing`, so it races
 // harmlessly against the webhook — whichever arrives first wins and the other
 // is a no-op.
+// The whole body is inside the try. An earlier version started it only after
+// the lookup, which meant an unreachable database threw out of here and became
+// the unhandled 500 this function exists to prevent.
 export async function ensureUser(userId: string): Promise<boolean> {
-  // Cheap primary-key lookup. On the overwhelmingly common path the row is
-  // already there and this is the only cost — no Clerk call.
-  const existing = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  if (existing.length > 0) return true;
-
-  const secretKey = process.env.CLERK_SECRET_KEY;
-  if (!secretKey) {
-    console.error("CLERK_SECRET_KEY is not set");
-    return false;
-  }
-
   try {
+    // Cheap primary-key lookup. On the overwhelmingly common path the row is
+    // already there and this is the only cost — no Clerk call.
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (existing.length > 0) return true;
+
+    const secretKey = process.env.CLERK_SECRET_KEY;
+    if (!secretKey) {
+      console.error("CLERK_SECRET_KEY is not set");
+      return false;
+    }
+
     const clerkUser = await createClerkClient({ secretKey }).users.getUser(
       userId,
     );
@@ -55,14 +58,17 @@ export async function ensureUser(userId: string): Promise<boolean> {
       return false;
     }
 
+    // Derived exactly as the webhook derives it
+    // (src/app/api/webhooks/clerk+api.ts) — no username fallback. Both paths
+    // write the same row and which one wins is a race, so a difference here
+    // would mean the stored name depended on that race.
     const name =
       [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
-      clerkUser.username ||
       null;
 
     await db
       .insert(users)
-      .values({ id: userId, email, name, imageUrl: clerkUser.imageUrl ?? null })
+      .values({ id: userId, email, name, imageUrl: clerkUser.imageUrl || null })
       .onConflictDoNothing({ target: users.id });
 
     return true;
