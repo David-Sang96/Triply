@@ -4,11 +4,23 @@ import { verifyToken } from "@clerk/backend";
 // <token>` (from `getToken()`), and returns the Clerk user id. Web-standard
 // (uses fetch + WebCrypto), so it runs on Cloudflare Workers. Returns null when
 // the header is missing or the token is invalid — callers respond 401.
-// Comma-separated allowlist of origins/app schemes Clerk tokens may be minted
-// for (Clerk's `authorizedParties`) — rejects tokens from any other
-// Clerk-connected frontend sharing this instance. Optional in local dev (no
-// origin restriction until the app's real origin(s) are known), but required
-// in production — an unset value there would silently disable this check.
+// Comma-separated allowlist of origins Clerk tokens may be minted for (Clerk's
+// `authorizedParties`) — rejects tokens from any other Clerk-connected frontend
+// sharing this instance. Optional in local dev, required in production, where
+// an unset value would silently disable the check for browser callers.
+//
+// It only applies to requests that carry an `Origin` header. Clerk fills the
+// token's `azp` claim from the browser origin that minted the session, so a
+// native client — which has no origin — produces a token with no `azp` at all,
+// and `verifyToken` REJECTS a missing claim rather than skipping the check.
+// Applied unconditionally it 401s every request from the app:
+//
+//   Invalid JWT Authorized party claim (azp) undefined.
+//
+// Gating on `Origin` keeps the protection where it can actually work (browsers
+// always send `Origin` cross-origin, and those tokens do carry `azp`) and
+// gives up nothing where it never could: a token minted by another *native*
+// frontend of this instance would have no `azp` to check either way.
 const authorizedParties = process.env.CLERK_AUTHORIZED_PARTIES?.split(",")
   .map((p) => p.trim())
   .filter(Boolean);
@@ -31,10 +43,16 @@ export async function getUserId(request: Request): Promise<string | null> {
     return null;
   }
 
+  // See the note on `authorizedParties` above — only browser callers can be
+  // checked, and they are exactly the ones that send `Origin`.
+  const isBrowserRequest = Boolean(request.headers.get("Origin"));
+
   try {
     const payload = await verifyToken(token, {
       secretKey,
-      ...(authorizedParties?.length ? { authorizedParties } : {}),
+      ...(isBrowserRequest && authorizedParties?.length
+        ? { authorizedParties }
+        : {}),
     });
     return payload.sub ?? null;
   } catch (err) {
