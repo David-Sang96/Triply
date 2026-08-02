@@ -149,6 +149,31 @@ Clerk `pk_test_` / `sk_test_` keys are for development only. A shipped app needs
 a Clerk production instance. That needs a domain and DNS records. Do this before
 any build that real people will use, then update the three Clerk variables above.
 
+**Turn password sign-in back on.** A new instance starts from Clerk's defaults,
+and the development instance shipped with password *disabled as a sign-in
+strategy* — enabled and required at sign-up, so accounts stored a password, but
+`used_for_first_factor: false`, so no one could ever sign in with it. Every
+email/password user was locked out; only Google worked. Set it under
+**Configure → User & authentication → Email, phone, username → Authentication
+strategies → Password**.
+
+Read the instance's real configuration rather than trusting the dashboard's
+wording — the endpoint is public, and the publishable key's middle segment
+base64-decodes to the host:
+
+```sh
+curl -s https://<slug>.clerk.accounts.dev/v1/environment?_is_native=true \
+  | jq '.user_settings.attributes | {email_address, password}'
+```
+
+`password.first_factors` must contain `"password"`. An empty array is the
+broken state described above.
+
+The sign-in screen only handles a `complete` status; any other one reports the
+status and supported factors to Sentry (`src/app/(auth)/sign-in.tsx`) and tells
+the user to try Google. So if this is misconfigured again, Sentry names the
+step Clerk wanted instead of leaving you guessing.
+
 ### 5. Deploy the backend
 
 **First time only — the chicken-and-egg.** Two variables need the deployed
@@ -305,6 +330,10 @@ resets. Organisation accounts are exempt. Budget 3–4 extra weeks.
 - [ ] `npm run lint` passes
 - [ ] Support / privacy email addresses actually receive mail (see step 2b)
 - [ ] Clerk is on a production instance
+- [ ] Clerk password sign-in enabled — `password.first_factors` contains
+      `"password"` (see step 4); an empty array locks out every
+      email/password user
+- [ ] Signed in on a real device with email + password, not only with Google
 - [ ] `CLERK_AUTHORIZED_PARTIES` is set for the production environment
 - [ ] `npm run db:migrate` applied against the production database
 - [ ] `eas deploy --prod` run, and `EXPO_PUBLIC_API_URL` points at that origin
