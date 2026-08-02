@@ -41,7 +41,16 @@ export async function POST(request: Request, { id }: Record<string, string>) {
   if (!(file instanceof File)) {
     return Response.json({ error: "Missing file" }, { status: 400 });
   }
-  if (!file.type.startsWith("image/")) {
+  // Fall back to the filename when the part carries no content type. React
+  // Native produces exactly that for a Blob read from a file:// URI, which
+  // made every gallery upload fail this check. The client now sets the type
+  // explicitly, but older installs are still out there and cannot be updated
+  // without a new build. ImageKit validates the actual bytes, so this stays a
+  // cheap guard rather than the last line of defence.
+  const declaredType =
+    file.type ||
+    (/\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name) ? "image/" : "");
+  if (!declaredType.startsWith("image/")) {
     return Response.json({ error: "File must be an image" }, { status: 400 });
   }
   if (file.size > MAX_FILE_BYTES) {

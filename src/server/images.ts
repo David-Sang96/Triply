@@ -23,9 +23,35 @@ function withUtm(url: string): string {
   return u.toString();
 }
 
+// Search terms to try, in order, stopping at the first that returns anything.
+//
+// Users type destinations freely, and an exact phrase often matches no photo
+// at all: "Malaysia Genting high land travel" returned nothing and the trip was
+// saved with no cover. Each step drops something — first the "travel" keyword,
+// then everything but the broadest part of the name (the text after the last
+// comma, which is usually the country, otherwise the final word).
+//
+// Deliberately stops at the region rather than falling back to a generic
+// travel photo: a wrong-place cover is worse than none, and the UI now shows a
+// placeholder when there is no image.
+function searchTerms(destination: string): string[] {
+  const trimmed = destination.trim();
+  const terms = [`${trimmed} travel`, trimmed];
+
+  const parts = trimmed.split(",");
+  const broadest = (
+    parts.length > 1 ? parts[parts.length - 1] : trimmed.split(/\s+/).pop()
+  )?.trim();
+
+  if (broadest && broadest.toLowerCase() !== trimmed.toLowerCase()) {
+    terms.push(broadest);
+  }
+  return terms;
+}
+
 // Returns up to `count` landscape destination photos (each with required
 // attribution) for the detail carousel. The first is used as the cover. Returns
-// an empty array if no key is configured or the search fails — never throws.
+// an empty array if no key is configured or every search fails — never throws.
 export async function getDestinationImages(
   destination: string,
   count = 5,
@@ -38,8 +64,20 @@ export async function getDestinationImages(
     return [];
   }
 
+  for (const term of searchTerms(destination)) {
+    const images = await searchPhotos(term, count, accessKey);
+    if (images.length > 0) return images;
+  }
+  return [];
+}
+
+async function searchPhotos(
+  query: string,
+  count: number,
+  accessKey: string,
+): Promise<CoverImage[]> {
   const url = new URL("https://api.unsplash.com/search/photos");
-  url.searchParams.set("query", `${destination} travel`);
+  url.searchParams.set("query", query);
   url.searchParams.set("orientation", "landscape");
   url.searchParams.set("per_page", String(count));
 
