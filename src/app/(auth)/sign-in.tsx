@@ -103,7 +103,26 @@ export default function SignIn() {
         await setActive({ session: attempt.createdSessionId });
         router.replace("/");
       } else {
-        setFormError("Additional verification is required to sign in.");
+        // Clerk wants another step and this screen implements none of them, so
+        // the user is stuck here. Report which step it asked for: the copy
+        // below cannot say, and without it there is no way to know whether to
+        // build an email-code factor, a second factor, or something else.
+        //
+        // Status and strategy names are fixed enum values, not user content —
+        // safe to send under the telemetry rules in AGENTS.md.
+        Sentry.captureMessage("Sign-in did not complete", {
+          level: "warning",
+          extra: {
+            status: attempt.status,
+            firstFactors: attempt.supportedFirstFactors?.map((f) => f.strategy),
+            secondFactors: attempt.supportedSecondFactors?.map(
+              (f) => f.strategy,
+            ),
+          },
+        });
+        setFormError(
+          "We couldn't finish signing you in. Please try again, or use Continue with Google.",
+        );
       }
     } catch (err) {
       setFormError(
