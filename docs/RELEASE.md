@@ -202,6 +202,15 @@ but no code reads them. They are safe to skip.
 
 ### 6. Migrate the production database
 
+Check the state first — read-only, safe to run any time:
+
+```powershell
+npm run db:check
+```
+
+It confirms `DATABASE_URL` connects and reports how many migrations are applied
+versus how many files are in `drizzle/`. If it says PENDING:
+
 ```powershell
 npm run db:migrate
 ```
