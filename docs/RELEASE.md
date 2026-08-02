@@ -137,11 +137,20 @@ any build that real people will use, then update the three Clerk variables above
 ### 5. Deploy the backend
 
 **First time only — the chicken-and-egg.** Two variables need the deployed
-origin, but you only learn the origin by deploying. So on the very first deploy:
-set every other variable, deploy, note the origin, then set
-`EXPO_PUBLIC_API_URL` and `CLERK_AUTHORIZED_PARTIES` and deploy a second time.
-The first deployment's API routes will error until that second deploy — that is
-expected, not a bug.
+origin, but you only learn the origin by deploying. And `CLERK_AUTHORIZED_PARTIES`
+cannot simply be added afterwards: `src/server/auth.ts:16` throws at module
+load when it is missing in production, and `eas deploy` loads each worker to
+validate it. So the deploy **fails outright** rather than deploying a broken
+backend.
+
+Resolve it by claiming the subdomain first:
+
+1. Run `eas deploy --environment production --prod`. It prompts for a
+   subdomain. Choose one. The deploy then fails on `CLERK_AUTHORIZED_PARTIES` —
+   expected.
+2. Your origin is `https://<that-subdomain>.expo.app`. Set the two remaining
+   variables with it.
+3. Run the same deploy command again. It succeeds.
 
 ```powershell
 npx expo export --platform web
