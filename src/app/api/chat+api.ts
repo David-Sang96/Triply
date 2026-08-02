@@ -6,6 +6,7 @@ import { GEMINI_TIMEOUT_MS, isRateLimitError } from "@/server/ai/rate-limit";
 import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { chatConversations, chatMessages, trips } from "@/server/db/schema";
+import { ensureUser, userSyncUnavailable } from "@/server/users";
 import type { SendChatSuccess } from "@/shared/chat-contract";
 
 const UUID_RE =
@@ -203,6 +204,12 @@ export async function POST(request: Request) {
   if (!apiKey) {
     return Response.json({ error: "AI is not configured" }, { status: 500 });
   }
+
+  // Both writes below (`chat_conversations` and `chat_messages`) carry a
+  // foreign key to `users.id`, which the Clerk webhook fills in asynchronously.
+  // Back-fill it here so a brand-new account's first message is not rejected by
+  // the constraint. Placed after validation so a bad request never reaches it.
+  if (!(await ensureUser(userId))) return userSyncUnavailable();
 
   const history = tripId || conversationId
     ? await db
