@@ -35,7 +35,7 @@ export default function HelpCenterScreen() {
         {
           heading: "Still stuck?",
           body: [
-            "Email luainawl@gmail.com with a short description of what happened and roughly when. That is enough for us to find the matching error report.",
+            "Email tyee834@gmail.com with a short description of what happened and roughly when. That is enough for us to find the matching error report.",
           ],
         },
       ]}

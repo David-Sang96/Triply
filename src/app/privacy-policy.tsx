@@ -43,7 +43,7 @@ export default function PrivacyPolicyScreen() {
         },
         {
           heading: "Contact",
-          body: ["Questions about this policy: luainawl@gmail.com."],
+          body: ["Questions about this policy: tyee834@gmail.com."],
         },
       ]}
     />
