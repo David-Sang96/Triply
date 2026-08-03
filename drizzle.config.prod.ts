@@ -9,7 +9,10 @@ import { defineConfig } from "drizzle-kit";
 // reads `.env.production`. Keeping them as separate files means opening Studio
 // against production is a deliberate, differently-named command rather than
 // something a stray environment variable can cause.
-config({ path: ".env.production" });
+// `override: true` for the same reason as scripts/db-env.mjs: dotenv leaves
+// already-set variables alone by default, so an exported DATABASE_URL would win
+// and Studio would open a database this file did not choose.
+config({ path: ".env.production", override: true });
 
 if (!process.env.DATABASE_URL) {
   throw new Error(

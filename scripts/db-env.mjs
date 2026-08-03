@@ -31,7 +31,13 @@ export function loadDatabaseEnv() {
     );
   }
 
-  config({ path: file });
+  // `override: true` because dotenv defaults to leaving already-set variables
+  // alone. Without it an exported DATABASE_URL in the shell silently wins over
+  // the file, and the script still prints the label from the file — so
+  // `db:check:prod` would report PRODUCTION while talking to whatever was
+  // exported. The named file has to be authoritative or the whole scheme is
+  // decorative.
+  config({ path: file, override: true });
 
   if (!process.env.DATABASE_URL) {
     throw new Error(`DATABASE_URL is not set in ${file}`);

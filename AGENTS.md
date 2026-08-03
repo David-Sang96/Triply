@@ -162,9 +162,8 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   rather than re-scanning) → `SET DEFAULT`.
 - **Two databases: one Neon project, two branches.** `.env` and `.env.local`
   hold the **`dev`** branch; `.env.production` holds **`production`**, which is
-  what the deployed backend uses. Every `db:*` script targets dev by default and
-  prints which target it chose. The `:prod` variants target production — the
-  unsafe one has to be named:
+  what the deployed backend uses. Three commands have a `:prod` variant, and the
+  dev one is always the default — the unsafe target has to be named:
 
   | dev (default) | production |
   | ------------- | ---------- |
@@ -172,8 +171,18 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   | `npm run db:check` | `npm run db:check:prod` |
   | `npm run db:studio` | `npm run db:studio:prod` |
 
-  Migrate dev first, confirm it worked, then production. `db:generate` needs no
-  database, so it has no `:prod` variant.
+  Migrate dev first, run `db:check` to confirm it worked, and only then run
+  `db:migrate:prod`.
+
+  `db:migrate` and `db:check` print which env file they loaded **and** the Neon
+  endpoint id, because the file name alone can lie — a production string left in
+  `.env` still prints `dev`. The endpoint differs per branch, so compare it with
+  the Neon console when it matters.
+
+  Every other `db:*` command — `db:generate`, `db:push`, `db:baseline`,
+  `db:backfill-orphan-chats`, `db:seed-destinations` — reads `.env` only, prints
+  no target line, and has no production path. `db:generate` connects to no
+  database at all; it reads `schema.ts` and writes SQL.
 - `npm run db:migrate` — apply pending migrations from `drizzle/` to the **dev**
   branch. `db:migrate:prod` writes to the live database.
 - `npm run db:generate` — generate a versioned SQL migration from schema changes.
