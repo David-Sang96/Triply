@@ -181,11 +181,13 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 - [x] Internal-distribution APK, installed and verified on a real device
 - [x] Over-the-air updates *(`expo-updates`, fingerprint runtime policy, one
       channel per build profile)*
-- [ ] **A support email that exists.** The app and legal site tell users to
-      write to `support@triply.app` and `privacy@triply.app`; neither mailbox
-      does. The privacy policy promises that address for deletion requests, so
-      this is a broken promise to anyone who installs today, not only a Play
-      requirement. 22 references across 8 files.
+- [x] **A support email that exists** — `luainawl@gmail.com`, one address for
+      both support and privacy, across the two app screens and the six legal
+      pages. It was `support@triply.app` / `privacy@triply.app`, on a domain
+      that was never registered, so every one of those addresses bounced while
+      the privacy policy promised them for deletion requests.
+      **The legal site still needs `npx wrangler deploy` from `legal/` for the
+      web pages to show the new address.**
 - [ ] Clerk **production** instance *(needs a domain; re-check that password
       sign-in is enabled, it is off in Clerk's defaults)*
 - [ ] Replace the iOS icon *(`app.json` → `ios.icon` is still the Expo default)*

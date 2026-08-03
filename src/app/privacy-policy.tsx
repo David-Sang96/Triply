@@ -43,7 +43,7 @@ export default function PrivacyPolicyScreen() {
         },
         {
           heading: "Contact",
-          body: ["Questions about this policy: privacy@triply.app."],
+          body: ["Questions about this policy: luainawl@gmail.com."],
         },
       ]}
     />

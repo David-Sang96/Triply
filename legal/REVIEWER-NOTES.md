@@ -17,7 +17,7 @@ Decided by the developer and written into both documents:
 
 | Item | Decision |
 |---|---|
-| Contact domain | `triply.app` — `privacy@triply.app` and `support@triply.app`, matching `src/app/privacy-policy.tsx:43` and `src/app/help-center.tsx:38`. The landing page's `support@triply.com`, which came from the design mock, was corrected. |
+| Contact address | `luainawl@gmail.com`, one address for both support and privacy. Previously `privacy@triply.app` / `support@triply.app`, but `triply.app` was never registered, so every address on it bounced. A working inbox matters here: the privacy policy commits to handling deletion requests sent to it, and Google Play rejects a listing whose support email does not receive mail. |
 | Publisher | An individual developer, not a company. |
 | Governing law | Singapore, with exclusive jurisdiction in the Singapore courts, subject to consumer-law rights to sue locally. |
 | Minimum age | 18+. |
@@ -164,7 +164,7 @@ there are no cookies.
 The in-app screens duplicate parts of this content and will drift:
 
 - `src/app/privacy-policy.tsx` — a short summary, subtitled "Draft — pending
-  legal review". Its contact address already matches (`privacy@triply.app`).
+  legal review". Its contact address already matches (`luainawl@gmail.com`).
   Consider replacing the body with a link to `https://[DOMAIN]/privacy` once
   these pages are live, so there is one source of truth.
 - `src/app/about.tsx` — carries the OpenStreetMap and Unsplash attributions that
