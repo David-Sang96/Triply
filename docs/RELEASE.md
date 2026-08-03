@@ -360,6 +360,36 @@ resets. Organisation accounts are exempt. Budget 3–4 extra weeks.
 
 ---
 
+## Known limits
+
+**Cloudflare subrequests.** A Worker invocation may only make so many outbound
+requests, and with the `neon-http` driver **every database query counts as
+one**, not just `fetch` calls. On 3 Aug the deployment logged a burst of:
+
+```
+Too many subrequests by single Worker invocation.
+```
+
+followed each time by an SDK message about "a custom fetch implementation",
+which is the follow-on complaint from whichever client had its request
+rejected — not a separate problem.
+
+Nothing failed. Inngest retries a failed step, the retry succeeded, and
+**Inngest → Runs showed zero failed runs**, which is why no trip or sign-up was
+affected. The source was never identified: `generateTrip` runs each geocode as
+its own step, `geocodePlace` makes three subrequests, and `finalize` writes
+with a single `db.batch([...])` — none of them come close to the cap on their
+own.
+
+Where it would bite first, if it returns: a trip long enough that one step does
+many queries, or `syncUserDeleted`, whose `delete-uploaded-covers` step loops
+over ImageKit deletions inside a single `step.run`
+(`src/server/inngest/functions.ts:137`) — one subrequest per uploaded cover.
+
+If it recurs and a run actually fails, check **Inngest → Runs** first: the
+failing step names the code. The fix is to split that step's work into several
+`step.run` calls, since each one is a fresh invocation with a fresh budget.
+
 ## Release checklist
 
 - [ ] `npm run lint` passes
