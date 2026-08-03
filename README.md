@@ -135,8 +135,7 @@ Play requirements, and the known limits.
 ## Contributing
 
 There is no test framework yet, so `npx tsc --noEmit` and `npm run lint` are
-the gate. Pull requests are reviewed by Gemini Code Assist against
-[`.gemini/styleguide.md`](.gemini/styleguide.md).
+the gate. Both must pass before a pull request is opened.
 
 [`AGENTS.md`](AGENTS.md) holds the non-negotiable rules — Workers-compatible
 server code, native tabs, NativeWind over `StyleSheet`, and what may go into
