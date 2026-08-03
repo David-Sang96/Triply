@@ -287,9 +287,36 @@ native package.
 
 `runtimeVersion` uses the `fingerprint` policy, which hashes the native project
 state. An update is only offered to a build whose fingerprint matches, so a
-JS bundle can never land on a binary whose native code it does not fit. When
-you change something native, the fingerprint moves and `eas update` simply
-stops reaching the old builds — it fails safe rather than shipping a crash.
+JS bundle can never land on a binary whose native code it does not fit.
+
+**This is stricter than "did I touch native code".** The fingerprint includes
+`package.json`, so **adding or upgrading any dependency ends over-the-air
+delivery to every existing install** — even a pure-JavaScript package. It
+happened on 3 Aug: `zod` was declared as a direct dependency the same day the
+build was made, and the next `eas update` published against a fingerprint the
+installed APK did not have. The update succeeded, and reached nobody.
+
+`eas update` reaches an installed app only while all of these are unchanged
+since it was built:
+
+- `package.json` dependencies
+- `app.json` native config — icons, splash, permissions, `userInterfaceStyle`
+- config plugins and native packages
+
+Change any of them and you need a build. Everything else — screens, components,
+logic, copy — goes over the air.
+
+Check before you rely on it. This compares what an update would target against
+what a build actually has:
+
+```powershell
+npx expo-updates fingerprint:generate --platform android   # local
+eas build:view <build-id>                                  # "Runtime Version"
+```
+
+If those differ, the update will publish and silently reach nobody. It fails
+safe — it never ships a mismatched bundle — but "safe" and "delivered" are not
+the same thing.
 
 **Server code is separate again.** API routes under `src/app/**/*+api.ts` are
 neither an update nor a build; they ship with `eas deploy` (step 5).
