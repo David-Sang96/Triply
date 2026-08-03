@@ -25,8 +25,8 @@ Both routes need the same groundwork, so do "Groundwork" once.
   it over `EXPO_PUBLIC_API_URL` (`src/lib/api.ts`).
 - `.env` / `.env.local` are for local development only. Release builds and the
   hosted backend read variables from **EAS**, not from those files.
-- `expo-updates` is not installed, so there are no over-the-air updates. Every
-  change needs a new build.
+- **JavaScript-only changes ship over the air**, without a rebuild — see
+  "Shipping a JS-only change" below. Native changes still need a build.
 
 ---
 
@@ -266,6 +266,41 @@ npm run db:migrate
 
 Run this with the **production** `DATABASE_URL`. Migrations alter tables, so
 existing rows survive. Never use `db:push` here — it wipes data.
+
+---
+
+## Shipping a JS-only change
+
+`expo-updates` is installed and each build profile publishes to a channel of
+the same name (`eas.json`). So a change that touches only JavaScript — screens,
+components, most logic — reaches installed apps in seconds:
+
+```powershell
+eas update --channel preview --message "what changed"
+```
+
+Testers get it the next time they open the app. No rebuild, no reinstall.
+
+**What still needs a build.** Anything native: `app.json` (icons, splash,
+permissions, `userInterfaceStyle`), config plugins, and any added or upgraded
+native package.
+
+`runtimeVersion` uses the `fingerprint` policy, which hashes the native project
+state. An update is only offered to a build whose fingerprint matches, so a
+JS bundle can never land on a binary whose native code it does not fit. When
+you change something native, the fingerprint moves and `eas update` simply
+stops reaching the old builds — it fails safe rather than shipping a crash.
+
+**Server code is separate again.** API routes under `src/app/**/*+api.ts` are
+neither an update nor a build; they ship with `eas deploy` (step 5).
+
+Three ways to ship, then:
+
+| Changed | Command | Reaches users |
+| ------- | ------- | ------------- |
+| API routes, `src/server/**` | `eas deploy --environment production --prod` | immediately |
+| Screens, components, TS logic | `eas update --channel preview` | on next app open |
+| `app.json`, plugins, native deps | `eas build` + install | after they install |
 
 ---
 
