@@ -92,6 +92,12 @@ export default function SignIn() {
   const [resending, setResending] = useState(false);
   const codeRef = useRef<TextInput>(null);
 
+  // Which verification Clerk asked for. Client Trust reports
+  // `needs_client_trust` and offers `email_code` as a *second* factor, so it
+  // needs prepare/attemptSecondFactor; a plain `needs_first_factor` needs the
+  // first-factor pair. The screens are identical, only the calls differ.
+  const [codeFactor, setCodeFactor] = useState<"first" | "second">("second");
+
   // Errors derived live from current values; shown once touched or submitted.
   const allErrors = fieldRules({ email: emailAddress, password });
   const touch = (k: keyof FieldErrors) => setTouched((t) => ({ ...t, [k]: true }));
@@ -118,15 +124,35 @@ export default function SignIn() {
 
 
       // Untrusted device: Clerk withholds the session until an emailed code is
-      // verified. Send it and move to the code step.
-      const emailFactor = attempt.supportedFirstFactors?.find(
+      // verified. It reports this as `needs_client_trust` — not
+      // `needs_first_factor` — and offers email_code among the *second*
+      // factors, which is what the observed event carried:
+      //   status: needs_client_trust, secondFactors: ["email_code"]
+      const hasEmailSecondFactor = attempt.supportedSecondFactors?.some(
         (factor) => factor.strategy === "email_code",
       );
-      if (attempt.status === "needs_first_factor" && emailFactor) {
+      if (
+        (attempt.status === "needs_client_trust" ||
+          attempt.status === "needs_second_factor") &&
+        hasEmailSecondFactor
+      ) {
+        await signIn.prepareSecondFactor({ strategy: "email_code" });
+        setCodeFactor("second");
+        setCode("");
+        setStep("code");
+        return;
+      }
+
+      // Instances configured to verify by email as a first factor instead.
+      const emailFirstFactor = attempt.supportedFirstFactors?.find(
+        (factor) => factor.strategy === "email_code",
+      );
+      if (attempt.status === "needs_first_factor" && emailFirstFactor) {
         await signIn.prepareFirstFactor({
           strategy: "email_code",
-          emailAddressId: emailFactor.emailAddressId,
+          emailAddressId: emailFirstFactor.emailAddressId,
         });
+        setCodeFactor("first");
         setCode("");
         setStep("code");
         return;
@@ -163,10 +189,10 @@ export default function SignIn() {
     setFormError(null);
     setBusy(true);
     try {
-      const attempt = await signIn.attemptFirstFactor({
-        strategy: "email_code",
-        code,
-      });
+      const attempt =
+        codeFactor === "second"
+          ? await signIn.attemptSecondFactor({ strategy: "email_code", code })
+          : await signIn.attemptFirstFactor({ strategy: "email_code", code });
       if (attempt.status === "complete") {
         await setActive({ session: attempt.createdSessionId });
         router.replace("/");
@@ -197,14 +223,18 @@ export default function SignIn() {
     setFormError(null);
     setResending(true);
     try {
-      const emailFactor = signIn.supportedFirstFactors?.find(
-        (factor) => factor.strategy === "email_code",
-      );
-      if (!emailFactor) return;
-      await signIn.prepareFirstFactor({
-        strategy: "email_code",
-        emailAddressId: emailFactor.emailAddressId,
-      });
+      if (codeFactor === "second") {
+        await signIn.prepareSecondFactor({ strategy: "email_code" });
+      } else {
+        const emailFactor = signIn.supportedFirstFactors?.find(
+          (factor) => factor.strategy === "email_code",
+        );
+        if (!emailFactor) return;
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: emailFactor.emailAddressId,
+        });
+      }
       // Only clear the box once a new code is actually on its way.
       setCode("");
     } catch (err) {
