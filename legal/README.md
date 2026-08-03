@@ -117,7 +117,7 @@ screenshots and re-run to refresh the `.webp` files.
 - **Retake the screenshots without the debug button.** The floating grey gear
   (the dev settings button) is visible in the current app screenshots.
 
-Contact address is settled: `luainawl@gmail.com` for both support and privacy,
+Contact address is settled: `tyee834@gmail.com` for both support and privacy,
 matching `src/app/privacy-policy.tsx` and `src/app/help-center.tsx`. It was
 `privacy@triply.app` / `support@triply.app` until 3 Aug 2026 — that domain was
 never owned, so both mailboxes bounced and the deletion promise in the privacy

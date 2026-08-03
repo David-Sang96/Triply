@@ -37,9 +37,12 @@ this file drifted badly once by ticking boxes on code that had never run.
 - [x] Create **Inngest** account → `INNGEST_EVENT_KEY` + `INNGEST_SIGNING_KEY`
 - [x] Create **Sentry** account → DSN
 - [x] Create **Expo / EAS** account *(`@david_sang/TRIPLY`)*
-- [ ] Create **Google Cloud** project → OAuth client IDs for native Google sign-in
-      *(Not needed: Google sign-in uses Clerk **browser SSO**, which only needs
-      the provider enabled in the Clerk Dashboard.)*
+- [~] Create **Google Cloud** project → OAuth client ID
+      *(Not needed in development — Clerk supplies shared credentials there. But
+      **production instances require your own**, browser SSO or not: Clerk shows
+      "Setup required" until a Client ID and Secret are added. Project `Triply`
+      (`triply-504414`) created 3 Aug; consent screen and client still to do.
+      Redirect URI: `https://clerk.triply.davidsang.dev/v1/oauth_callback`.)*
 - [x] Decide the geocoder `User-Agent` contact string
 - [x] Set env strategy: client keys use `EXPO_PUBLIC_`; server keys are
       **sensitive**, never **secret**
@@ -183,7 +186,7 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 - [x] Internal-distribution APK, installed and verified on a real device
 - [x] Over-the-air updates *(`expo-updates`, fingerprint runtime policy, one
       channel per build profile)*
-- [x] **A support email that exists** — `luainawl@gmail.com`, one address for
+- [x] **A support email that exists** — `tyee834@gmail.com`, one address for
       both support and privacy, across the two app screens and the six legal
       pages. It was `support@triply.app` / `privacy@triply.app`, on a domain
       that was never registered, so every one of those addresses bounced while
