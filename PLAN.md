@@ -2,20 +2,23 @@
 
 Living task tracker for the v1 build. Full rationale and architecture live in
 [`_plans/triply-implementation-plan.md`](_plans/triply-implementation-plan.md).
+Deployment and store submission live in [`docs/RELEASE.md`](docs/RELEASE.md).
 
-**How to use:** mark a box `[x]` when a task is done and verified. Work phases
-in order — each phase depends on the ones before it.
+**How to use:** mark a box `[x]` when a task is done **and verified**. `[ ]`
+means "not proven", even if the code looks present — the difference matters, and
+this file drifted badly once by ticking boxes on code that had never run.
 
 **Legend:** `[ ]` todo · `[x]` done · `[~]` in progress · `[!]` blocked
 
-**Progress:** Phase 0 ◐ · 1 ◐ · 2 ◐ · 3 ◐ · 4 ▢ · 5 ▢ · 6 ◐ · 7 ◐
+**Progress:** Phase 0 ● · 1 ● · 2 ● · 3 ● · 4 ● · 5 ● · 6 ● · 7 ◐ · 8 ▢
 
-> `◐` = partly done. Auth is now wired end-to-end for the user lifecycle: the
-> Clerk webhook + Inngest jobs sync user **created / updated / deleted** into the
-> Neon `users` table (see `_plans/auth-to-neon-flow.md`). The database client and
-> the Inngest serve route were built as part of this, which is why Phases 1, 2,
-> and 6 are partly done. Still open in Phase 3: protecting the trip API routes
-> with `authenticateRequest()`.
+> `●` = done · `◐` = partly done · `▢` = not started
+>
+> **3 Aug 2026:** the app was built, deployed and run end-to-end on a real
+> Android device for the first time. Sign-up, trip generation with geocoded
+> places and photos, the assistant, and custom cover upload all work in
+> production. Phases 0–6 are closed. What remains is Phase 7 polish and Phase 8,
+> the store submission.
 
 ---
 
@@ -23,154 +26,186 @@ in order — each phase depends on the ones before it.
 
 > These are the user's accounts (billing is theirs). All on free tiers, no card.
 
-- [x] Create **Clerk** account → get Publishable key, Secret key, Webhook signing secret
-      *(Publishable key is wired via `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`; Secret
-      key + Webhook secret not needed until the backend exists — Phase 1/3.)*
-- [x] Create **Neon** account → get `DATABASE_URL` (HTTP connection string)
-      *(wired in `.env`; verified working — the user-sync insert writes rows.)*
-- [ ] Create **Google AI Studio** key → `GEMINI_API_KEY`
-- [ ] Create **Pexels** account → `PEXELS_API_KEY`
-- [ ] Create **ImageKit** account → URL endpoint + public/private keys
-- [ ] Create **Inngest** account → `INNGEST_EVENT_KEY` + `INNGEST_SIGNING_KEY`
+- [x] Create **Clerk** account → Publishable key, Secret key, Webhook signing secret
+- [x] Create **Neon** account → `DATABASE_URL` (HTTP connection string)
+- [x] Create **Google AI Studio** key → `GEMINI_API_KEY`
+- [x] Create an image-search account → **Unsplash**, not Pexels
+      *(`UNSPLASH_ACCESS_KEY`. Still on the **Demo** tier: 50 requests/hour.
+      Production access must be applied for before a public launch.)*
+- [x] Create **ImageKit** account → URL endpoint + public/private keys
+      *(only `IMAGEKIT_PRIVATE_KEY` is read by code; the other two are unused.)*
+- [x] Create **Inngest** account → `INNGEST_EVENT_KEY` + `INNGEST_SIGNING_KEY`
 - [x] Create **Sentry** account → DSN
-      *(DSN wired via `EXPO_PUBLIC_SENTRY_DSN`; Sentry installed and initialized
-      in `src/app/_layout.tsx`.)*
-- [ ] Create **Expo / EAS** account
-- [ ] Create **Google Cloud** project → OAuth 2.0 client IDs (Android, iOS, Web) for Clerk Google sign-in
-      *(Not needed for the current approach: Google sign-in uses Clerk **browser
-      SSO**, which only needs the provider enabled in the Clerk Dashboard. Revisit
-      only if native Google sign-in is wanted later.)*
-- [ ] Decide the **Nominatim `User-Agent`** contact string (e.g. `Triply/1.0 (email)`)
-- [ ] Set env strategy: client keys use `EXPO_PUBLIC_` prefix; server keys marked **sensitive** (not "secret") in EAS
+- [x] Create **Expo / EAS** account *(`@david_sang/TRIPLY`)*
+- [ ] Create **Google Cloud** project → OAuth client IDs for native Google sign-in
+      *(Not needed: Google sign-in uses Clerk **browser SSO**, which only needs
+      the provider enabled in the Clerk Dashboard.)*
+- [x] Decide the geocoder `User-Agent` contact string
+- [x] Set env strategy: client keys use `EXPO_PUBLIC_`; server keys are
+      **sensitive**, never **secret**
+      *(EAS Hosting cannot read `secret`-visibility variables — a deployment
+      using one starts with no database. Verified 3 Aug: every server secret is
+      masked, and the only plain-text values are public by design.)*
 
 ## Phase 1 — Backend Scaffold
 
 - [x] Change `app.json` → `web.output` from `"static"` to `"server"`
-- [ ] Create `eas.json` (EAS Build + Hosting config)
+- [x] Create `eas.json` (EAS Build + Hosting config)
 - [ ] Create `src/app/api/health+api.ts` returning `{ ok: true }`
-- [ ] Run `npx expo export --platform web`
-- [ ] Run `npx eas deploy` (get the `*.expo.app` URL)
-- [ ] **Verify:** `GET /api/health` responds on the deployed URL
+      *(never built, and no longer needed — the real routes are verified in
+      production.)*
+- [x] Run `npx expo export --platform web`
+- [x] Run `eas deploy` → **`https://triply-app.expo.app`**
+- [x] **Verify:** deployed routes respond *(clean 401 JSON on `/api/trips` and
+      `/api/destinations` without a token; authenticated calls work from the app.)*
 
 ## Phase 2 — Database (Neon + Drizzle)
 
 - [x] Install `drizzle-orm`, `@neondatabase/serverless`, `drizzle-kit`
 - [x] Create `src/server/db/index.ts` (neon-http client)
-- [x] Create `drizzle.config.ts` (drizzle-kit, loads `DATABASE_URL` via dotenv)
-- [~] Create `src/server/db/schema.ts`:
-  - [x] `users` table (`id`, `email`, `name`, `image_url`, `created_at`, `updated_at`)
-  - [ ] `trips` table (incl. `status`, `counts_against_cap`, `error_message`)
-  - [ ] `days` table (unique `trip_id, day_number`)
-  - [ ] `activities` table (place fields + `place_verified`)
-  - [ ] `place_cache` table (Nominatim cache)
-- [x] Run migration against Neon *(schema now managed by versioned migrations:
-      `db:generate` → `db:migrate`; adopt on an existing DB with `db:baseline`.
-      `db:push` is legacy/throwaway-only since it wipes data.)*
-- [x] **Verify:** neon-http write works *(the user-sync Inngest job inserts a row —
-      done in place of a `select 1` health route, which does not exist yet)*
+- [x] Create `drizzle.config.ts`
+- [x] Create `src/server/db/schema.ts` — `users`, `trips`, `days`, `activities`,
+      `chat_conversations`, `chat_messages`, `place_cache`, `destinations`
+- [x] Run migrations against Neon *(versioned: `db:generate` → `db:migrate`.
+      `db:push` is legacy — it wipes data.)*
+- [x] **Verify:** 10 of 10 migrations applied, connection healthy
+      *(`npm run db:check` — added 3 Aug, read-only.)*
 
 ## Phase 3 — Auth (Clerk — Google + Email)
 
-> Scope grew beyond "Google only": email/password sign-up (with email-code
-> verification) and sign-in are now built too. Client-side auth is done; the
-> backend items below wait on Phase 1 (no server exists yet).
+**Client**
 
-**Client (done)**
-
-- [x] Confirm `@clerk/expo` supports **Expo SDK 57**, then install + pin it (`@clerk/expo` ^3.7.8)
-- [x] Install `expo-secure-store`
-- [x] Wrap app in `ClerkProvider` (token cache) in `src/app/_layout.tsx`
-- [x] Create an **Android development build** (`npx expo run:android`)
-- [x] Enable **Google** in Clerk Dashboard → Social connections; sign in via
-      **browser SSO** (`useSSO` → `oauth_google`) with the `sso-callback`
-      deep-link route (`src/components/SocialAuthButtons.tsx`,
-      `src/app/sso-callback.tsx`)
-- [x] **Verify:** Google sign-in works on the Android dev build
-- [x] Build **email/password sign-up** with email-code verification (`src/app/(auth)/sign-up.tsx`)
-- [x] Build **email/password sign-in** (`src/app/(auth)/sign-in.tsx`)
-- [x] Build auth screens — welcome, sign-in, sign-up, verify — plus shared
-      `AuthField` and `SocialAuthButtons` components, with field validation and
-      an error boundary that hides details in release builds
-- [x] Guard routes: `(auth)/_layout.tsx` redirects signed-in users to `/`;
-      `src/app/index.tsx` redirects signed-out users to `/welcome`
-- [ ] Apple sign-in — placeholder only (needs an Apple Developer account); intentionally deferred
+- [x] Pin `@clerk/expo` for Expo SDK 57 (`^3.7.8`)
+- [x] Install `expo-secure-store`; `ClerkProvider` with token cache
+- [x] Android development build
+- [x] Google sign-in via browser SSO (`useSSO` → `oauth_google`) + `sso-callback`
+- [x] **Verify:** Google sign-in works on a real device
+- [x] Email/password sign-up with email-code verification
+- [x] Email/password sign-in
+- [x] Handle Clerk's **Client Trust** challenge — a device Clerk has not seen is
+      untrusted for password sign-ins, and the sign-in screen now sends and
+      verifies an emailed code (`needs_client_trust` → `prepareSecondFactor`)
+- [x] Auth screens, shared `AuthField` / `SocialAuthButtons`, error boundaries
+- [x] Route guards: `(auth)/_layout.tsx` and `src/app/index.tsx`
+- [ ] Apple sign-in — placeholder only, needs an Apple Developer account
 
 **Backend**
 
 - [x] Install `@clerk/backend`
-- [x] Create `src/app/api/webhooks/clerk+api.ts` — verify with `verifyWebhook`
-      (svix), then enqueue an Inngest event for **`user.created` / `user.updated`
-      / `user.deleted`**
-- [x] Build the Inngest user-sync jobs (`src/server/inngest/functions.ts`):
-  - [x] `syncUserCreated` — insert (idempotent, `onConflictDoNothing`)
-  - [x] `syncUserUpdated` — upsert the latest email/name/image, bump `updated_at`
-  - [x] `syncUserDeleted` — delete the row
-- [x] **Verify:** the user-sync pipeline writes to Neon *(confirmed via an Inngest
-      test event; ngrok + Clerk webhook wired for real sign-ups)*
-- [ ] Protect the trip API routes with `authenticateRequest()` *(deferred to
-      Phase 5, when the trip routes exist)*
+- [x] `src/app/api/webhooks/clerk+api.ts` — `verifyWebhook`, then enqueue an
+      Inngest event for `user.created` / `updated` / `deleted`
+- [x] Inngest user-sync jobs: `syncUserCreated`, `syncUserUpdated`, `syncUserDeleted`
+- [x] **Verify:** a real sign-up writes to Neon in production
+      *(Clerk → deployed webhook → Inngest Cloud → row inserted.)*
+- [x] Protect the API routes *(`getUserId` in `src/server/auth.ts` verifies the
+      bearer token with `verifyToken`; every route calls it. `authorizedParties`
+      is applied only when the token carries an `azp` claim — native tokens do
+      not, and passing it unconditionally rejects every request from the app.)*
+- [x] Back-fill the `users` row on demand *(`src/server/users.ts` — the webhook
+      is asynchronous, and `trips.user_id` is a NOT NULL foreign key to it.)*
 
-## Phase 4 — Screens with Mock Data
+## Phase 4 — Screens
 
-- [ ] Install `@tanstack/react-query`; add Query provider to `_layout.tsx`
-- [ ] Create `apiFetch` helper that injects `Authorization: Bearer <token>`
-- [ ] Build **Home** screen (past-trip cards + empty state + "Generate a trip" button)
-- [ ] Build **Generate form** (destination, #days 1–7, #travelers, budget level, interests)
-- [ ] Build **Trip detail** screen (overview, cover, days, activities)
-- [ ] Build **Loading** screen
-- [ ] **Verify:** screens render against seeded/mock data
+- [x] `@tanstack/react-query` + Query provider
+- [x] `apiFetch` helper injecting `Authorization: Bearer <token>` (`src/lib/api.ts`)
+- [x] **Home** screen — hero carousel, trip cards, destinations, empty states
+- [x] **Generate form** — destination, days, travellers, budget, interests, pace
+- [x] **Trip detail** — photo carousel, map, days, activities, custom cover
+- [x] **Loading** screen driven by generation status
+- [x] Assistant, profile, destinations list and detail screens
+- [x] **Verify:** every screen renders against real data on a device
 
-## Phase 5 — CRUD Without AI
+## Phase 5 — Trip CRUD
 
-- [ ] `POST /trips` — cap check (max 5) + insert `status='ready'` with hardcoded content
-- [ ] `GET /trips` — list current user's trips
-- [ ] `GET /trips/:id` — full trip (days + activities)
-- [ ] `DELETE /trips/:id`
-- [ ] `GET /trips/:id/status` — polling target
-- [ ] **Verify:** full navigation loop works end-to-end with fake generation
-- [ ] **Verify:** 6th trip is rejected with a friendly "limit reached" message
+- [x] `POST /trips` — 5-trip cap enforced in a single statement, so two
+      concurrent requests cannot both pass the check
+- [x] `GET /trips`, `GET /trips/:id`, `DELETE /trips/:id`, `GET /trips/:id/status`
+- [x] `POST /trips/:id/cover` — custom cover upload, validated by magic-number
+      check on the file's bytes rather than a client-supplied MIME type
+- [x] **Verify:** full navigation loop works end-to-end in production
+- [ ] **Verify:** the 6th trip is rejected with a friendly "limit reached"
+      message *(code is in place; never exercised)*
 
 ## Phase 6 — Generation Pipeline (Inngest + AI)
 
-- [x] Install `inngest` *(done for user-sync; `@google/genai` + `zod` still pending)*
-- [ ] Install `@google/genai`, `zod`
-- [x] Create `src/server/inngest/client.ts` *(dev mode via `INNGEST_DEV=1`)*
-- [x] Create `src/app/api/inngest+api.ts` (`inngest/edge` serve; GET/POST/PUT)
-- [ ] Sync the app URL in Inngest Cloud *(prod only; dev syncs to the local Inngest dev server)*
-- [ ] Switch `POST /trips` to insert `status='queued'` + `inngest.send('trip/requested')`
-- [ ] Build `generateTrip` in `src/server/inngest/functions.ts`:
-  - [ ] Step: set `status='generating'`
-  - [ ] Step: Gemini structured JSON output (no personal data in prompt) + Zod validation + clamp days ≤ 7
-  - [ ] Step: Nominatim enrichment — cache lookup, ≤1 req/s throttle, custom `User-Agent`, set lat/lng/`place_verified`
-  - [ ] Step: Pexels image search by destination/city
-  - [ ] Step: ImageKit URL transform → `cover_image_url`
-  - [ ] Step: persist days + activities, set `status='ready'`
-  - [ ] `onFailure`: set `status='failed'`, friendly `error_message`, `counts_against_cap=false`
-- [ ] Add retry path (re-send event / reset to `queued`) for the Retry button
-- [ ] **Verify (happy path):** submit form → poll → redirect to detail with verified places
-- [ ] **Verify (failure):** forced error → retries → `status='failed'` → error + Retry, and failure excluded from cap
-- [ ] **Verify (privacy):** Gemini request payload contains no name/email/Clerk id
+- [x] Install `inngest`, `@google/genai`, `zod`
+      *(`zod` was only declared as a direct dependency on 3 Aug — before that it
+      resolved by accident through a Clerk transitive dependency.)*
+- [x] `src/server/inngest/client.ts` — `isDev` decided by `NODE_ENV`, not by the
+      `INNGEST_DEV` flag alone, which does reach deployments and silently
+      pointed the client at localhost
+- [x] `src/app/api/inngest+api.ts` (`inngest/edge` serve)
+- [x] Sync the app URL in Inngest Cloud *(5 functions registered)*
+- [x] `POST /trips` inserts `status='queued'` + sends `trip/requested`
+- [x] Build `generateTrip`:
+  - [x] set `status='generating'`
+  - [x] Gemini structured JSON + Zod validation, days clamped ≤ 7
+  - [x] Geocoding — cache lookup, 1 req/s throttle, contact `User-Agent`,
+        sets lat/lng/`place_verified` *(Photon, not Nominatim)*
+  - [x] Image search by destination *(Unsplash, with a fallback ladder: the
+        phrase, the bare destination, then the broadest part of the name — a
+        single query left trips with no cover at all)*
+  - [x] persist days + activities in one `db.batch`, set `status='ready'`
+  - [x] `onFailure`: `status='failed'` + friendly `error_message`
+- [ ] Add a retry path for the Retry button *(re-send the event / reset to
+      `queued`)*
+- [x] **Verify (happy path):** form → poll → detail screen with geocoded places
+      and a cover photo, in production
+- [ ] **Verify (failure):** forced error → retries → `failed` → Retry works, and
+      the failure is excluded from the cap
+- [ ] **Verify (privacy):** the Gemini request payload carries no name, email or
+      Clerk id
 
 ## Phase 7 — Monitoring & Polish
 
-- [~] Install + configure **Sentry** (app crashes + API route errors)
-      *(installed; `Sentry.init` + `Sentry.wrap` in `_layout.tsx`, and auth
-      screens report errors via an ErrorBoundary → Sentry. **App-crash reporting
-      done**; API-route error capture not wired yet.)*
+- [x] Install + configure **Sentry** — app crashes, `Sentry.wrap`, route-level
+      error boundaries, `gen_ai.*` spans for the assistant
+- [x] **Verify:** a triggered warning reaches Sentry with usable context
+      *(the sign-in diagnostic did exactly this and identified
+      `needs_client_trust`, which no amount of reading the code had.)*
+- [ ] Capture API-route errors in Sentry *(routes currently `console.error`,
+      which reaches the EAS Hosting log but not Sentry)*
 - [ ] Add a manual Sentry capture on failed generations
-- [ ] Tune polling interval (3–5s) and hard-stop on terminal status
-- [ ] Add **OpenStreetMap** + **Pexels** attribution in the UI
-- [ ] Review request / CPU usage in the EAS Hosting dashboard
-- [ ] **Verify:** a triggered error appears in Sentry
+- [ ] Tune the polling interval (3–5s) and hard-stop on a terminal status
+- [x] **Unsplash** attribution in the UI *(photographer + Unsplash link per
+        photo, and the download-tracking ping, as their terms require)*
+- [ ] **OpenStreetMap / Photon** attribution in the UI
+- [x] Review request usage in the EAS Hosting dashboard
+- [ ] Apply for Unsplash **production** access (50 req/hour on Demo)
+
+## Phase 8 — Release
+
+See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
+
+- [x] `eas.json` build profiles; Android keystore generated and stored by EAS
+- [x] Internal-distribution APK, installed and verified on a real device
+- [x] Over-the-air updates *(`expo-updates`, fingerprint runtime policy, one
+      channel per build profile)*
+- [ ] **A support email that exists.** The app and legal site tell users to
+      write to `support@triply.app` and `privacy@triply.app`; neither mailbox
+      does. The privacy policy promises that address for deletion requests, so
+      this is a broken promise to anyone who installs today, not only a Play
+      requirement. 22 references across 8 files.
+- [ ] Clerk **production** instance *(needs a domain; re-check that password
+      sign-in is enabled, it is off in Clerk's defaults)*
+- [ ] Replace the iOS icon *(`app.json` → `ios.icon` is still the Expo default)*
+- [ ] Play Console account, store listing assets, data safety + content rating
+- [ ] Closed test: 12 testers opted in for 14 continuous days
+- [ ] Back up the Android keystore *(`eas credentials` — losing it means the app
+      can never be updated on Play)*
 
 ---
 
-## Cross-cutting reminders (from the plan's Open Risks)
+## Cross-cutting reminders
 
-- [ ] Run `db:generate`/`db:migrate` for the custom trip cover columns added on
-      `feat/trip-custom-cover-image` (`customCoverImageUrl`, `useCustomCover`
-      on `trips`) before that branch is used against the live database
-- [ ] Confirm every server dependency is edge/web-standard (Cloudflare Workers, not Node)
-- [x] Pin the confirmed `@clerk/expo` version (`^3.7.8`, Expo SDK 57)
-- [ ] Always `JSON.parse` Gemini output in try/catch + Zod validate
-- [ ] Keep Nominatim usage within policy (light use only)
+- [x] Server dependencies are edge/web-standard (Cloudflare Workers, not Node)
+      *(verified by the deployment running)*
+- [x] Pin `@clerk/expo` (`^3.7.8`, Expo SDK 57)
+- [x] Gemini output is `JSON.parse`d in a try/catch and Zod-validated
+- [x] Custom trip cover columns migrated *(`customCoverImageUrl`,
+      `useCustomCover` — 10/10 migrations applied)*
+- [x] Geocoder usage within policy *(1 req/s throttle + cache table)*
+- [ ] No test framework — `npx tsc --noEmit` and `npm run lint` are the only gate
+- [ ] Cloudflare **subrequest limit** watch — every `neon-http` query counts as
+      one. Seen once on 3 Aug with no failures; see "Known limits" in
+      `docs/RELEASE.md`.
