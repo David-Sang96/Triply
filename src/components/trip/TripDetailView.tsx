@@ -300,7 +300,15 @@ export function TripDetailView({
       // unreliable on newer React Native versions and silently fails to
       // send the request at all instead of throwing a clear error.
       const fileResponse = await fetch(compressed.uri);
-      const blob = await fileResponse.blob();
+
+      // React Native does not set a MIME type on a Blob read from a file://
+      // URI, so the multipart part reached the server with an empty content
+      // type and POST /trips/:id/cover rejected it with "File must be an
+      // image". manipulateAsync above always writes JPEG, so say so rather
+      // than trusting the platform to infer it.
+      const blob = new Blob([await fileResponse.blob()], {
+        type: "image/jpeg",
+      });
 
       formData = new FormData();
       formData.append("file", blob, "cover.jpg");

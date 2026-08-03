@@ -1,0 +1,59 @@
+# Files excluded from the tarball uploaded to EAS Build.
+#
+# IMPORTANT: when this file exists, EAS uses it INSTEAD of .gitignore — not in
+# addition to it. So everything .gitignore excludes has to be repeated here, or
+# it gets uploaded. In particular /android and /ios: leaving them in would make
+# EAS build the stale local native project instead of running prebuild from
+# app.json, which would ship the old `com.david_sang.TRIPLY` package name.
+
+# --- mirrors .gitignore ---
+node_modules/
+
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+.metro-health-check*
+.wrangler/
+
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+.DS_Store
+*.pem
+
+.env
+.env.*
+!.env.example
+
+*.tsbuildinfo
+
+# Generated native folders — EAS runs prebuild from app.json instead.
+/ios
+/android
+
+# --- EAS-only exclusions ---
+
+# Agent configuration. `.claude/skills/clerk` is a symlink, and the upload step
+# fails with EPERM on Windows because it cannot recreate symlinks without
+# Developer Mode enabled. None of this is app code.
+.agents/
+.claude/
+.github/
+
+# Documentation, design references and the separate legal site. Not part of the
+# app bundle, and design/ in particular is heavy PNGs.
+_plans/
+docs/
+design/
+legal/

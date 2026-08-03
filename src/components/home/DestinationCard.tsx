@@ -22,7 +22,12 @@ export function DestinationCard({
   return (
     <Pressable
       onPress={onPress}
-      className={`overflow-hidden rounded-2xl active:opacity-90 ${
+      // bg-line is the placeholder the card sits on until its photo arrives.
+      // Without it an unloaded card is transparent, which reads as a blank white
+      // gap — very visible on the two-column all-destinations grid, where
+      // FlatList windowing mounts a fresh row's images only as you reach it.
+      // The photo fades in over this via `transition` below.
+      className={`overflow-hidden rounded-2xl bg-line active:opacity-90 ${
         full ? "h-[200px] w-full" : "h-[172px] w-[132px]"
       }`}
     >

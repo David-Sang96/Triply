@@ -5,6 +5,7 @@ import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { budgetLevel, trips } from "@/server/db/schema";
 import { inngest } from "@/server/inngest/client";
+import { ensureUser, userSyncUnavailable } from "@/server/users";
 
 const MAX_TRIPS = 5;
 
@@ -65,6 +66,11 @@ export async function POST(request: Request) {
     );
   }
   const input = parsed.data;
+
+  // `trips.user_id` is a foreign key to `users.id`, and that row arrives
+  // asynchronously via the Clerk webhook. Back-fill it if it has not landed
+  // yet, otherwise the insert below fails on the constraint.
+  if (!(await ensureUser(userId))) return userSyncUnavailable();
 
   // Cap check + insert as a single statement (the neon-http driver has no
   // interactive transactions — see src/server/db/index.ts), so two concurrent
