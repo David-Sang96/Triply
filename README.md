@@ -1,56 +1,147 @@
-# Welcome to your Expo app 👋
+# Triply
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An AI trip planner for iOS and Android. Describe a trip and Gemini generates a
+day-by-day itinerary of real, geocoded places — with photos, a map, and an
+assistant you can ask follow-up questions.
 
-## Get started
+Built with Expo SDK 57. The backend lives in the same repo as Expo Router API
+routes and runs on Cloudflare Workers.
 
-1. Install dependencies
+## Features
 
-   ```bash
-   npm install
-   ```
+- **AI itineraries** — destination, length, travellers, budget and interests in;
+  a structured day-by-day plan out
+- **Verified places** — every activity is geocoded, so the map shows real
+  locations rather than plausible-sounding names
+- **Photos** — destination imagery from Unsplash, delivered through ImageKit,
+  with a custom cover you can upload yourself
+- **Assistant** — chat about a specific trip or start a general conversation
+- **Accounts** — email and password or Google, with account deletion in-app
 
-2. Start the app
+## Stack
 
-   ```bash
-   npx expo start
-   ```
+| Layer | Choice |
+| ----- | ------ |
+| App | Expo SDK 57 · React Native 0.86 · React 19.2 · TypeScript (strict) |
+| Routing | Expo Router, typed routes, native tabs |
+| Styling | NativeWind v5 on Tailwind v4 |
+| Data | TanStack Query |
+| Backend | Expo Router API routes on Cloudflare Workers (EAS Hosting) |
+| Database | Neon Postgres · Drizzle ORM |
+| Auth | Clerk |
+| AI | Google Gemini (structured JSON output) |
+| Jobs | Inngest |
+| Geocoding | Photon (OpenStreetMap) |
+| Images | Unsplash · ImageKit |
+| Monitoring | Sentry |
 
-In the output, you'll find options to open the app in a
+## Getting started
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requires Node 20+, and **JDK 17** for Android native builds — JDK 24 and 25
+break the CMake step. The path is pinned in `android/gradle.properties`; your
+machine default can stay newer.
 
 ```bash
-npm run reset-project
+git clone git@github.com:David-Sang96/Triply.git
+cd Triply
+npm ci
+cp .env.example .env.local
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Fill in `.env.local` — `.env.example` documents every variable and which are
+required. Then:
 
-### Other setup steps
+```bash
+npm run db:migrate     # apply the schema to your Neon database
+npm run db:check       # confirm it connects and is up to date
+npm start              # dev server
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Google sign-in needs a **development build**, not Expo Go:
 
-## Learn more
+```bash
+npm run android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Running the backend locally
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+The Clerk webhook → Inngest → database chain needs two more processes, each in
+its own terminal:
 
-## Join the community
+```bash
+npm run inngest:dev    # local Inngest dev server
+npm run tunnel         # ngrok, so Clerk can reach the webhook route
+```
 
-Join our community of developers creating universal apps.
+Point a Clerk webhook at `<ngrok-url>/api/webhooks/clerk` for `user.created`,
+`user.updated` and `user.deleted`.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Project layout
+
+```
+src/
+  app/               screens and API routes (file-based routing)
+    (auth)/          welcome, sign-in, sign-up
+    (tabs)/          home, assistant, trips, profile
+    api/             *+api.ts — the backend, Workers runtime
+  components/        UI, grouped by feature
+  server/            server-only code: db, ai, inngest, places
+  lib/               client-side data access and helpers
+  shared/            types shared across the client/server boundary
+  theme/             colour tokens
+drizzle/             generated SQL migrations — append-only
+docs/RELEASE.md      how to deploy and publish
+legal/               the privacy/terms site, deployed separately
+```
+
+App code lives in `src/app`, **not** the repo-root `app/`. Imports use the
+`@/` alias (`@/*` → `src/*`).
+
+## Commands
+
+| Command | What it does |
+| ------- | ------------ |
+| `npm start` | Dev server |
+| `npm run android` / `ios` | Native development build |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | Typecheck |
+| `npm run db:generate` | Generate a migration from `schema.ts` |
+| `npm run db:migrate` | Apply pending migrations |
+| `npm run db:check` | Read-only: connection + migration status |
+| `npm run db:studio` | Browse the database |
+| `npm run inngest:dev` | Local Inngest dev server |
+| `npm run tunnel` | ngrok tunnel for webhooks |
+
+`db:push` exists but recreates tables and **wipes data** — it is for throwaway
+resets only. Schema changes go through `db:generate` and `db:migrate`.
+
+## Deploying
+
+Three targets, depending on what changed:
+
+| Changed | Command |
+| ------- | ------- |
+| API routes, `src/server/**` | `npx expo export --platform web && eas deploy --environment production --prod` |
+| Screens, components, TS logic | `eas update --channel preview -m "..."` |
+| `app.json`, plugins, native deps | `eas build --profile preview --platform android` |
+
+`runtimeVersion` uses the fingerprint policy, so an over-the-air update is only
+offered to a build whose native code matches.
+
+**[`docs/RELEASE.md`](docs/RELEASE.md)** is the full guide: environment
+variables and their visibility rules, the sign-up webhook chain, the Google
+Play requirements, and the known limits.
+
+## Contributing
+
+There is no test framework yet, so `npx tsc --noEmit` and `npm run lint` are
+the gate. Pull requests are reviewed by Gemini Code Assist against
+[`.gemini/styleguide.md`](.gemini/styleguide.md).
+
+[`AGENTS.md`](AGENTS.md) holds the non-negotiable rules — Workers-compatible
+server code, native tabs, NativeWind over `StyleSheet`, and what may go into
+telemetry. Read it before opening a PR.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).
