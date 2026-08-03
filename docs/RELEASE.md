@@ -251,18 +251,37 @@ but no code reads them. They are safe to skip.
 
 ### 6. Migrate the production database
 
-Check the state first — read-only, safe to run any time:
+There are two Neon branches: `dev` (in `.env`) and `production` (in
+`.env.production`). `db:migrate`, `db:check` and `db:studio` target dev unless
+you name the `:prod` variant.
+
+**The `PRODUCTION` label is not proof.** It comes from the `--prod` flag and the
+file that flag selects — nothing more. It says which file was read, not which
+Neon branch that file points at. Before running `db:check:prod`,
+`db:migrate:prod` or `db:studio:prod`, read the `endpoint` value the script
+prints and check it against the endpoint shown in the Neon console for the
+`production` branch. The endpoint differs per branch; the label does not.
+
+Check the state first. Read-only, safe any time:
 
 ```powershell
-npm run db:check
+npm run db:check:prod
 ```
 
-It confirms `DATABASE_URL` connects and reports how many migrations are applied
-versus how many files are in `drizzle/`. If it says PENDING:
+It confirms the production `DATABASE_URL` connects and reports how many
+migrations are applied versus how many files are in `drizzle/`. If it says
+PENDING:
 
 ```powershell
-npm run db:migrate
+npm run db:migrate         # dev branch
+npm run db:check           # must succeed and report up to date
+npm run db:migrate:prod    # only after the dev check passes
+npm run db:check:prod      # confirm production matches
 ```
+
+Do not skip the middle check. A migration that fails halfway leaves the schema
+in a state Drizzle will not re-apply, and finding that out on the dev branch
+costs nothing — finding it out on production costs a manual repair.
 
 Run this with the **production** `DATABASE_URL`. Migrations alter tables, so
 existing rows survive. Never use `db:push` here — it wipes data.
