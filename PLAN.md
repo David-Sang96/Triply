@@ -169,7 +169,9 @@ this file drifted badly once by ticking boxes on code that had never run.
 - [ ] Tune the polling interval (3–5s) and hard-stop on a terminal status
 - [x] **Unsplash** attribution in the UI *(photographer + Unsplash link per
         photo, and the download-tracking ping, as their terms require)*
-- [ ] **OpenStreetMap / Photon** attribution in the UI
+- [x] **OpenStreetMap** attribution in the UI *(the Leaflet tile layer credits
+      "© OpenStreetMap contributors" with `attributionControl` on, and
+      `src/app/about.tsx` credits place data under the Open Database Licence)*
 - [x] Review request usage in the EAS Hosting dashboard
 - [ ] Apply for Unsplash **production** access (50 req/hour on Demo)
 
@@ -205,6 +207,9 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 - [x] Custom trip cover columns migrated *(`customCoverImageUrl`,
       `useCustomCover` — 10/10 migrations applied)*
 - [x] Geocoder usage within policy *(1 req/s throttle + cache table)*
+- [ ] OSM's **public tile server** is for light and personal use only
+      (`src/components/trip/TripMap.tsx`). Real traffic needs a proper tile
+      provider — worth settling before a public launch, not after.
 - [ ] No test framework — `npx tsc --noEmit` and `npm run lint` are the only gate
 - [ ] Cloudflare **subrequest limit** watch — every `neon-http` query counts as
       one. Seen once on 3 Aug with no failures; see "Known limits" in
