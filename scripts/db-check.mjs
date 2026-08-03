@@ -1,19 +1,18 @@
-import "dotenv/config";
-
 import { readdirSync } from "node:fs";
 
 import { neon } from "@neondatabase/serverless";
+
+import { loadDatabaseEnv } from "./db-env.mjs";
 
 // Read-only pre-deploy check. Confirms DATABASE_URL actually connects, and
 // compares the migrations recorded in the database against the files in
 // ./drizzle. Writes nothing, so it is safe to run against production.
 //
-// Reads .env (via dotenv), same as db:migrate and drizzle.config.ts — note that
-// the Expo app reads .env.local instead, so a rotated password has to be
-// updated in both files.
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set (check your .env)");
-}
+// Targets the dev branch by default; `npm run db:check:prod` targets
+// production. The Expo app reads .env.local, so a rotated password has to be
+// updated there as well as in .env.
+const { label, file, endpoint } = loadDatabaseEnv();
+console.log(`target     ${label} (${file})  endpoint ${endpoint}`);
 
 const sql = neon(process.env.DATABASE_URL);
 

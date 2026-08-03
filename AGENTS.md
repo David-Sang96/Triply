@@ -148,7 +148,8 @@ run long-lived processes. If one is needed, STOP and ask the developer.
 - **Schema changes use versioned migrations (not `db:push`).** Migrations
   *alter* tables, so existing data is preserved. Workflow: edit
   `src/server/db/schema.ts` → `npm run db:generate` (writes SQL to `drizzle/`)
-  → `npm run db:migrate` (applies it to Neon).
+  → `npm run db:migrate` (applies it to the dev branch) → verify → `npm run
+  db:migrate:prod` (applies it to production).
 - **Never edit a migration that may already have been applied.** Drizzle
   records a hash of each file, so changing one causes drift; fix it forward
   with a new migration instead.
@@ -159,14 +160,29 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   stage it instead: add nullable → backfill in batches → add a validated
   `CHECK (col IS NOT NULL)` → `SET NOT NULL` (which then reuses the check
   rather than re-scanning) → `SET DEFAULT`.
-- `npm run db:migrate` — apply pending migrations from `drizzle/` to Neon.
-  **Writes to the live database.**
+- **Two databases: one Neon project, two branches.** `.env` and `.env.local`
+  hold the **`dev`** branch; `.env.production` holds **`production`**, which is
+  what the deployed backend uses. Every `db:*` script targets dev by default and
+  prints which target it chose. The `:prod` variants target production — the
+  unsafe one has to be named:
+
+  | dev (default) | production |
+  | ------------- | ---------- |
+  | `npm run db:migrate` | `npm run db:migrate:prod` |
+  | `npm run db:check` | `npm run db:check:prod` |
+  | `npm run db:studio` | `npm run db:studio:prod` |
+
+  Migrate dev first, confirm it worked, then production. `db:generate` needs no
+  database, so it has no `:prod` variant.
+- `npm run db:migrate` — apply pending migrations from `drizzle/` to the **dev**
+  branch. `db:migrate:prod` writes to the live database.
 - `npm run db:generate` — generate a versioned SQL migration from schema changes.
 - `npm run db:baseline` — one-time: record existing migrations as already-applied
   (used when adopting migrations on a DB created earlier via `db:push`).
 - `npm run db:push` — **legacy / throwaway resets only.** Recreates tables and
   **wipes data** on schema changes; do not use it for normal changes.
-- `npm run db:studio` — open Drizzle Studio to browse/edit DB rows.
+- `npm run db:studio` — open Drizzle Studio on the dev branch to browse/edit
+  rows. `db:studio:prod` opens production.
 - `npm run inngest:dev` — local Inngest dev server, pointed at
   `http://localhost:8081/api/inngest`. Long-running. (Edit the port in the
   script if the Expo dev server uses a different one.)
