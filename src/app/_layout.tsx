@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/expo";
-import { tokenCache } from "@clerk/expo/token-cache";
+
 import {
   Poppins_400Regular,
   Poppins_500Medium,
@@ -18,6 +18,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SplashScreenView } from "@/components/SplashScreenView";
 import { queryClient } from "@/lib/query";
+import { tokenCache } from "@/lib/token-cache";
 
 import "../../global.css";
 
