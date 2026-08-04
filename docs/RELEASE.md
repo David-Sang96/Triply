@@ -149,6 +149,30 @@ Clerk `pk_test_` / `sk_test_` keys are for development only. A shipped app needs
 a Clerk production instance. That needs a domain and DNS records. Do this before
 any build that real people will use, then update the three Clerk variables above.
 
+**Allowlist the mobile SSO redirect, or Google sign-in dies.** Clerk →
+**Developers → Native applications → Allowlist for mobile SSO redirect** → add:
+
+```
+triply://sso-callback
+```
+
+Development instances do not enforce this; production instances do. With the
+list empty, `startSSOFlow` throws **before any browser opens** — the user sees
+"Google sign-in failed" instantly and there is nothing in `adb logcat`, because
+Clerk rejected the request rather than the OAuth flow failing. The dashboard
+describes the list as being "for maximum security", which reads as optional. It
+is not, on production.
+
+Also enable **Native API** on the same page — nothing native works without it.
+
+**Google sign-in needs your own Google Cloud OAuth client.** Development
+instances use Clerk's shared credentials; production requires yours, browser
+SSO or not, and Clerk shows "Setup required" until they are added. Create a Web
+application client and set the authorised redirect URI to the one Clerk shows,
+e.g. `https://clerk.<domain>/v1/oauth_callback`. Publish the consent screen too:
+in Testing mode only accounts you list by hand can sign in, and everyone else
+sees "Access blocked".
+
 **Turn password sign-in back on.** A new instance starts from Clerk's defaults,
 and the development instance shipped with password *disabled as a sign-in
 strategy* — enabled and required at sign-up, so accounts stored a password, but
