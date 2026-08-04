@@ -373,9 +373,22 @@ export default function ChatScreen() {
           style={{ flex: 1 }}
           contentContainerClassName="p-4"
           keyboardShouldPersistTaps="handled"
+          // Content grew — a message was sent or a reply arrived. Animate, so
+          // the movement reads as the conversation advancing.
           onContentSizeChange={() =>
             scrollRef.current?.scrollToEnd({ animated: true })
           }
+          // The *viewport* changed size. Opening the keyboard shifts the input
+          // row up by its height, which shrinks this ScrollView — but the
+          // content is unchanged, so onContentSizeChange never fires and the
+          // scroll position stays put. The end of a long reply then sits behind
+          // the input with no way to reach it.
+          //
+          // onLayout is the matching signal: it fires whenever this view is
+          // resized, including on keyboard show and hide. Not animated, because
+          // this is a resize rather than new content — animating it makes the
+          // whole thread appear to lurch when the keyboard opens.
+          onLayout={() => scrollRef.current?.scrollToEnd({ animated: false })}
         >
           {items.map((m) => (
             <Bubble

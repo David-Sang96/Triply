@@ -35,11 +35,19 @@ export function GoogleButton() {
           // No session + no error → user cancelled; do nothing.
         },
       );
-    } catch {
+    } catch (err) {
       Alert.alert("Google sign-in failed", "Please try again.");
       // Fixed category, not the raw error/exception message — same policy as
       // src/lib/api.ts, src/lib/chat.ts, src/lib/trips.ts.
       Sentry.logger.error("Google sign-in failed", { failure_kind: "sso_failed" });
+      // Also log the real error to the device log. Discarding it made a
+      // production failure undiagnosable: the alert says "please try again",
+      // Sentry carries only the category, and `adb logcat` had nothing — so the
+      // cause (an empty mobile SSO redirect allowlist on the production Clerk
+      // instance) had to be guessed. console.error stays on the device and is
+      // not telemetry, so the AGENTS.md rule against sending exception text to
+      // Sentry does not apply.
+      console.error("Google sign-in failed:", err);
     } finally {
       setBusy(false);
     }
