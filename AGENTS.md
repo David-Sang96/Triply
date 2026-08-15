@@ -110,6 +110,29 @@ Notes that will save time:
 - **Images:** render with `expo-image`; serve through ImageKit for optimization.
 - **Auth:** Clerk `@clerk/expo`; store tokens with an `expo-secure-store` token
   cache.
+- **`@clerk/expo` is on v4 (`^4.3.0`) because v3 lost Google-SSO sessions.** On
+  3.7.8 a Google session did not survive a restart on the production instance,
+  while email/password on the same instance did. The token cache was *not* the
+  cause — it returned the device token on every cold start (518 chars, 9–159ms,
+  no clears, no failures). The cause is the native Clerk Android SDK that
+  `@clerk/expo` autolinks (`expo.modules.clerk.ClerkExpoModule`): it keeps its
+  **own** device token and syncs it into the JS token cache. Measured on the
+  device, a Google sign-in wrote two different tokens 320ms apart and the last
+  write won, leaving a token for a client the server reported as having **zero**
+  sessions. Browser SSO diverges because the session is created through a
+  browser; email/password stays inside the JS SDK. v4 fixes it directly —
+  `isForeignSessionlessClient` in `nativeClientSync` now refuses to adopt a
+  different client that has no sessions when the previous one did, and restores
+  the previous device token.
+- **Do not "fix" native-sync problems by excluding `@clerk/expo` from
+  autolinking on v3.** It was tried (build `c3880a89`) and the app crashed on
+  launch with `Cannot find native module 'ClerkExpo'`: on 3.7.8
+  `dist/specs/NativeClerkModule.android.js` calls `requireNativeModule`, which
+  throws from module scope, and Metro prefers that file over the `.js` one that
+  correctly uses `requireOptionalNativeModule`. v4 made every spec optional, so
+  the exclusion is *available* as a fallback — but v4's own fix should make it
+  unnecessary. `ClerkProvider` has no prop to disable the sync either;
+  `useNativeClientBootstrap` runs unconditionally.
 - **Environment variables:** client keys use the **`EXPO_PUBLIC_`** prefix (they
   get bundled into the app, so never put a secret there). Server secrets have NO
   prefix and must stay server-side. See `.env.example`.

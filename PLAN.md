@@ -78,11 +78,19 @@ this file drifted badly once by ticking boxes on code that had never run.
 
 **Client**
 
-- [x] Pin `@clerk/expo` for Expo SDK 57 (`^3.7.8`)
+- [x] Pin `@clerk/expo` for Expo SDK 57 (`^4.3.0` — moved off 3.7.8 on 15 Aug
+      because v3's native client sync lost Google-SSO sessions across restarts;
+      v4 supports `expo >=54 <58`. See AGENTS.md.)
 - [x] Install `expo-secure-store`; `ClerkProvider` with token cache
 - [x] Android development build
 - [x] Google sign-in via browser SSO (`useSSO` → `oauth_google`) + `sso-callback`
 - [x] **Verify:** Google sign-in works on a real device
+- [x] **Verify:** a Google session survives a full restart — 10 of 10
+      swipe-away-from-Recents cycles on the phone against the **production**
+      instance (16 Aug). It did not before: v3's native client sync replaced the
+      device token with one whose client had no sessions, so every restart
+      signed the user out while email/password survived. Needed `@clerk/expo`
+      v4; the token cache was never the cause. Full diagnosis in AGENTS.md.
 - [x] Email/password sign-up with email-code verification
 - [x] Email/password sign-in
 - [x] Handle Clerk's **Client Trust** challenge — a device Clerk has not seen is
@@ -207,7 +215,7 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 
 - [x] Server dependencies are edge/web-standard (Cloudflare Workers, not Node)
       *(verified by the deployment running)*
-- [x] Pin `@clerk/expo` (`^3.7.8`, Expo SDK 57)
+- [x] Pin `@clerk/expo` (`^4.3.0`, Expo SDK 57)
 - [x] Gemini output is `JSON.parse`d in a try/catch and Zod-validated
 - [x] Custom trip cover columns migrated *(`customCoverImageUrl`,
       `useCustomCover` — 10/10 migrations applied)*
