@@ -2,23 +2,6 @@
   "name": "triply",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "expo": {
-    "autolinking": {
-      "exclude": [
-        "@clerk/expo"
-      ],
-      "android": {
-        "exclude": [
-          "@clerk/expo"
-        ]
-      },
-      "apple": {
-        "exclude": [
-          "@clerk/expo"
-        ]
-      }
-    }
-  },
   "dependencies": {
     "@clerk/backend": "^3.11.7",
     "@clerk/expo": "^3.7.8",
