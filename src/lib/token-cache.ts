@@ -5,31 +5,36 @@ import * as SecureStore from "expo-secure-store";
 //
 // Why replace Clerk's at all: Clerk's `saveToken` calls
 // `SecureStore.setItemAsync` with no error handling, so a failed write is
-// silent, and its `getToken` swallows a read error and deletes the key. When a
-// session goes missing there is nothing in the log to say which of those
-// happened. This version does exactly what Clerk's does, and reports it.
+// silent, and its `getToken` swallows a read error and then deletes the key.
+// When a session goes missing there is nothing in the log to say which of those
+// happened. This does what Clerk's does, and reports failures.
 //
 // It deliberately does NOT split the value into chunks. An earlier version did,
 // to work around a 2048-byte Android limit — but that limit does not exist:
 // expo-secure-store 57.0.1 has no length check in its Android native code, and
 // the SDK 57 docs say "Expo does not enforce a limit" (the historical ~2048
-// figure was iOS). Chunking bought nothing and cost two things:
+// figure was iOS). The real device token measures 518 characters. Chunking
+// bought nothing and cost two things:
 //
-//   1. Writes stopped being atomic. Clerk saves the client JWT from the auth
-//      header of every FAPI response, so saves overlap. Interleaved, two saves
-//      could leave chunk 0 from one and chunk 1 from the other — a spliced,
-//      invalid JWT. Every chunk was present, so the integrity check passed and
-//      nothing was logged. One key cannot splice: a later write replaces the
-//      whole value, and either value is complete.
-//   2. Reads got slower. Clerk gives the cache ONE SECOND to return the client
-//      JWT on startup (`tokenCacheReadTimeoutMs` in @clerk/expo's
+//   1. Writes stopped being atomic. Saving cleared the old chunks before
+//      writing the new ones, so a process death in that window — which is what
+//      swiping the app out of Recents does — left no readable session at all.
+//      Overlapping saves could also leave chunk 0 from one and chunk 1 from
+//      another: a spliced, invalid token that passed the integrity check
+//      because no chunk was *missing*.
+//   2. Reads got slower. Clerk gives the cache ONE SECOND to return the token
+//      on startup (`tokenCacheReadTimeoutMs` in @clerk/expo's
 //      nativeClientSync) and treats a slower read as "no stored session".
 //      Reading a count and then the chunks is two round trips through the
 //      Android keystore instead of one, on the coldest possible path.
 //
+// Note for future debugging: a lost session is usually NOT this file. Measured
+// on a real device it returns the token on every cold start in 9-159ms with no
+// failures, while sessions were still being lost — the cause was Clerk's native
+// client sync, and the fix was `@clerk/expo` v4. See AGENTS.md.
+//
 // Logging stays on the device (console, not Sentry), so no token material
-// becomes telemetry — see the policy in AGENTS.md. Only lengths, durations and
-// key names are logged, never a token.
+// becomes telemetry — see the policy in AGENTS.md.
 
 const OPTIONS: SecureStore.SecureStoreOptions = {
   // Matches Clerk's own cache: readable after the first unlock following a
@@ -38,33 +43,9 @@ const OPTIONS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
 };
 
-// --- diagnostics -----------------------------------------------------------
-// TEMPORARY. Here to answer one question: when a Google-SSO session does not
-// survive a restart, is the token absent, slow to read, or actively cleared?
-// Remove once that is settled — the failure logging below is the part worth
-// keeping.
-const DIAGNOSTICS = true;
-
-function diag(message: string) {
-  if (DIAGNOSTICS) console.log(`tokenCache: ${message}`);
-}
-
-// Non-reversible 32-bit checksum (FNV-1a). Length alone cannot tell two device
-// tokens apart — they are the same shape, so a replacement looks identical in
-// the log. This says whether the stored value CHANGED without the log ever
-// containing token material.
-function fingerprint(value: string) {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < value.length; i += 1) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
-}
-
 // --- legacy chunked layout -------------------------------------------------
 // Read-and-migrate only, so a session written by the chunked version survives
-// this upgrade instead of silently signing the user out.
+// the upgrade instead of silently signing the user out.
 const COUNT_SUFFIX = "__chunks";
 
 function chunkKey(key: string, index: number) {
@@ -88,7 +69,10 @@ async function readLegacyChunked(key: string): Promise<string | null> {
   // fails verification in a way that looks like an auth bug rather than a
   // storage one.
   if (parts.some((part) => part === null)) {
-    diag(`legacy ${key} incomplete (${parts.filter(Boolean).length}/${count})`);
+    console.error(
+      `tokenCache: legacy ${key} was incomplete ` +
+        `(${parts.filter(Boolean).length}/${count} chunks) — discarding`,
+    );
     await clearLegacyChunked(key, count);
     return null;
   }
@@ -106,8 +90,8 @@ async function clearLegacyChunked(key: string, count: number) {
 }
 
 // Best effort: enough chunk keys to cover any token the old 1024-char split
-// could have produced. Leftovers are harmless (nothing reads them once the
-// count marker is gone), so a failure here is not worth reporting.
+// could have produced. Leftovers are harmless — nothing reads them once the
+// count marker is gone — so a failure here is not worth reporting.
 async function discardLegacyChunked(key: string) {
   try {
     await clearLegacyChunked(key, 32);
@@ -118,49 +102,31 @@ async function discardLegacyChunked(key: string) {
 
 export const tokenCache = {
   async getToken(key: string): Promise<string | null> {
-    const startedAt = Date.now();
     try {
-      let value = await SecureStore.getItemAsync(key, OPTIONS);
-      let source = "single";
+      const value = await SecureStore.getItemAsync(key, OPTIONS);
+      if (value !== null) return value;
 
       // Nothing under the single key: this may be a session stored by the
       // chunked version. Reassemble it, then rewrite it as one value so the
       // slow path runs at most once.
-      if (value === null) {
-        value = await readLegacyChunked(key);
-        if (value !== null) {
-          source = "legacy-chunked";
-          await SecureStore.setItemAsync(key, value, OPTIONS);
-          await discardLegacyChunked(key);
-        }
-      }
+      const legacy = await readLegacyChunked(key);
+      if (legacy === null) return null;
 
-      diag(
-        `get ${key} -> ` +
-          `${value === null ? "null" : `${value.length} chars fp=${fingerprint(value)}`} ` +
-          `(${source}) in ${Date.now() - startedAt}ms`,
-      );
-      return value;
+      await SecureStore.setItemAsync(key, legacy, OPTIONS);
+      await discardLegacyChunked(key);
+      return legacy;
     } catch (err) {
       // Clerk's cache deletes the key here. Keep the value: a read can fail
       // for reasons that pass (a locked device, keystore contention), and
       // deleting turns a recoverable miss into a permanent sign-out.
-      console.error(
-        `tokenCache: read failed for ${key} after ${Date.now() - startedAt}ms:`,
-        err,
-      );
+      console.error(`tokenCache: read failed for ${key}:`, err);
       return null;
     }
   },
 
   async saveToken(key: string, token: string): Promise<void> {
-    const startedAt = Date.now();
     try {
       await SecureStore.setItemAsync(key, token, OPTIONS);
-      diag(
-        `save ${key} (${token.length} chars fp=${fingerprint(token)}) ` +
-          `in ${Date.now() - startedAt}ms`,
-      );
     } catch (err) {
       // The failure Clerk's implementation swallows. Logged rather than thrown:
       // an unwritable token costs the session on next launch, which is worth
@@ -176,11 +142,6 @@ export const tokenCache = {
     try {
       await SecureStore.deleteItemAsync(key, OPTIONS);
       await discardLegacyChunked(key);
-      // Logged loudly: @clerk/expo clears the client JWT by itself in two
-      // places — when it decides the publishable key changed, and when a FAPI
-      // request comes back unauthenticated while the native SDK has no device
-      // token. Either one signs the user out, and neither says so.
-      diag(`CLEARED ${key}`);
     } catch (err) {
       console.error(`tokenCache: clear failed for ${key}:`, err);
     }
