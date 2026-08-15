@@ -110,30 +110,29 @@ Notes that will save time:
 - **Images:** render with `expo-image`; serve through ImageKit for optimization.
 - **Auth:** Clerk `@clerk/expo`; store tokens with an `expo-secure-store` token
   cache.
-- **Known bug: a Google-SSO session does not survive a restart on the
-  production Clerk instance.** Email/password on the same instance does. The
-  token cache is *not* the cause — it stores and returns the device token on
-  every cold start (518 chars, 9–159ms, no clears, no failures). The cause is
-  that `@clerk/expo` v3 loads a native Clerk Android SDK
-  (`expo.modules.clerk.ClerkExpoModule`) which keeps its **own** device token
-  and syncs it into the JS token cache. Measured on the device: after a Google
-  sign-in, two different tokens are written 320ms apart, and the last write wins
-  — leaving a token for a client the server reports as having **zero** sessions.
-  Browser SSO diverges this way because the session is created through a
-  browser; email/password stays inside the JS SDK and never diverges.
-- **Do NOT try to fix that by excluding `@clerk/expo` from autolinking on
-  3.7.8.** It was tried (build `c3880a89`) and the app crashes on launch with
-  `Cannot find native module 'ClerkExpo'`: on 3.7.8,
+- **`@clerk/expo` is on v4 (`^4.3.0`) because v3 lost Google-SSO sessions.** On
+  3.7.8 a Google session did not survive a restart on the production instance,
+  while email/password on the same instance did. The token cache was *not* the
+  cause — it returned the device token on every cold start (518 chars, 9–159ms,
+  no clears, no failures). The cause is the native Clerk Android SDK that
+  `@clerk/expo` autolinks (`expo.modules.clerk.ClerkExpoModule`): it keeps its
+  **own** device token and syncs it into the JS token cache. Measured on the
+  device, a Google sign-in wrote two different tokens 320ms apart and the last
+  write won, leaving a token for a client the server reported as having **zero**
+  sessions. Browser SSO diverges because the session is created through a
+  browser; email/password stays inside the JS SDK. v4 fixes it directly —
+  `isForeignSessionlessClient` in `nativeClientSync` now refuses to adopt a
+  different client that has no sessions when the previous one did, and restores
+  the previous device token.
+- **Do not "fix" native-sync problems by excluding `@clerk/expo` from
+  autolinking on v3.** It was tried (build `c3880a89`) and the app crashed on
+  launch with `Cannot find native module 'ClerkExpo'`: on 3.7.8
   `dist/specs/NativeClerkModule.android.js` calls `requireNativeModule`, which
-  throws, and Metro prefers that file over the `.js` one that correctly uses
-  `requireOptionalNativeModule`. `ClerkProvider` has no prop to disable the sync
-  either — `useNativeClientBootstrap` runs unconditionally.
-  **`@clerk/expo` 4.3.0 fixes the Android spec to `requireOptionalNativeModule`**
-  and supports Expo 57 (`expo >=54 <58`), so the exclusion becomes viable after
-  upgrading. Nothing here needs the native module: the app imports only JS hooks
-  (`ClerkProvider`, `useAuth`, `useClerk`, `useUser`, `useSSO`) and no native
-  Clerk component (`AuthView`, `UserButton`, `UserProfileView`), native Google
-  sign-in, or passkeys.
+  throws from module scope, and Metro prefers that file over the `.js` one that
+  correctly uses `requireOptionalNativeModule`. v4 made every spec optional, so
+  the exclusion is *available* as a fallback — but v4's own fix should make it
+  unnecessary. `ClerkProvider` has no prop to disable the sync either;
+  `useNativeClientBootstrap` runs unconditionally.
 - **Environment variables:** client keys use the **`EXPO_PUBLIC_`** prefix (they
   get bundled into the app, so never put a secret there). Server secrets have NO
   prefix and must stay server-side. See `.env.example`.
