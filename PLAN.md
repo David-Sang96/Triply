@@ -85,6 +85,12 @@ this file drifted badly once by ticking boxes on code that had never run.
 - [x] Android development build
 - [x] Google sign-in via browser SSO (`useSSO` → `oauth_google`) + `sso-callback`
 - [x] **Verify:** Google sign-in works on a real device
+- [x] **Verify:** a Google session survives a full restart — 10 of 10
+      swipe-away-from-Recents cycles on the phone against the **production**
+      instance (16 Aug). It did not before: v3's native client sync replaced the
+      device token with one whose client had no sessions, so every restart
+      signed the user out while email/password survived. Needed `@clerk/expo`
+      v4; the token cache was never the cause. Full diagnosis in AGENTS.md.
 - [x] Email/password sign-up with email-code verification
 - [x] Email/password sign-in
 - [x] Handle Clerk's **Client Trust** challenge — a device Clerk has not seen is
