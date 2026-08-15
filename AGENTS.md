@@ -110,6 +110,19 @@ Notes that will save time:
 - **Images:** render with `expo-image`; serve through ImageKit for optimization.
 - **Auth:** Clerk `@clerk/expo`; store tokens with an `expo-secure-store` token
   cache.
+- **Clerk's native module is excluded from autolinking on purpose.** See
+  `expo.autolinking.exclude` in `package.json`. `@clerk/expo` v3 ships a native
+  Clerk SDK that keeps its *own* device token and syncs it into the JS token
+  cache. After a browser SSO sign-in the two disagree, both write the cache
+  within ~300ms, and whichever wins the last write is the one that persists — on
+  production that was a client with no session, so Google sign-ins were
+  forgotten on every restart while email/password survived. There is no prop to
+  disable that sync, so the module is excluded instead. Nothing here uses it:
+  the app imports only JS hooks (`ClerkProvider`, `useAuth`, `useClerk`,
+  `useUser`, `useSSO`), and no Clerk *native* component (`AuthView`,
+  `UserButton`, `UserProfileView`) or native Google sign-in. Adding any of those,
+  or `@clerk/expo-passkeys`, means removing the exclusion — and re-testing that
+  a Google session survives a swipe-away from Recents.
 - **Environment variables:** client keys use the **`EXPO_PUBLIC_`** prefix (they
   get bundled into the app, so never put a secret there). Server secrets have NO
   prefix and must stay server-side. See `.env.example`.
