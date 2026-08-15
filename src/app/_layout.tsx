@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AuthDiagnostics } from "@/components/AuthDiagnostics";
 import { SplashScreenView } from "@/components/SplashScreenView";
 import { queryClient } from "@/lib/query";
 import { tokenCache } from "@/lib/token-cache";
@@ -92,6 +93,8 @@ function RootLayout() {
     // reliably receive pan gestures, especially on Android.
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        {/* TEMPORARY — see src/components/AuthDiagnostics.tsx. Remove with it. */}
+        <AuthDiagnostics />
         <QueryClientProvider client={queryClient}>
           <SafeAreaProvider>
             <StatusBar style="dark" />

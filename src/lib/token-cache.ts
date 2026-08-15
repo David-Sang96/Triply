@@ -49,6 +49,19 @@ function diag(message: string) {
   if (DIAGNOSTICS) console.log(`tokenCache: ${message}`);
 }
 
+// Non-reversible 32-bit checksum (FNV-1a). Length alone cannot tell two device
+// tokens apart — they are the same shape, so a replacement looks identical in
+// the log. This says whether the stored value CHANGED without the log ever
+// containing token material.
+function fingerprint(value: string) {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
 // --- legacy chunked layout -------------------------------------------------
 // Read-and-migrate only, so a session written by the chunked version survives
 // this upgrade instead of silently signing the user out.
@@ -123,7 +136,8 @@ export const tokenCache = {
       }
 
       diag(
-        `get ${key} -> ${value === null ? "null" : `${value.length} chars`} ` +
+        `get ${key} -> ` +
+          `${value === null ? "null" : `${value.length} chars fp=${fingerprint(value)}`} ` +
           `(${source}) in ${Date.now() - startedAt}ms`,
       );
       return value;
@@ -143,7 +157,10 @@ export const tokenCache = {
     const startedAt = Date.now();
     try {
       await SecureStore.setItemAsync(key, token, OPTIONS);
-      diag(`save ${key} (${token.length} chars) in ${Date.now() - startedAt}ms`);
+      diag(
+        `save ${key} (${token.length} chars fp=${fingerprint(token)}) ` +
+          `in ${Date.now() - startedAt}ms`,
+      );
     } catch (err) {
       // The failure Clerk's implementation swallows. Logged rather than thrown:
       // an unwritable token costs the session on next launch, which is worth
