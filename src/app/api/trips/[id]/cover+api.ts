@@ -4,6 +4,7 @@ import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { trips } from "@/server/db/schema";
 import { deleteCoverImage, uploadCoverImage } from "@/server/imagekit";
+import { captureServerError } from "@/server/sentry";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -83,6 +84,12 @@ export async function POST(request: Request, { id }: Record<string, string>) {
     ({ url, fileId } = await uploadCoverImage(file, id));
   } catch (err) {
     console.error("ImageKit upload failed:", err);
+    await captureServerError(err, {
+      failure_kind: "cover_upload_failed",
+      route: "POST /api/trips/[id]/cover",
+      status: 502,
+      tags: { trip_id: id, user_id: userId, bytes: file.size },
+    });
     return Response.json(
       { error: "Upload failed. Please try again." },
       { status: 502 },
@@ -106,10 +113,24 @@ export async function POST(request: Request, { id }: Record<string, string>) {
       .returning({ id: trips.id });
   } catch (err) {
     console.error("Failed to save uploaded cover:", err);
+    await captureServerError(err, {
+      failure_kind: "cover_save_failed",
+      route: "POST /api/trips/[id]/cover",
+      status: 502,
+      tags: { trip_id: id, user_id: userId, file_id: fileId },
+    });
     try {
       await deleteCoverImage(fileId);
     } catch (cleanupErr) {
       console.error("Failed to clean up orphaned upload:", cleanupErr);
+      // The file is now orphaned in ImageKit: uploaded, referenced by nothing,
+      // and billed for. Nothing will ever retry it, so if this is not reported
+      // the storage just grows quietly.
+      await captureServerError(cleanupErr, {
+        failure_kind: "cover_orphaned",
+        route: "POST /api/trips/[id]/cover",
+        tags: { trip_id: id, file_id: fileId },
+      });
     }
     return Response.json(
       { error: "Upload failed. Please try again." },
@@ -122,6 +143,14 @@ export async function POST(request: Request, { id }: Record<string, string>) {
       await deleteCoverImage(fileId);
     } catch (cleanupErr) {
       console.error("Failed to clean up orphaned upload:", cleanupErr);
+      // The file is now orphaned in ImageKit: uploaded, referenced by nothing,
+      // and billed for. Nothing will ever retry it, so if this is not reported
+      // the storage just grows quietly.
+      await captureServerError(cleanupErr, {
+        failure_kind: "cover_orphaned",
+        route: "POST /api/trips/[id]/cover",
+        tags: { trip_id: id, file_id: fileId },
+      });
     }
     return notFound();
   }
@@ -133,6 +162,16 @@ export async function POST(request: Request, { id }: Record<string, string>) {
       await deleteCoverImage(existing.customCoverImageFileId);
     } catch (err) {
       console.error("Failed to delete replaced cover from ImageKit:", err);
+      // Same leak as above, just the old file rather than the new one. The
+      // request still succeeds, which is correct — but somebody should know.
+      await captureServerError(err, {
+        failure_kind: "cover_replaced_orphaned",
+        route: "POST /api/trips/[id]/cover",
+        tags: {
+          trip_id: id,
+          file_id: existing.customCoverImageFileId,
+        },
+      });
     }
   }
 

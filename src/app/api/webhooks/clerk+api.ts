@@ -1,6 +1,7 @@
 import { verifyWebhook } from "@clerk/backend/webhooks";
 
 import { inngest } from "@/server/inngest/client";
+import { captureServerError } from "@/server/sentry";
 
 // Clerk webhook receiver. Verifies the Standard Webhooks signature (using
 // CLERK_WEBHOOK_SIGNING_SECRET from the environment) before trusting the body,
@@ -13,6 +14,15 @@ export async function POST(request: Request) {
     evt = await verifyWebhook(request);
   } catch (err) {
     console.error("Clerk webhook verification failed:", err);
+    // Worth reporting even though a 400 is the correct answer. There is no user
+    // and no client here, so nothing else can notice: a rotated or mismatched
+    // CLERK_WEBHOOK_SIGNING_SECRET rejects *every* webhook, and the only symptom
+    // would be new sign-ups quietly never getting a `users` row.
+    await captureServerError(err, {
+      failure_kind: "webhook_verification_failed",
+      route: "POST /api/webhooks/clerk",
+      status: 400,
+    });
     return new Response("Invalid webhook signature", { status: 400 });
   }
 

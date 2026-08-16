@@ -7,6 +7,8 @@
 //     tagged with utm params). See getCoverImageUrl's return shape and
 //     TripDetailView, which renders the credit line.
 // We also ping the required "download" tracking endpoint once per use.
+import { captureServerError } from "@/server/sentry";
+
 const APP_NAME = "Triply";
 
 export type CoverImage = {
@@ -121,6 +123,14 @@ async function searchPhotos(
     return images;
   } catch (err) {
     console.error("Unsplash search failed:", err);
+    // Worth reporting even though generation continues without a cover: the
+    // Unsplash account is still on the Demo tier (50 requests/hour), so this is
+    // how the rate limit being hit in real use becomes visible instead of just
+    // producing trips with no photo. See the production-access item in PLAN.md.
+    await captureServerError(err, {
+      failure_kind: "unsplash_search_failed",
+      route: "getDestinationImages",
+    });
     return [];
   }
 }

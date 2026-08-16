@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
+import { captureServerError, captureServerErrorOnce } from "@/server/sentry";
 
 // Makes sure the signed-in Clerk user has a row in `users` before a write that
 // depends on it.
@@ -36,6 +37,11 @@ export async function ensureUser(userId: string): Promise<boolean> {
     const secretKey = process.env.CLERK_SECRET_KEY;
     if (!secretKey) {
       console.error("CLERK_SECRET_KEY is not set");
+      await captureServerErrorOnce(
+        "users:missing-clerk-secret",
+        new Error("CLERK_SECRET_KEY is not set"),
+        { failure_kind: "server_misconfigured", route: "ensureUser" },
+      );
       return false;
     }
 
@@ -55,6 +61,15 @@ export async function ensureUser(userId: string): Promise<boolean> {
       // in this app, so this means something is wrong with the Clerk account
       // rather than with the request.
       console.error("Clerk user has no email address:", userId);
+      await captureServerError(
+        new Error("Clerk user has no email address"),
+        {
+          failure_kind: "user_without_email",
+          route: "ensureUser",
+          // The id only — never the address itself.
+          tags: { user_id: userId },
+        },
+      );
       return false;
     }
 
@@ -74,6 +89,15 @@ export async function ensureUser(userId: string): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("Failed to back-fill user row:", err);
+    // This blocks the user from creating anything at all — `trips.user_id` is a
+    // NOT NULL foreign key to `users`, so no row means no trips and no chats.
+    // The caller returns 503 and tells them to retry, which is useless advice if
+    // the cause is persistent and nobody is told.
+    await captureServerError(err, {
+      failure_kind: "user_backfill_failed",
+      route: "ensureUser",
+      tags: { user_id: userId },
+    });
     return false;
   }
 }
