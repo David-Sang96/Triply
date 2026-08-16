@@ -81,6 +81,13 @@ export async function geocodePlace(
     }
   } catch (err) {
     console.error("Photon geocode failed:", err);
+    // Deliberately NOT sent to Sentry (unlike the other server failures — see
+    // src/server/sentry.ts). A geocode miss is routine: the AI invents plausible
+    // place names, Photon does not know all of them, and the itinerary is still
+    // fine without coordinates. Reporting each one would be constant noise, and
+    // an alert that fires constantly is an alert nobody reads. If geocoding
+    // quality needs measuring, count the `place_verified` column instead — it
+    // already records the outcome per activity.
     return null; // do not cache network failures
   }
 

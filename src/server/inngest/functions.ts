@@ -15,6 +15,7 @@ import {
 import { getDestinationImages } from "@/server/images";
 import { deleteCoverImage } from "@/server/imagekit";
 import { geocodePlace, type GeoResult } from "@/server/places/geocode";
+import { captureServerError } from "@/server/sentry";
 
 import { inngest } from "./client";
 
@@ -139,6 +140,16 @@ export const syncUserDeleted = inngest.createFunction(
           await deleteCoverImage(fileId);
         } catch (err) {
           console.error("Failed to delete a cover from ImageKit:", err);
+          // This one matters more than the other cover leaks: the account has
+          // been deleted, so an image left behind is personal data the privacy
+          // policy promised to erase. Nothing retries it, and swallowing the
+          // error here is what keeps the job from retrying — so reporting is the
+          // only way anyone finds out.
+          await captureServerError(err, {
+            failure_kind: "deleted_user_cover_orphaned",
+            route: "syncUserDeleted",
+            tags: { user_id: data.id, file_id: fileId },
+          });
         }
       }
       return { attempted: fileIds.length };
@@ -175,6 +186,23 @@ export const generateTrip = inngest.createFunction(
         data?: { tripId?: string; event?: { data?: { tripId?: string } } };
       };
       const tripId = failed.data?.event?.data?.tripId ?? failed.data?.tripId;
+
+      // Report before the early return, and outside step.run. A generation that
+      // fails every retry is otherwise completely silent: the user sees a
+      // friendly "we couldn't build your trip", the row says failed, and nobody
+      // is told. Reported even when tripId is missing — that case means the
+      // failure event did not carry the id we expect, which is itself worth
+      // knowing rather than swallowing.
+      //
+      // Not wrapped in step.run because a step that throws would be retried and
+      // could mask the real failure; captureServerError never throws, so this is
+      // safe to call directly.
+      await captureServerError(error, {
+        failure_kind: "trip_generation_failed",
+        route: "generateTrip",
+        tags: { trip_id: tripId ?? null, has_trip_id: Boolean(tripId) },
+      });
+
       if (!tripId) return;
 
       await step.run("mark-failed", async () => {

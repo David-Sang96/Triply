@@ -1,5 +1,7 @@
 import { verifyToken } from "@clerk/backend";
 
+import { captureServerErrorOnce } from "@/server/sentry";
+
 // Verifies the Clerk session token the app sends as `Authorization: Bearer
 // <token>` (from `getToken()`), and returns the Clerk user id. Web-standard
 // (uses fetch + WebCrypto), so it runs on Cloudflare Workers. Returns null when
@@ -39,6 +41,18 @@ export async function getUserId(request: Request): Promise<string | null> {
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {
     console.error("CLERK_SECRET_KEY is not set");
+    // The worst possible deployment state: every authenticated request 401s, so
+    // the app looks entirely broken to every signed-in user. Reported once —
+    // every request hits this line, and one report says all of it.
+    //
+    // The verification failure further down is deliberately NOT reported:
+    // expired and malformed tokens are routine traffic, and reporting them
+    // would bury real problems.
+    await captureServerErrorOnce(
+      "auth:missing-clerk-secret",
+      new Error("CLERK_SECRET_KEY is not set"),
+      { failure_kind: "server_misconfigured", route: "getUserId" },
+    );
     return null;
   }
 

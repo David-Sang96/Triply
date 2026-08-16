@@ -186,6 +186,24 @@ fixed `failure_kind` plus the numeric status, not the user-facing copy: that
 text is display material and often echoes user input. `sendDefaultPii` is
 deliberately `__DEV__`-only for the same reason.
 
+**The backend reports errors through `src/server/sentry.ts`, not an SDK.** No
+Sentry SDK can run on Cloudflare Workers here: `@sentry/react-native` is a client
+SDK, and `@sentry/cloudflare` wraps the Worker's own `fetch` handler — which EAS
+Hosting generates, so there is nothing to attach it to. So that file POSTs a
+Sentry envelope with plain `fetch`, which keeps server code inside the
+web-standard rule above. Use `captureServerError(err, { failure_kind, route })`,
+or `captureServerErrorOnce(key, …)` for failures that repeat on every request
+(a missing environment variable makes *all* of them fail — one report says
+everything). Both swallow their own errors: reporting must never turn a handled
+failure into an unhandled one. `tags` follow the same rule as everything else —
+ids, enums, booleans and counts only, never the message text or the request body.
+
+Not everything is reported, on purpose. Token verification failures
+(`src/server/auth.ts`) and geocode misses (`src/server/places/geocode.ts`) are
+routine traffic, and an alert that fires constantly is one nobody reads. Both
+sites say so in a comment, so the omission reads as a decision rather than a
+gap.
+
 **One deliberate exception: AI agent monitoring.** The `gen_ai.*` spans around
 the assistant (`src/lib/chat.ts`) do record the user's message and the model's
 reply, because Sentry's AI Conversations view is what makes a bad answer

@@ -5,6 +5,7 @@ import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { budgetLevel, trips } from "@/server/db/schema";
 import { inngest } from "@/server/inngest/client";
+import { captureServerError } from "@/server/sentry";
 import { ensureUser, userSyncUnavailable } from "@/server/users";
 
 const MAX_TRIPS = 5;
@@ -109,6 +110,15 @@ export async function POST(request: Request) {
     await inngest.send({ name: "trip/requested", data: { tripId: trip.id } });
   } catch (err) {
     console.error("Failed to dispatch trip/requested:", err);
+    // A trip that never reaches the queue never fails a generation either, so
+    // generateTrip's onFailure will not report it. Without this, the whole
+    // pipeline being down looks like nothing at all.
+    await captureServerError(err, {
+      failure_kind: "trip_dispatch_failed",
+      route: "POST /api/trips",
+      status: 502,
+      tags: { trip_id: trip.id },
+    });
     await db
       .update(trips)
       .set({

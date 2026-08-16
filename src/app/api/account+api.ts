@@ -1,6 +1,7 @@
 import { createClerkClient } from "@clerk/backend";
 
 import { getUserId, unauthorized } from "@/server/auth";
+import { captureServerError } from "@/server/sentry";
 
 // DELETE /account — permanently delete the signed-in user's account.
 //
@@ -24,6 +25,14 @@ export async function DELETE(request: Request) {
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {
     console.error("CLERK_SECRET_KEY is not set");
+    // Not an exception, but a deployment-wide breakage: account deletion is
+    // impossible for every user until someone sets the variable. Reported as a
+    // synthetic Error so it groups in Sentry like any other failure.
+    await captureServerError(new Error("CLERK_SECRET_KEY is not set"), {
+      failure_kind: "server_misconfigured",
+      route: "DELETE /api/account",
+      status: 500,
+    });
     return Response.json(
       { error: "Account deletion is unavailable right now." },
       { status: 500 },
@@ -40,6 +49,15 @@ export async function DELETE(request: Request) {
       return Response.json({ ok: true, alreadyDeleted: true });
     }
     console.error("Clerk user deletion failed:", err);
+    // A deletion that keeps failing is a data-protection problem, not just a
+    // bad user experience — the privacy policy promises accounts can be
+    // removed.
+    await captureServerError(err, {
+      failure_kind: "account_deletion_failed",
+      route: "DELETE /api/account",
+      status: 502,
+      tags: { user_id: userId },
+    });
     return Response.json(
       { error: "We couldn't delete your account. Please try again." },
       { status: 502 },

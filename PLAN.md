@@ -174,9 +174,25 @@ this file drifted badly once by ticking boxes on code that had never run.
 - [x] **Verify:** a triggered warning reaches Sentry with usable context
       *(the sign-in diagnostic did exactly this and identified
       `needs_client_trust`, which no amount of reading the code had.)*
-- [ ] Capture API-route errors in Sentry *(routes currently `console.error`,
-      which reaches the EAS Hosting log but not Sentry)*
-- [ ] Add a manual Sentry capture on failed generations
+- [~] Capture API-route errors in Sentry — **written, not yet verified.**
+      `src/server/sentry.ts` POSTs a Sentry envelope with plain `fetch`, because
+      no Sentry SDK runs on Cloudflare Workers (`@sentry/react-native` is a
+      client SDK; `@sentry/cloudflare` wraps a Worker `fetch` handler that EAS
+      Hosting owns). Wired into 19 failure sites across the API routes,
+      `auth.ts`, `users.ts`, `images.ts` and the Inngest jobs — every existing
+      server `console.error` except two, and those two omissions are deliberate
+      and commented: token verification failures and geocode misses are routine
+      traffic, and an alert that fires constantly is one nobody reads. No
+      `console.error` was removed; the reports are additional.
+      **To verify:** deploy, force one failure (e.g. temporarily break
+      `DATABASE_URL` in the EAS `preview` environment, or delete a trip mid-
+      upload), and confirm the event arrives in Sentry with its `failure_kind`
+      tag. Until that is seen, this box stays `[~]` — the envelope format is
+      hand-written and has never made a real round trip.
+- [~] Add a manual Sentry capture on failed generations — **written, not yet
+      verified.** `generateTrip`'s `onFailure` now reports before marking the
+      trip failed, including when the failure event carries no `tripId`. Same
+      verification as above: force a generation to fail and look in Sentry.
 - [ ] Tune the polling interval (3–5s) and hard-stop on a terminal status
 - [x] **Unsplash** attribution in the UI *(photographer + Unsplash link per
         photo, and the download-tracking ping, as their terms require)*

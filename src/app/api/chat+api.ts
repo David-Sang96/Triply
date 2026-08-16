@@ -6,6 +6,7 @@ import { GEMINI_TIMEOUT_MS, isRateLimitError } from "@/server/ai/rate-limit";
 import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { chatConversations, chatMessages, trips } from "@/server/db/schema";
+import { captureServerError } from "@/server/sentry";
 import { ensureUser, userSyncUnavailable } from "@/server/users";
 import type { SendChatSuccess } from "@/shared/chat-contract";
 
@@ -241,6 +242,13 @@ export async function POST(request: Request) {
       .values({ userId, tripId, conversationId, turnId, role: "user", content: message });
   } catch (err) {
     console.error("Failed to persist chat message:", err);
+    await captureServerError(err, {
+      failure_kind: "chat_persist_failed",
+      route: "POST /api/chat",
+      status: 502,
+      // Ids and a boolean only — never the message content, which is user text.
+      tags: { user_id: userId, turn_id: turnId, is_trip_chat: Boolean(tripId) },
+    });
     return Response.json(
       { error: "The assistant couldn't reply. Please try again." },
       { status: 502 },
@@ -322,6 +330,14 @@ export async function POST(request: Request) {
       );
     }
     console.error("Chat failed:", err);
+    // Deliberately after the rate-limit branch above: hitting the free-tier
+    // quota is expected and already answered with a 429, so reporting it would
+    // be noise that trains you to ignore this alert.
+    await captureServerError(err, {
+      failure_kind: "chat_failed",
+      route: "POST /api/chat",
+      status: 502,
+    });
     return Response.json(
       { error: "The assistant couldn't reply. Please try again." },
       { status: 502 },

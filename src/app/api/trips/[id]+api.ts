@@ -4,6 +4,7 @@ import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { trips } from "@/server/db/schema";
 import { deleteCoverImage } from "@/server/imagekit";
+import { captureServerError } from "@/server/sentry";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -57,6 +58,14 @@ export async function DELETE(request: Request, { id }: Record<string, string>) {
       await deleteCoverImage(deleted.customCoverImageFileId);
     } catch (err) {
       console.error("Failed to delete trip's cover from ImageKit:", err);
+      // The trip row is gone but its image is not, so nothing will ever
+      // reference or retry this file. That is a leak against the privacy policy
+      // as much as against storage cost: the user deleted their trip.
+      await captureServerError(err, {
+        failure_kind: "cover_delete_orphaned",
+        route: "DELETE /api/trips/[id]",
+        tags: { trip_id: id, file_id: deleted.customCoverImageFileId },
+      });
     }
   }
 
