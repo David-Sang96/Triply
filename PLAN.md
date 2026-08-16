@@ -228,8 +228,15 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       pages. It was `support@triply.app` / `privacy@triply.app`, on a domain
       that was never registered, so every one of those addresses bounced while
       the privacy policy promised them for deletion requests.
-      **The legal site still needs `npx wrangler deploy` from `legal/` for the
-      web pages to show the new address.**
+      **Verified live on 16 Aug**, by reading the deployed pages rather than the
+      source: `support.html` and `delete-account.html` both show
+      `tyee834@gmail.com` and mention `triply.app` nowhere. `npx wrangler deploy`
+      from `legal/` reported "No updated asset files to upload", so the pages had
+      already been deployed and this note was stale — worth knowing, because the
+      note itself was the only reason to think users were still being sent to a
+      bouncing address.
+      *`legal/README.md` and `legal/REVIEWER-NOTES.md` still contain the old
+      addresses on purpose: they document what changed and why.*
 - [ ] Clerk **production** instance *(needs a domain; re-check that password
       sign-in is enabled, it is off in Clerk's defaults)*
 - [ ] Replace the iOS icon *(`app.json` → `ios.icon` is still the Expo default)*

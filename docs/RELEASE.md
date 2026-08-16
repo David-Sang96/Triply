@@ -57,26 +57,37 @@ folder still holds the old id until the next `npx expo prebuild --clean` — whi
 also means the next local dev build installs as a *second* app next to the old
 one.
 
-### 2b. Fix the support email addresses
+### 2b. The support email — DONE, and how to check it stays done
 
-The app and the legal site tell users to write to `support@triply.app` and
-`privacy@triply.app`. **These mailboxes do not exist.** Google Play requires a
-support email that receives mail, and the privacy policy promises a working
-address for deletion requests. Shipping with dead addresses is both a policy
-failure and a broken promise to users.
+The contact address is **`tyee834@gmail.com`**, one address for both support and
+privacy, across the two app screens and the six legal pages.
 
-22 references across 8 files:
+It used to be `support@triply.app` and `privacy@triply.app` — 22 references
+across 8 files — on a domain that was never registered, so **every one of those
+addresses bounced.** That is not cosmetic: Google Play rejects a listing whose
+support email does not receive mail, and the privacy policy commits to handling
+deletion requests sent to it.
 
-- `src/app/help-center.tsx`, `src/app/privacy-policy.tsx`
-- `legal/public/`: `index.html`, `privacy.html`, `terms.html`, `support.html`,
-  `delete-account.html`, `404.html`
+Verified live on 16 Aug by reading the deployed pages, not the source:
 
-Two ways to fix it:
+```bash
+curl -s https://triply-legal.luainawl.workers.dev/support.html | grep -o "[a-z0-9.]*@[a-z.]*"
+curl -s https://triply-legal.luainawl.workers.dev/delete-account.html | grep -o "[a-z0-9.]*@[a-z.]*"
+```
 
-1. Buy `triply.app` and add email forwarding to an inbox you read. Keeps the
-   branding.
-2. Replace every address with one you already control, then redeploy the legal
-   site with `npx wrangler deploy` from `legal/`.
+Both should show only `tyee834@gmail.com`, and no `triply.app`.
+
+**Check the deployed page, not the repo.** The legal site is a separate
+Cloudflare Worker: correcting `legal/public/*.html` changes nothing users see
+until `npx wrangler deploy` runs from `legal/`. A stale note in `PLAN.md` claimed
+that deploy was still outstanding long after it had happened, which is its own
+lesson — the source of truth for a deployed site is the site.
+
+If the address ever changes, it has to change in both places: the app screens
+(shipped by `eas update`) and `legal/public/` (shipped by `wrangler deploy`).
+
+`legal/README.md` and `legal/REVIEWER-NOTES.md` still mention the old addresses
+on purpose — they record what changed and why.
 
 ### 3. Put the secrets in EAS
 
