@@ -428,23 +428,44 @@ installed APK did not have. The update succeeded, and reached nobody.
 since it was built:
 
 - `package.json` dependencies
+- **`package.json` scripts** — yes, really; see below
 - `app.json` native config — icons, splash, permissions, `userInterfaceStyle`
 - config plugins and native packages
 
 Change any of them and you need a build. Everything else — screens, components,
 logic, copy — goes over the air.
 
-Check before you rely on it. This compares what an update would target against
-what a build actually has:
+**`package.json` scripts count, and that surprises people.** On 16 Aug two
+`db:audit-users` npm scripts were added — pure local tooling, no app code, nothing
+native, code that only ever runs on a laptop. The next `eas update` published
+against a fingerprint no installed build had, and reached nobody. The whole
+`package.json` is hashed, not just its dependencies.
+
+So "did I touch native code" is the wrong question, and so is "did I add a
+dependency". The question is "did `package.json` change at all".
+
+Check before you rely on it — **one command, no comparing hashes by eye:**
 
 ```powershell
-npx expo-updates fingerprint:generate --platform android   # local
-eas build:view <build-id>                                  # "Runtime Version"
+eas fingerprint:compare --build-id <build-id>
 ```
 
-If those differ, the update will publish and silently reach nobody. It fails
+It prints whether they match and, when they do not, **exactly what differs** —
+the changed `package.json` keys with a diff, and any native dependency
+directories. That is what identified the scripts above; guessing would not have.
+
+Get the build id from `eas build:list --platform android`. There is also
+`eas fingerprint:generate` for the local hash alone, but comparing two hex
+strings by hand tells you *that* something changed, never *what*.
+
+If they differ, the update publishes and silently reaches nobody. It fails
 safe — it never ships a mismatched bundle — but "safe" and "delivered" are not
 the same thing.
+
+One local caveat: the comparison uses your `node_modules`, so drift from the
+lockfile can show up as a phantom "modified directory" under
+`node_modules/…`. Run `npm ci` first if a native-dependency difference appears
+that you cannot explain.
 
 **Server code is separate again.** API routes under `src/app/**/*+api.ts` are
 neither an update nor a build; they ship with `eas deploy` (step 5).
@@ -455,7 +476,15 @@ Three ways to ship, then:
 | ------- | ------- | ------------- |
 | API routes, `src/server/**` | `eas deploy --environment production --prod` | immediately |
 | Screens, components, TS logic | `eas update --channel preview` | on next app open |
-| `app.json`, plugins, native deps | `eas build` + install | after they install |
+| `app.json`, plugins, native deps, **any `package.json` edit** | `eas build` + install | after they install |
+
+**Match the environment to the channel.** `eas update` prompts for an
+environment: choose `preview` for the `preview` channel and `production` for
+`production`. That prompt decides which `EXPO_PUBLIC_*` values get baked into the
+bundle, so picking the wrong one ships the wrong `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+to that channel — the same class of key mix-up that cost 4 Aug.
+`eas deploy --environment production` is different and correct: there is only one
+production backend.
 
 ---
 
