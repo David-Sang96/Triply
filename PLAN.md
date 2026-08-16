@@ -37,12 +37,15 @@ this file drifted badly once by ticking boxes on code that had never run.
 - [x] Create **Inngest** account → `INNGEST_EVENT_KEY` + `INNGEST_SIGNING_KEY`
 - [x] Create **Sentry** account → DSN
 - [x] Create **Expo / EAS** account *(`@david_sang/TRIPLY`)*
-- [~] Create **Google Cloud** project → OAuth client ID
-      *(Not needed in development — Clerk supplies shared credentials there. But
-      **production instances require your own**, browser SSO or not: Clerk shows
-      "Setup required" until a Client ID and Secret are added. Project `Triply`
-      (`triply-504414`) created 3 Aug; consent screen and client still to do.
-      Redirect URI: `https://clerk.triply.davidsang.dev/v1/oauth_callback`.)*
+- [x] Create **Google Cloud** project → OAuth client ID — **done; confirmed 16
+      Aug** by checking Clerk → SSO Connections → Google, which shows this
+      project's own Client ID rather than "Setup required". Project `Triply`
+      (`triply-504414`), redirect URI
+      `https://clerk.triply.davidsang.dev/v1/oauth_callback`.
+      *Not needed in development — Clerk supplies shared credentials there. But a
+      production instance requires your own, browser SSO or not, and on shared
+      credentials users would see a consent screen naming Clerk rather than
+      Triply.*
 - [x] Decide the geocoder `User-Agent` contact string
 - [x] Set env strategy: client keys use `EXPO_PUBLIC_`; server keys are
       **sensitive**, never **secret**
