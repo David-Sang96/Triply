@@ -234,6 +234,34 @@ the API routes. Without it the routes run with no configuration. `--prod`
 promotes the deployment to the stable production URL instead of a one-off
 preview URL.
 
+> **The export is not optional, and `eas deploy` will not tell you.** It deploys
+> whatever is already sitting in `dist/` — it does not rebuild. The only hint is
+> one quiet line at the top:
+>
+> ```text
+> > Project export: static - exported 22 hours ago
+> ```
+>
+> **`eas update` overwrites `dist/` too**, and with a different shape. Running
+> `eas update --platform android` leaves a `dist/` holding only `_expo/`,
+> `assets/`, `assetmap.json` and `metadata.json` — **no `server/` directory and no
+> API routes at all**. Deploying that succeeds, uploads assets, prints "Your
+> deployment is ready", and serves a backend with nothing in it. With `--prod`
+> that replaces your live API routes.
+>
+> Hit on 16 Aug: a bare `eas deploy` reused a day-old Android-only export. It only
+> went to a preview URL, so nothing broke — but the same command with `--prod`
+> would have taken the production backend down, and the output looked like a
+> success either way.
+>
+> So always run the export immediately before the deploy, and check the code you
+> expect is really in there before promoting it:
+>
+> ```bash
+> ls dist/server        # must exist
+> grep -rl "<a string only your new code contains>" dist
+> ```
+
 Note the origin it prints. That value goes into `EXPO_PUBLIC_API_URL` (step 3),
 and into `CLERK_AUTHORIZED_PARTIES`.
 
