@@ -23,8 +23,11 @@ Both routes need the same groundwork, so do "Groundwork" once.
 - The backend is **part of this app** (`src/app/**/*+api.ts`, `web.output` is
   `"server"`). It is deployed separately to EAS Hosting. The app then talks to
   it over `EXPO_PUBLIC_API_URL` (`src/lib/api.ts`).
-- `.env` / `.env.local` are for local development only. Release builds and the
-  hosted backend read variables from **EAS**, not from those files.
+- `.env` is for local development only (there is no `.env.local` — it was an
+  identical duplicate that had to be hand-synced). Release builds and the hosted
+  backend read variables from **EAS**, not from any local file. That is why a
+  wrong value in `.env.production` cannot break the deployment: it only affects
+  locally-run scripts.
 - **JavaScript-only changes ship over the air**, without a rebuild — see
   "Shipping a JS-only change" below. Native changes still need a build.
 

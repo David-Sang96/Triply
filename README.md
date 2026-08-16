@@ -45,11 +45,13 @@ machine default can stay newer.
 git clone git@github.com:David-Sang96/Triply.git
 cd Triply
 npm ci
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Fill in `.env.local` — `.env.example` documents every variable and which are
-required. Then:
+Fill in `.env` — `.env.example` documents every variable and which are
+required. It must be `.env`, not `.env.local`: the `db:*` scripts and
+`drizzle.config.ts` run as plain Node and read `.env`, so filling in
+`.env.local` gives you a working app whose database commands all fail. Then:
 
 ```bash
 npm run db:migrate     # apply the schema to your Neon database

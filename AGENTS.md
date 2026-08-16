@@ -136,6 +136,30 @@ Notes that will save time:
 - **Environment variables:** client keys use the **`EXPO_PUBLIC_`** prefix (they
   get bundled into the app, so never put a secret there). Server secrets have NO
   prefix and must stay server-side. See `.env.example`.
+- **Four env files, and the split is deliberate. Do not add `.env.local`.**
+
+  | File | Holds | Read by |
+  | ---- | ----- | ------- |
+  | `.env.example` | nothing (committed template) | humans |
+  | `.env` | dev Neon branch + dev Clerk secret | Expo, `db:*`, `drizzle.config.ts` |
+  | `.env.development` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` = `pk_test_` only | Expo when `NODE_ENV=development` |
+  | `.env.production` | production `DATABASE_URL` + `CLERK_SECRET_KEY` + `pk_live_` | Expo when `NODE_ENV=production`, and `db:*:prod` |
+
+  **The two publishable keys must never live in files that can both load.** That
+  is why `pk_test_` sits in `.env.development` rather than in `.env`: `.env`
+  loads alongside `.env.production`, so putting it there would make which key
+  wins depend on load precedence — the exact bug fixed on 4 Aug.
+
+  **`.env.local` existed and was deleted (16 Aug).** It was a hand-synced copy of
+  `.env`, created because the README used to say `cp .env.example .env.local`
+  while `db:*` and `drizzle.config.ts` read `.env` — so following the README gave
+  a working app with broken database commands. Expo reads `.env` too, so the
+  duplicate bought nothing and only invited drift.
+
+  Nothing local reaches production: release builds and the hosted backend read
+  variables from **EAS**, so a wrong value in `.env.production` breaks only
+  locally-run scripts. It still matters — a test `CLERK_SECRET_KEY` there made
+  every production user look missing from Clerk.
 - Save new plan or spec docs under `_plans/`. `PLAN.md` (repo root) is the live
   phase-by-phase checklist.
 
@@ -183,9 +207,10 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   stage it instead: add nullable → backfill in batches → add a validated
   `CHECK (col IS NOT NULL)` → `SET NOT NULL` (which then reuses the check
   rather than re-scanning) → `SET DEFAULT`.
-- **Two databases: one Neon project, two branches.** `.env` and `.env.local`
-  hold the **`dev`** branch; `.env.production` holds **`production`**, which is
-  what the deployed backend uses. Three commands have a `:prod` variant, and the
+- **Two databases: one Neon project, two branches.** `.env` holds the **`dev`**
+  branch — there is deliberately no `.env.local`, see below;
+  `.env.production` holds **`production`**, which is
+  what the deployed backend uses. Four commands have a `:prod` variant, and the
   dev one is always the default — the unsafe target has to be named:
 
   | dev (default) | production |
@@ -193,19 +218,31 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   | `npm run db:migrate` | `npm run db:migrate:prod` |
   | `npm run db:check` | `npm run db:check:prod` |
   | `npm run db:studio` | `npm run db:studio:prod` |
+  | `npm run db:audit-users` | `npm run db:audit-users:prod` |
 
   Migrate dev first, run `db:check` to confirm it worked, and only then run
   `db:migrate:prod`.
 
-  `db:migrate` and `db:check` print which env file they loaded **and** the Neon
-  endpoint id, because the file name alone can lie — a production string left in
-  `.env` still prints `dev`. The endpoint differs per branch, so compare it with
-  the Neon console when it matters.
+  `db:migrate`, `db:check` and `db:audit-users` print which env file they loaded
+  **and** the Neon endpoint id, because the file name alone can lie — a
+  production string left in `.env` still prints `dev`. The endpoint differs per
+  branch, so compare it with the Neon console when it matters.
 
   Every other `db:*` command — `db:generate`, `db:push`, `db:baseline`,
   `db:backfill-orphan-chats`, `db:seed-destinations` — reads `.env` only, prints
   no target line, and has no production path. `db:generate` connects to no
   database at all; it reads `schema.ts` and writes SQL.
+- `npm run db:audit-users` — read-only. Looks every `users.id` up in the Clerk
+  instance that the loaded `CLERK_SECRET_KEY` belongs to, and reports any row
+  that instance does not know about, plus what each such row owns. Written to
+  investigate two `users` rows sharing one email on production: Clerk links a
+  verified OAuth email to an existing account automatically, so it cannot
+  normally make two users for one address — the far likelier cause is rows
+  written by the *development* instance while the app pointed at the production
+  database (the env key shadowing fixed on 4 Aug). **It deletes nothing on
+  purpose:** `users.id` cascades to `trips`, `chat_conversations` and
+  `chat_messages`, so removing a row also destroys that user's trips, days,
+  activities and chats.
 - `npm run db:migrate` — apply pending migrations from `drizzle/` to the **dev**
   branch. `db:migrate:prod` writes to the live database.
 - `npm run db:generate` — generate a versioned SQL migration from schema changes.
