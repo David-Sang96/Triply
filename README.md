@@ -37,9 +37,12 @@ routes and runs on Cloudflare Workers.
 
 ## Getting started
 
-Requires Node 20+, and **JDK 17** for Android native builds — JDK 24 and 25
-break the CMake step. The path is pinned in `android/gradle.properties`; your
-machine default can stay newer.
+Requires **Node 20** (`nvm use 20.20.1` — see `.nvmrc`), and **JDK 17** for
+Android native builds. Not "Node 20 or newer": Node 24 crashes `eas update`
+during the export, and because nvm keeps global packages per version, switching
+away also hides globally-installed CLIs like `ngrok`. JDK 24 and 25 break the
+CMake step; that path is pinned in `android/gradle.properties`, so your machine
+default `java` can stay newer.
 
 ```bash
 git clone git@github.com:David-Sang96/Triply.git
