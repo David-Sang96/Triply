@@ -234,6 +234,72 @@ the API routes. Without it the routes run with no configuration. `--prod`
 promotes the deployment to the stable production URL instead of a one-off
 preview URL.
 
+> **The export is not optional, and `eas deploy` will not tell you.** It deploys
+> whatever is already sitting in `dist/` — it does not rebuild. The only hint is
+> one quiet line at the top:
+>
+> ```text
+> > Project export: static - exported 22 hours ago
+> ```
+>
+> **`eas update` overwrites `dist/` too**, and with a different shape. Running
+> `eas update --platform android` leaves a `dist/` holding only `_expo/`,
+> `assets/`, `assetmap.json` and `metadata.json` — **no `server/` directory and no
+> API routes at all**. Deploying that succeeds, uploads assets, prints "Your
+> deployment is ready", and serves a backend with nothing in it. With `--prod`
+> that replaces your live API routes.
+>
+> Hit on 16 Aug: a bare `eas deploy` reused a day-old Android-only export. It only
+> went to a preview URL, so nothing broke — but the same command with `--prod`
+> would have taken the production backend down, and the output looked like a
+> success either way.
+>
+> So always run the export immediately before the deploy, and check the code you
+> expect is really in there before promoting it:
+>
+> ```bash
+> ls dist/server        # must exist
+> grep -rl "<a string only your new code contains>" dist
+> ```
+>
+> A correct run says `Project export: server` — **not** `static`. That one word
+> is the difference between deploying a backend and deploying an empty shell.
+
+**`EXPO_PUBLIC_*` is NOT inlined into the server bundles.** It is inlined into
+the *client* bundle, which is why those values must never hold a secret. But an
+API route compiles to `process.env.EXPO_PUBLIC_…` as a **runtime** lookup, so it
+resolves from the EAS environment when the worker runs, not from your local
+`.env` at export time.
+
+Two consequences:
+
+- The variable must exist in the EAS environment you deploy with, or the route
+  sees `undefined`. `src/server/sentry.ts` reads `EXPO_PUBLIC_SENTRY_DSN` this
+  way, and with it unset every error report silently no-ops.
+- Its visibility must not be **secret**. EAS Hosting cannot read secret
+  variables, so a secret DSN behaves exactly like a missing one.
+
+Verified 16 Aug: the DSN stayed a runtime lookup in
+`dist/server/_expo/functions/api/webhooks/clerk+api.js`, while `NODE_ENV` *was*
+inlined as `"production"` — so server error events are tagged with the right
+environment.
+
+### 5c. Smoke-test server error reporting
+
+After any deploy that touches `src/server/**`, confirm errors still reach Sentry:
+
+```bash
+curl -X POST https://triply-app.expo.app/api/webhooks/clerk -d '{}'
+```
+
+Expect `Invalid webhook signature` and a 400. A bad signature is rejected before
+anything is read, so this changes no data and creates no user. Within a minute
+Sentry should show an issue tagged `failure_kind: webhook_verification_failed`.
+
+Worth repeating because the failure mode is invisible: if the envelope in
+`src/server/sentry.ts` ever stops being accepted, nothing breaks and no error
+appears — the backend simply looks like it has no errors.
+
 Note the origin it prints. That value goes into `EXPO_PUBLIC_API_URL` (step 3),
 and into `CLERK_AUTHORIZED_PARTIES`.
 

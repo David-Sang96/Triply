@@ -174,25 +174,38 @@ this file drifted badly once by ticking boxes on code that had never run.
 - [x] **Verify:** a triggered warning reaches Sentry with usable context
       *(the sign-in diagnostic did exactly this and identified
       `needs_client_trust`, which no amount of reading the code had.)*
-- [~] Capture API-route errors in Sentry — **written, not yet verified.**
-      `src/server/sentry.ts` POSTs a Sentry envelope with plain `fetch`, because
-      no Sentry SDK runs on Cloudflare Workers (`@sentry/react-native` is a
-      client SDK; `@sentry/cloudflare` wraps a Worker `fetch` handler that EAS
-      Hosting owns). Wired into 19 failure sites across the API routes,
-      `auth.ts`, `users.ts`, `images.ts` and the Inngest jobs — every existing
-      server `console.error` except two, and those two omissions are deliberate
-      and commented: token verification failures and geocode misses are routine
-      traffic, and an alert that fires constantly is one nobody reads. No
-      `console.error` was removed; the reports are additional.
-      **To verify:** deploy, force one failure (e.g. temporarily break
-      `DATABASE_URL` in the EAS `preview` environment, or delete a trip mid-
-      upload), and confirm the event arrives in Sentry with its `failure_kind`
-      tag. Until that is seen, this box stays `[~]` — the envelope format is
-      hand-written and has never made a real round trip.
-- [~] Add a manual Sentry capture on failed generations — **written, not yet
-      verified.** `generateTrip`'s `onFailure` now reports before marking the
-      trip failed, including when the failure event carries no `tripId`. Same
-      verification as above: force a generation to fail and look in Sentry.
+- [x] Capture API-route errors in Sentry — **verified in production, 16 Aug.**
+      `curl -X POST https://triply-app.expo.app/api/webhooks/clerk -d '{}'`
+      produced a Sentry issue within a minute: *"@clerk/backend: Missing required
+      webhook headers: svix-id, svix-timestamp, svix-signature"*, tagged
+      `failure_kind: webhook_verification_failed`, `route: POST
+      /api/webhooks/clerk`, `runtime: cloudflare-workers`, `status: 400`, and
+      found by a tag search. So the hand-written envelope is accepted, the tags
+      are indexed, and events group as real issues. A bad signature changes no
+      data, which makes that curl a safe smoke test to repeat after any change to
+      `src/server/sentry.ts`.
+      *Proven for the transport, which was the risk. The other 18 call sites use
+      the same helper; only this one has actually been fired.*
+      *Implementation:* `src/server/sentry.ts` POSTs a Sentry envelope with plain
+      `fetch`, because no Sentry SDK runs on Cloudflare Workers
+      (`@sentry/react-native` is a client SDK; `@sentry/cloudflare` wraps a
+      Worker `fetch` handler that EAS Hosting owns). Wired into 19 failure sites
+      across the API routes, `auth.ts`, `users.ts`, `images.ts` and the Inngest
+      jobs — every server `console.error` except two, and those two omissions are
+      deliberate and commented: token verification failures and geocode misses
+      are routine traffic, and an alert that fires constantly is one nobody
+      reads. No `console.error` was removed; the reports are additional.
+- [~] Add a manual Sentry capture on failed generations — **written; transport
+      proven, this path not yet fired.** `generateTrip`'s `onFailure` reports
+      before marking the trip failed, including when the failure event carries no
+      `tripId` (which would mean the event shape is not what the code assumes).
+      It calls the same `captureServerError` verified above, so the remaining
+      unknown is only whether `onFailure` runs and reads the id correctly — not
+      whether Sentry receives events.
+      **To close:** force a generation to fail (e.g. temporarily invalidate
+      `GEMINI_API_KEY` in the EAS `production` environment, generate one trip,
+      then put it back) and confirm an issue tagged
+      `failure_kind: trip_generation_failed` with a `trip_id` tag.
 - [ ] Tune the polling interval (3–5s) and hard-stop on a terminal status
 - [x] **Unsplash** attribution in the UI *(photographer + Unsplash link per
         photo, and the download-tracking ping, as their terms require)*
