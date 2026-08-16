@@ -230,7 +230,24 @@ this file drifted badly once by ticking boxes on code that had never run.
       "© OpenStreetMap contributors" with `attributionControl` on, and
       `src/app/about.tsx` credits place data under the Open Database Licence)*
 - [x] Review request usage in the EAS Hosting dashboard
-- [ ] Apply for Unsplash **production** access (50 req/hour on Demo)
+- [ ] Apply for Unsplash **production** access — 50 req/hour on Demo → 1,000 on
+      production. App id `1014838`, currently **Demo**.
+      Their checklist, against this app: hotlinking ✅ (`photo.urls.regular` used
+      directly; ImageKit only touches user-uploaded custom covers, never Unsplash
+      images) · attribution ✅ (`"{photographer} / Unsplash"` in
+      `TripDetailView`, tappable, UTM-tagged via `withUtm`) · no Unsplash
+      logo/name ✅ · not replicating Unsplash ✅ (no photo search or browse
+      surface) · download tracking ✅ **as of 16 Aug** — it previously fired for
+      the cover photo only, which under-reported usage the guidelines require
+      reporting.
+      **Before applying:** the app description on Unsplash reads "This is AI trip
+      planner application", and their checklist asks that name and description
+      alone explain what you are building. Say where photos appear and that there
+      is no photo browsing. Screenshots are required: use the trip detail screen
+      with the credit line visible.
+      *Note the Demo tier is now tighter, not looser: pinging every photo costs
+      1 search + 5 pings per generation instead of 2 requests, so roughly 8
+      generations/hour rather than 25 until production is approved.*
 
 ## Phase 8 — Release
 
