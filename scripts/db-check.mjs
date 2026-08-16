@@ -9,8 +9,8 @@ import { loadDatabaseEnv } from "./db-env.mjs";
 // ./drizzle. Writes nothing, so it is safe to run against production.
 //
 // Targets the dev branch by default; `npm run db:check:prod` targets
-// production. The Expo app reads .env.local, so a rotated password has to be
-// updated there as well as in .env.
+// production. A rotated password only has to be updated in .env — Expo reads
+// that file too, which is why the duplicate .env.local was removed.
 const { label, file, endpoint } = loadDatabaseEnv();
 console.log(`target     ${label} (${file})  endpoint ${endpoint}`);
 

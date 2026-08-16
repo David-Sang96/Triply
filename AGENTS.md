@@ -136,6 +136,30 @@ Notes that will save time:
 - **Environment variables:** client keys use the **`EXPO_PUBLIC_`** prefix (they
   get bundled into the app, so never put a secret there). Server secrets have NO
   prefix and must stay server-side. See `.env.example`.
+- **Four env files, and the split is deliberate. Do not add `.env.local`.**
+
+  | File | Holds | Read by |
+  | ---- | ----- | ------- |
+  | `.env.example` | nothing (committed template) | humans |
+  | `.env` | dev Neon branch + dev Clerk secret | Expo, `db:*`, `drizzle.config.ts` |
+  | `.env.development` | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` = `pk_test_` only | Expo when `NODE_ENV=development` |
+  | `.env.production` | production `DATABASE_URL` + `CLERK_SECRET_KEY` + `pk_live_` | Expo when `NODE_ENV=production`, and `db:*:prod` |
+
+  **The two publishable keys must never live in files that can both load.** That
+  is why `pk_test_` sits in `.env.development` rather than in `.env`: `.env`
+  loads alongside `.env.production`, so putting it there would make which key
+  wins depend on load precedence — the exact bug fixed on 4 Aug.
+
+  **`.env.local` existed and was deleted (16 Aug).** It was a hand-synced copy of
+  `.env`, created because the README used to say `cp .env.example .env.local`
+  while `db:*` and `drizzle.config.ts` read `.env` — so following the README gave
+  a working app with broken database commands. Expo reads `.env` too, so the
+  duplicate bought nothing and only invited drift.
+
+  Nothing local reaches production: release builds and the hosted backend read
+  variables from **EAS**, so a wrong value in `.env.production` breaks only
+  locally-run scripts. It still matters — a test `CLERK_SECRET_KEY` there made
+  every production user look missing from Clerk.
 - Save new plan or spec docs under `_plans/`. `PLAN.md` (repo root) is the live
   phase-by-phase checklist.
 
@@ -183,8 +207,9 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   stage it instead: add nullable → backfill in batches → add a validated
   `CHECK (col IS NOT NULL)` → `SET NOT NULL` (which then reuses the check
   rather than re-scanning) → `SET DEFAULT`.
-- **Two databases: one Neon project, two branches.** `.env` and `.env.local`
-  hold the **`dev`** branch; `.env.production` holds **`production`**, which is
+- **Two databases: one Neon project, two branches.** `.env` holds the **`dev`**
+  branch — there is deliberately no `.env.local`, see below;
+  `.env.production` holds **`production`**, which is
   what the deployed backend uses. Four commands have a `:prod` variant, and the
   dev one is always the default — the unsafe target has to be named:
 
