@@ -230,8 +230,13 @@ this file drifted badly once by ticking boxes on code that had never run.
       "© OpenStreetMap contributors" with `attributionControl` on, and
       `src/app/about.tsx` credits place data under the Open Database Licence)*
 - [x] Review request usage in the EAS Hosting dashboard
-- [ ] Apply for Unsplash **production** access — 50 req/hour on Demo → 1,000 on
-      production. App id `1014838`, currently **Demo**.
+- [~] Apply for Unsplash **production** access — **submitted 16 Aug, status "In
+      Review"**. Unsplash quote 5–10 business days. 50 req/hour on Demo → 1,000
+      on production. App id `1014838`.
+      Submitted with two trip-detail screenshots showing the credit line on the
+      photo itself (`Yovan Verma / Unsplash`, `Joy Lim / Unsplash`) and a
+      description saying where photos appear and that there is no photo browsing.
+      Nothing to do but wait; if it is rejected, the reply names the guideline.
       Their checklist, against this app: hotlinking ✅ (`photo.urls.regular` used
       directly; ImageKit only touches user-uploaded custom covers, never Unsplash
       images) · attribution ✅ (`"{photographer} / Unsplash"` in
