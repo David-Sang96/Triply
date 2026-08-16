@@ -198,17 +198,32 @@ this file drifted badly once by ticking boxes on code that had never run.
       deliberate and commented: token verification failures and geocode misses
       are routine traffic, and an alert that fires constantly is one nobody
       reads. No `console.error` was removed; the reports are additional.
-- [~] Add a manual Sentry capture on failed generations — **written; transport
-      proven, this path not yet fired.** `generateTrip`'s `onFailure` reports
-      before marking the trip failed, including when the failure event carries no
-      `tripId` (which would mean the event shape is not what the code assumes).
-      It calls the same `captureServerError` verified above, so the remaining
-      unknown is only whether `onFailure` runs and reads the id correctly — not
-      whether Sentry receives events.
-      **To close:** force a generation to fail (e.g. temporarily invalidate
-      `GEMINI_API_KEY` in the EAS `production` environment, generate one trip,
-      then put it back) and confirm an issue tagged
-      `failure_kind: trip_generation_failed` with a `trip_id` tag.
+- [x] Add a manual Sentry capture on failed generations — **verified in
+      production, 17 Aug.** `generateTrip`'s `onFailure` reports before marking
+      the trip failed, and the Sentry issue arrived tagged
+      `failure_kind: trip_generation_failed`, `route: generateTrip`, found by tag
+      search. The title carried the real root cause — the Postgres rejection of
+      the bad id, passed straight through from the original failure rather than a
+      wrapper.
+      **How it was forced, without spending anything:** send a `trip/requested`
+      event whose `tripId` is not a UUID. Postgres rejects it in the first step,
+      Inngest retries twice, and `onFailure` runs — no Gemini call, no Unsplash
+      requests, no env changes and no redeploy:
+
+      ```bash
+      KEY=$(grep -m1 '^INNGEST_EVENT_KEY=' .env | cut -d= -f2- | tr -d '\r"')
+      BODY='{"name":"trip/requested","data":{"tripId":"not-a-uuid"}}'
+      curl -X POST "https://inn.gs/e/$KEY" -H "Content-Type: application/json" -d "$BODY"
+      ```
+
+      Cheaper and safer than the obvious approach of invalidating
+      `GEMINI_API_KEY` in EAS, which costs a generation and two deploys and can
+      leave production broken if the restore is forgotten. Reusable whenever the
+      failure path needs re-checking; the only residue is one red run in Inngest's
+      history.
+      *Timing note: the report only appears after the retries are exhausted —
+      Inngest still showed "Running" ~40s before the Sentry event landed. Do not
+      conclude it failed to report until the run itself has finished failing.*
 - [x] Tune the polling interval (3–5s) and hard-stop on a terminal status —
       the interval and the hard-stop were already in `useTripStatus`
       (`src/lib/trips.ts`): 3s, and `refetchInterval` returns `false` once the
