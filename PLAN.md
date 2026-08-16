@@ -254,11 +254,27 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       bouncing address.
       *`legal/README.md` and `legal/REVIEWER-NOTES.md` still contain the old
       addresses on purpose: they document what changed and why.*
-- [ ] Clerk **production** instance *(needs a domain; re-check that password
-      sign-in is enabled, it is off in Clerk's defaults)*
+- [x] Clerk **production** instance — live on `clerk.triply.davidsang.dev`, keys
+      `pk_live_` / `sk_live_`, and the deployed backend verifies its tokens.
+      Both methods exercised against it on real devices: Google SSO (10 of 10
+      restart cycles on 16 Aug, once `@clerk/expo` v4 landed) and email/password
+      sign-up, which produced a real `users` row — so password sign-in **is**
+      enabled, which was the thing the old note asked to re-check.
+      *Two things this box does not cover, tracked separately below: whether
+      Google is using **your** OAuth credentials rather than Clerk's shared
+      development ones (see Phase 0), and the mobile SSO redirect allowlist,
+      which production enforces and development does not — `triply://sso-callback`
+      must be listed or `startSSOFlow` throws before a browser opens. See
+      `docs/RELEASE.md` step 4.*
 - [ ] Replace the iOS icon *(`app.json` → `ios.icon` is still the Expo default)*
 - [ ] Play Console account, store listing assets, data safety + content rating
 - [ ] Closed test: 12 testers opted in for 14 continuous days
+      **This is the critical path.** The 14 days are wall-clock and cannot be
+      compressed, shortened by having more testers, or started before the Play
+      Console account exists and a build is uploaded to a closed track. Every
+      other Phase 8 item can be done in parallel or during those two weeks, so
+      this is the one to start first regardless of how finished anything else
+      looks. The account also costs a one-time $25 fee.
 - [x] Back up the Android keystore *(downloaded 16 Aug via `eas credentials` →
       Android → production → Keystore → Download existing keystore. A copy now
       exists off this machine, together with the keystore password, key alias and
