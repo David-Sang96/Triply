@@ -17,7 +17,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SplashScreenView } from "@/components/SplashScreenView";
-import { queryClient } from "@/lib/query";
+import { queryClient, useAppStateFocus } from "@/lib/query";
 import { tokenCache } from "@/lib/token-cache";
 
 import "../../global.css";
@@ -73,6 +73,10 @@ function RootLayout() {
     Poppins_700Bold,
   });
   const navigationRef = useNavigationContainerRef();
+
+  // Stops trip-status polling while the app is backgrounded. React Query cannot
+  // work this out by itself on React Native — see the note in src/lib/query.ts.
+  useAppStateFocus();
 
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();

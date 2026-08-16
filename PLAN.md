@@ -206,7 +206,24 @@ this file drifted badly once by ticking boxes on code that had never run.
       `GEMINI_API_KEY` in the EAS `production` environment, generate one trip,
       then put it back) and confirm an issue tagged
       `failure_kind: trip_generation_failed` with a `trip_id` tag.
-- [ ] Tune the polling interval (3–5s) and hard-stop on a terminal status
+- [x] Tune the polling interval (3–5s) and hard-stop on a terminal status —
+      the interval and the hard-stop were already in `useTripStatus`
+      (`src/lib/trips.ts`): 3s, and `refetchInterval` returns `false` once the
+      status is in `TERMINAL = ["ready", "failed"]`. This box was simply never
+      ticked. It is the only polling site in the app.
+      **What was actually missing: it never paused in the background.** React
+      Query gates each interval tick on `focusManager.isFocused()`, and that
+      falls back to `globalThis.document?.visibilityState !== "hidden"` — on
+      React Native there is no `document`, so it is `undefined !== "hidden"`,
+      i.e. **true forever**. The default `refetchIntervalInBackground: false` had
+      no effect at all. So a backgrounded app kept polling every 3s, draining
+      battery and burning free-tier requests (and Cloudflare subrequests, since
+      each poll queries Neon). Fixed by wiring `AppState` to
+      `focusManager.setFocused` in `useAppStateFocus` (`src/lib/query.ts`), called
+      once from `_layout.tsx`.
+      **To verify on a device:** start a generation, background the app, and watch
+      `adb logcat` (or the EAS Hosting request count) go quiet instead of ticking
+      every 3s.
 - [x] **Unsplash** attribution in the UI *(photographer + Unsplash link per
         photo, and the download-tracking ping, as their terms require)*
 - [x] **OpenStreetMap** attribution in the UI *(the Leaflet tile layer credits
