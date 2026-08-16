@@ -206,8 +206,15 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 - [ ] Replace the iOS icon *(`app.json` → `ios.icon` is still the Expo default)*
 - [ ] Play Console account, store listing assets, data safety + content rating
 - [ ] Closed test: 12 testers opted in for 14 continuous days
-- [ ] Back up the Android keystore *(`eas credentials` — losing it means the app
-      can never be updated on Play)*
+- [x] Back up the Android keystore *(downloaded 16 Aug via `eas credentials` →
+      Android → production → Keystore → Download existing keystore. A copy now
+      exists off this machine, together with the keystore password, key alias and
+      key password — the file alone cannot sign anything. Type JKS, key alias
+      `863f28db…`, release SHA-1 `A3:BE:C0:0C:99:A9:4F:36:47:C5:C5:7C:8F:E7:E4:49:EE:11:9E:3D`
+      (fingerprints are public identifiers, not secrets; the SHA-1 is what an
+      Android OAuth client would need if Google sign-in ever moves from browser
+      SSO to native). Losing the keystore means the app can never be updated on
+      Play.)*
 
 ---
 
