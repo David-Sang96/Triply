@@ -103,9 +103,29 @@ async function searchPhotos(
       const imageUrl = photo.urls?.regular ?? photo.urls?.full;
       if (!imageUrl) continue;
 
-      // Required download-tracking ping — only for the cover (first) photo, to
-      // stay well within Unsplash's free-tier request budget. Fire and forget.
-      if (images.length === 0 && photo.links?.download_location) {
+      // Required download-tracking ping, for EVERY photo kept — not just the
+      // cover. Unsplash's production checklist words it as "when a user in your
+      // application uses a photo, it triggers an event to the download
+      // endpoint", and every photo here is displayed in the trip's carousel, so
+      // every one counts as used.
+      //
+      // It used to fire only for the first photo, to stay inside the Demo
+      // tier's 50 requests/hour. That saved quota by under-reporting usage the
+      // guidelines require reporting — and the production application asks you
+      // to confirm compliance with exactly this point, so the trade was not
+      // ours to make.
+      //
+      // Fire and forget: these pings are attribution bookkeeping, and a failed
+      // one must not delay or fail a generation.
+      //
+      // They DO count against the rate limit, so this makes the Demo tier
+      // meaningfully tighter: at `count = 5` a generation costs 1 search + 5
+      // pings = 6 requests instead of 2, which is roughly 8 generations per hour
+      // within the 50/hour Demo cap rather than 25. (More if the search falls
+      // through to a second or third term.) That is the correct trade — being
+      // inside the guidelines is not optional — and production access lifts the
+      // cap to 1,000/hour, at which point the arithmetic stops mattering.
+      if (photo.links?.download_location) {
         fetch(photo.links.download_location, {
           headers: { Authorization: `Client-ID ${accessKey}` },
         }).catch(() => {});
