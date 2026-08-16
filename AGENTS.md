@@ -37,6 +37,20 @@ rely on memory of older Expo or React Native patterns.
   (`react-native-worklets`, `react-native-screens`). JDK 17 is pinned in
   `android/gradle.properties` (`org.gradle.java.home`) — keep it. The machine
   default `java` can stay newer.
+- **Use Node 20 (`nvm use 20.20.1`). Node 24 breaks three separate things.**
+  Pinned in `.nvmrc` and `engines` in `package.json`, so npm warns on the wrong
+  version. `nvm-windows` does **not** read `.nvmrc` automatically — you still
+  type `nvm use`, and a fresh terminal may come back on the machine default. The
+  three failures, so nobody has to rediscover them:
+  1. `eas update` dies with exit `3221225477` (`0xC0000005`, a native access
+     violation) during the export, right after "Creating asset map" — bundling
+     itself succeeds, so the log looks healthy until it crashes. `eas build` is
+     unaffected: it bundles on EAS servers, not locally.
+  2. Expo SDK 57 targets Node LTS. 24 is newer than anything it is tested on.
+  3. **Global npm packages are per Node version.** Switching to 24 makes
+     `ngrok` (and `claude-mem`, and anything else installed globally under 20)
+     vanish with a bare "command not found" — nothing is uninstalled, it is just
+     a different tree. That is what breaks `npm run tunnel`.
 
 ## Stack
 
