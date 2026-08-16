@@ -41,14 +41,23 @@ const instance = secretKey.startsWith("sk_live_")
     ? "development"
     : "unrecognised";
 console.log(`clerk      ${instance} instance (from CLERK_SECRET_KEY prefix)`);
+// Stop rather than warn. On a mismatch every row is reported as missing from
+// Clerk, which reads as "these are all orphans, delete them" — and deleting
+// cascades to trips and chats. A warning above a convincing-looking list is not
+// enough protection for an irreversible action, so refuse to print the list.
 if (
   (label === "PRODUCTION" && instance !== "PRODUCTION") ||
   (label === "dev" && instance === "PRODUCTION")
 ) {
-  console.log(
-    "           WARNING: database and Clerk instance disagree. Every row will " +
-      "look orphaned. Fix the env file before reading anything below.",
+  console.error(
+    `\nSTOPPING: the database is ${label} but CLERK_SECRET_KEY belongs to the ` +
+      `${instance} instance.\n` +
+      `Every row would look orphaned, and acting on that would delete real ` +
+      `users' trips and chats.\n` +
+      `Fix CLERK_SECRET_KEY in ${file} (Clerk dashboard -> the ${label} ` +
+      `instance -> API keys), then run this again.`,
   );
+  process.exit(1);
 }
 
 const sql = neon(process.env.DATABASE_URL);
