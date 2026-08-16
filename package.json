@@ -79,6 +79,8 @@
     "db:check": "node scripts/db-check.mjs",
     "db:check:prod": "node scripts/db-check.mjs --prod",
     "db:backfill-orphan-chats": "node scripts/db-backfill-orphan-chats.mjs",
+    "db:audit-users": "node scripts/db-audit-users.mjs",
+    "db:audit-users:prod": "node scripts/db-audit-users.mjs --prod",
     "db:seed-destinations": "node scripts/db-seed-destinations.mjs",
     "db:studio": "drizzle-kit studio",
     "db:studio:prod": "drizzle-kit studio --config drizzle.config.prod.ts",

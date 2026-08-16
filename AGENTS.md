@@ -185,7 +185,7 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   rather than re-scanning) → `SET DEFAULT`.
 - **Two databases: one Neon project, two branches.** `.env` and `.env.local`
   hold the **`dev`** branch; `.env.production` holds **`production`**, which is
-  what the deployed backend uses. Three commands have a `:prod` variant, and the
+  what the deployed backend uses. Four commands have a `:prod` variant, and the
   dev one is always the default — the unsafe target has to be named:
 
   | dev (default) | production |
@@ -193,19 +193,31 @@ run long-lived processes. If one is needed, STOP and ask the developer.
   | `npm run db:migrate` | `npm run db:migrate:prod` |
   | `npm run db:check` | `npm run db:check:prod` |
   | `npm run db:studio` | `npm run db:studio:prod` |
+  | `npm run db:audit-users` | `npm run db:audit-users:prod` |
 
   Migrate dev first, run `db:check` to confirm it worked, and only then run
   `db:migrate:prod`.
 
-  `db:migrate` and `db:check` print which env file they loaded **and** the Neon
-  endpoint id, because the file name alone can lie — a production string left in
-  `.env` still prints `dev`. The endpoint differs per branch, so compare it with
-  the Neon console when it matters.
+  `db:migrate`, `db:check` and `db:audit-users` print which env file they loaded
+  **and** the Neon endpoint id, because the file name alone can lie — a
+  production string left in `.env` still prints `dev`. The endpoint differs per
+  branch, so compare it with the Neon console when it matters.
 
   Every other `db:*` command — `db:generate`, `db:push`, `db:baseline`,
   `db:backfill-orphan-chats`, `db:seed-destinations` — reads `.env` only, prints
   no target line, and has no production path. `db:generate` connects to no
   database at all; it reads `schema.ts` and writes SQL.
+- `npm run db:audit-users` — read-only. Looks every `users.id` up in the Clerk
+  instance that the loaded `CLERK_SECRET_KEY` belongs to, and reports any row
+  that instance does not know about, plus what each such row owns. Written to
+  investigate two `users` rows sharing one email on production: Clerk links a
+  verified OAuth email to an existing account automatically, so it cannot
+  normally make two users for one address — the far likelier cause is rows
+  written by the *development* instance while the app pointed at the production
+  database (the env key shadowing fixed on 4 Aug). **It deletes nothing on
+  purpose:** `users.id` cascades to `trips`, `chat_conversations` and
+  `chat_messages`, so removing a row also destroys that user's trips, days,
+  activities and chats.
 - `npm run db:migrate` — apply pending migrations from `drizzle/` to the **dev**
   branch. `db:migrate:prod` writes to the live database.
 - `npm run db:generate` — generate a versioned SQL migration from schema changes.
