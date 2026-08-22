@@ -276,6 +276,79 @@ preview URL.
 > A correct run says `Project export: server` — **not** `static`. That one word
 > is the difference between deploying a backend and deploying an empty shell.
 
+#### Three failures whose error messages point somewhere else
+
+All three were hit in one sitting on 22 Aug. None of them says what is actually
+wrong, so each is listed with the message you will really see.
+
+**1. `Unexpected end of JSON input` means the export died halfway.**
+
+```text
+> Project export: server
+✖ Failed to create deployment
+Unexpected end of JSON input
+    Error: deploy command failed.
+```
+
+Nothing is wrong with EAS. `eas deploy` reads
+`dist/server/_expo/routes.json` first, and that file was **0 bytes** — the
+export had segfaulted while writing it. `JSON.parse("")` throws exactly this.
+
+What makes it nasty is that the export *looked* fine: it printed all 14 API
+routes with their sizes and then crashed. That list is printed **before** the
+files are written, so it proves nothing. Only 1 of 14 function files had
+actually reached disk.
+
+Check before every deploy — non-zero bytes, and the count you expect:
+
+```bash
+wc -c dist/server/_expo/routes.json && ls dist/server/_expo/functions/api | wc -l
+```
+
+The fix is `rm -rf dist` and export again; `dist/` is gitignored and fully
+regenerated, so there is nothing to lose. It was a one-off — the same export
+succeeded on the retry, on the same Node 20.20.1. If it repeats, try
+`NODE_OPTIONS=--max-old-space-size=4096 npx expo export --platform web`, but
+retry plainly first or you will not know whether the flag did anything.
+
+**2. `CLERK_AUTHORIZED_PARTIES is not set` means you forgot `--environment production`.**
+
+```text
+✖ Failed to create deployment
+Uncaught Error: CLERK_AUTHORIZED_PARTIES is not set. Required in production …
+  at _expo/functions/api/chat+api.js:823:945
+```
+
+The variable *is* set in EAS. A bare `eas deploy` just does not load any
+environment, so every API route runs unconfigured, `src/server/auth.ts` throws
+at module load, and `eas deploy` — which loads each worker to validate it —
+refuses. That refusal is the safety net working: it is why a misconfigured
+backend cannot reach production.
+
+The stack trace names `chat+api.js` only because that is the first worker
+validated. It is not a chat bug. Always deploy with both flags:
+
+```bash
+eas deploy --environment production --prod
+```
+
+**3. A missing API route returns the web app's HTML, not a JSON 404.**
+
+`curl https://triply-app.expo.app/api/health` on a deployment that predates the
+route prints a screenful of Expo's CSS and markup. It means *no such route* —
+the request fell through to the single-page app — not *the route crashed*.
+
+Tell the two apart by comparing against a route you know is deployed:
+
+```bash
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" https://triply-app.expo.app/api/health
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" https://triply-app.expo.app/api/trips
+```
+
+`/api/trips` answers `401 application/json` when signed out. If your new route
+says `404 text/html` while that one is healthy, the backend is fine and the
+deployment is simply older than the route. Redeploy.
+
 **`EXPO_PUBLIC_*` is NOT inlined into the server bundles.** It is inlined into
 the *client* bundle, which is why those values must never hold a secret. But an
 API route compiles to `process.env.EXPO_PUBLIC_…` as a **runtime** lookup, so it
@@ -585,7 +658,12 @@ failing step names the code. The fix is to split that step's work into several
 - [ ] Signed in on a real device with email + password, not only with Google
 - [ ] `CLERK_AUTHORIZED_PARTIES` is set for the production environment
 - [ ] `npm run db:migrate` applied against the production database
-- [ ] `eas deploy --prod` run, and `EXPO_PUBLIC_API_URL` points at that origin
+- [ ] `npx expo export --platform web` run **immediately** before the deploy,
+      and checked: `wc -c dist/server/_expo/routes.json` is non-zero and
+      `ls dist/server/_expo/functions/api` holds every route you expect
+- [ ] `eas deploy --environment production --prod` run — **both** flags; without
+      `--environment production` the routes load unconfigured and the deploy is
+      refused — and `EXPO_PUBLIC_API_URL` points at that origin
 - [ ] Clerk webhook and Inngest Cloud point at the deployed origin
 - [ ] `expo.version` in `app.json` bumped if this is a user-visible release
 - [ ] Build tested from the install link on a real device before submitting

@@ -57,9 +57,10 @@ this file drifted badly once by ticking boxes on code that had never run.
 
 - [x] Change `app.json` → `web.output` from `"static"` to `"server"`
 - [x] Create `eas.json` (EAS Build + Hosting config)
-- [~] Create `src/app/api/health+api.ts` returning `{ ok: true }` — **written 22
-      Aug, not yet deployed.** Verify with
-      `curl https://triply-app.expo.app/api/health` after the next `eas deploy`.
+- [x] Create `src/app/api/health+api.ts` returning `{ ok: true }` — **deployed
+      and verified in production, 22 Aug.**
+      `curl https://triply-app.expo.app/api/health` → `{"ok":true}`, HTTP 200,
+      `application/json`.
       Deliberately touches no database and needs no auth, so a red health check
       means the deploy is down rather than a dependency — `/api/trips` (a clean
       401 when signed out) is what proves the auth path. Keeping it free of DB
@@ -166,7 +167,14 @@ this file drifted badly once by ticking boxes on code that had never run.
         single query left trips with no cover at all)*
   - [x] persist days + activities in one `db.batch`, set `status='ready'`
   - [x] `onFailure`: `status='failed'` + friendly `error_message`
-- [~] Add a retry path for the Retry button — **written 22 Aug, not yet run.**
+- [~] Add a retry path for the Retry button — **server side deployed and live 22
+      Aug; the round trip is still untested.** `POST /api/trips/:id/retry`
+      answers `401 application/json` without a token, which is the proof the
+      route is really deployed: an *undeployed* route returns `404 text/html`,
+      because the request falls through to the single-page app.
+      **The app side has not shipped.** The button that calls this route reaches
+      installed builds only via `eas update`; until then the server route exists
+      and nothing calls it.
       `POST /api/trips/:id/retry` (`src/app/api/trips/[id]/retry+api.ts`) resets
       the row to `queued`, clears `error_message`, and re-sends `trip/requested`
       with the parameters already stored on the trip. The screen no longer
