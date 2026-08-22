@@ -306,10 +306,49 @@ wc -c dist/server/_expo/routes.json && ls dist/server/_expo/functions/api | wc -
 ```
 
 The fix is `rm -rf dist` and export again; `dist/` is gitignored and fully
-regenerated, so there is nothing to lose. It was a one-off — the same export
-succeeded on the retry, on the same Node 20.20.1. If it repeats, try
-`NODE_OPTIONS=--max-old-space-size=4096 npx expo export --platform web`, but
-retry plainly first or you will not know whether the flag did anything.
+regenerated, so there is nothing to lose.
+
+**It is not a one-off, and it is not the Node 24 trap.** An earlier version of
+this note said both, and both were wrong. On 22 Aug the export crashed three
+times in one afternoon and succeeded on retry each time:
+
+| Command | Result |
+| ------- | ------ |
+| `npx expo export --platform web` | `Segmentation fault`, then fine on retry |
+| `eas update --channel production` | exit `3221225477`, then fine on retry |
+| `eas update --channel preview` | exit `3221225477` |
+
+`3221225477` is `0xC0000005`, an access violation — the same exit code
+`AGENTS.md` records for running `eas update` on Node 24. **That is not what this
+is.** A wrong Node version fails every time; this succeeds on retry. Do not
+spend time on `nvm` when you see that number: check whether a plain retry works
+first.
+
+What actually makes it likely is how much work one command does. `eas update`
+runs `expo export --platform=all --clear`, which throws away the bundler cache
+and then rebuilds Android, iOS **and** web bundles, each with a ~15 MB source
+map, plus all 14 API routes. So:
+
+- **Only bundle what you ship.** `eas update -p android` skips the iOS and web
+  bundles entirely. This project ships Android; building the other two doubles
+  the time and the exposure to the crash for nothing.
+- **Retry before reaching for flags.** It has worked every time so far.
+- If it becomes persistent, then try
+  `NODE_OPTIONS=--max-old-space-size=4096 npx expo export --platform web` — but
+  not first, or you will not know whether the flag did anything.
+
+**When the bundle already exists, do not rebuild it at all.** Copying a
+published update to another channel needs no export, so it cannot hit this:
+
+```bash
+eas update:republish --branch production --destination-channel preview
+```
+
+⚠️ Safe here **only because** `preview` and `production` hold identical
+`EXPO_PUBLIC_*` values — checked with `eas env:list --environment <name>`. Those
+values are baked into the bundle, so republishing between environments that
+differ would ship the wrong `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` to that channel.
+Compare them before using this shortcut.
 
 **2. `CLERK_AUTHORIZED_PARTIES is not set` means you forgot `--environment production`.**
 
@@ -558,6 +597,37 @@ bundle, so picking the wrong one ships the wrong `EXPO_PUBLIC_CLERK_PUBLISHABLE_
 to that channel — the same class of key mix-up that cost 4 Aug.
 `eas deploy --environment production` is different and correct: there is only one
 production backend.
+
+**An update can succeed and reach nobody. Two things must line up.**
+
+`eas update` reports "Published!" whether or not a single device can use the
+result, so check both before assuming a change shipped:
+
+1. **The channel** decides *which builds listen*. `--channel production` is only
+   heard by a build made with the `production` profile.
+2. **The runtime version** decides *which builds may accept it*. It is a
+   fingerprint of the native side, and it must match the installed build exactly.
+
+Hit on 22 Aug: an update went to `production` and reached nothing, because every
+Android build this project has ever made is `preview` — there were **zero**
+production-profile builds. The runtime fingerprint matched the installed APK
+perfectly; the channel did not.
+
+```bash
+# which channel and runtime does the installed build have?
+eas build:list --platform android --limit 5
+
+# what is actually being served on a channel, and at which runtime?
+eas update:list --branch preview --limit 1
+```
+
+The update's runtime must equal the build's runtime, and the branch must be the
+one that build listens on. If the runtimes differ, no update can fix it — that
+is a rebuild (see the fingerprint section above).
+
+*Also worth knowing: older updates on a branch can have runtimes that match
+nothing installed. Three of the newest `preview` updates on 22 Aug had three
+different runtimes, and only one of them could reach the device in hand.*
 
 ---
 
