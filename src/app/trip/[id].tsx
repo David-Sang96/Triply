@@ -8,7 +8,7 @@ import { GenerationError } from "@/components/trip/GenerationError";
 import { GenerationLoading } from "@/components/trip/GenerationLoading";
 import { TripDetailView } from "@/components/trip/TripDetailView";
 import { ApiError } from "@/lib/api";
-import { useDeleteTrip, useTrip, useTripStatus } from "@/lib/trips";
+import { useDeleteTrip, useRetryTrip, useTrip, useTripStatus } from "@/lib/trips";
 import { colors } from "@/theme/colors";
 
 function Centered() {
@@ -29,6 +29,7 @@ export default function TripScreen() {
 
   const queryClient = useQueryClient();
   const deleteTrip = useDeleteTrip();
+  const retryTrip = useRetryTrip(tripId);
 
   const statusQuery = useTripStatus(tripId, tripId.length > 0);
   const status = statusQuery.data?.status;
@@ -67,6 +68,20 @@ export default function TripScreen() {
   const goBack = () =>
     router.canGoBack() ? router.back() : router.replace("/");
 
+  // Re-runs the same trip with the parameters it already has. The screen does
+  // not navigate: the status query flips back to "queued" and the loading steps
+  // take over. If the retry is refused (the cap is full because the trip stops
+  // being exempt once it is queued again), say so and stay put — sending the
+  // user to the create screen would only fail there too.
+  const onRetry = () =>
+    retryTrip.mutate(undefined, {
+      onError: (err) =>
+        Alert.alert(
+          "Couldn't retry",
+          err instanceof ApiError ? err.message : "Please try again.",
+        ),
+    });
+
   if (statusQuery.isLoading || !status) {
     return <Centered />;
   }
@@ -78,7 +93,8 @@ export default function TripScreen() {
           statusQuery.data?.errorMessage ??
           "We couldn't build this itinerary. Please try again."
         }
-        onRetry={() => router.replace("/generate")}
+        onRetry={onRetry}
+        retrying={retryTrip.isPending}
         onBack={goBack}
       />
     );

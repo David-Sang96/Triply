@@ -1,0 +1,50 @@
+name: CI
+
+# The only automated gate this repo has. There is no test framework, so the
+# type checker and the linter are what stand between a bad edit and a build —
+# and until now nothing ran them except a human remembering to. Work lands here
+# through pull requests, so that is where the gate belongs.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A new push to the same branch makes the previous run pointless. Cancel it
+# rather than paying for both.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Types & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Read the version from .nvmrc so this file can never drift from the one
+      # the developer uses. Node 24 breaks three separate things in this project
+      # (see AGENTS.md); pinning is not cosmetic.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # `npm ci`, not `npm install` — it installs exactly what package-lock.json
+      # says and fails if the lockfile is out of date, which is itself a check
+      # worth having.
+      - run: npm ci
+
+      # Both commands are invoked directly instead of through new package.json
+      # scripts. Adding a script would change the Expo fingerprint, and a changed
+      # fingerprint means the next `eas update` cannot reach devices running the
+      # current build — a rebuild would be required (see docs/RELEASE.md). A CI
+      # convenience is not worth forcing a rebuild.
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # `continue-on-error: false` is the default; spelled out here only to say
+      # that lint failures are meant to block, not warn.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: false

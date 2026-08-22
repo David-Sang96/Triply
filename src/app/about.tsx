@@ -27,6 +27,7 @@ export default function AboutScreen() {
       ]}
       footer={
         "Place data © OpenStreetMap contributors, available under the Open Database License. " +
+        "Map tiles © MapTiler. " +
         "Photos from Unsplash, credited to their photographers wherever they appear. " +
         "Itineraries generated with Google Gemini."
       }

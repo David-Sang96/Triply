@@ -5,10 +5,9 @@ import { getUserId, unauthorized } from "@/server/auth";
 import { db } from "@/server/db";
 import { budgetLevel, trips } from "@/server/db/schema";
 import { inngest } from "@/server/inngest/client";
+import { MAX_TRIPS, TRIP_LIMIT_MESSAGE } from "@/server/limits";
 import { captureServerError } from "@/server/sentry";
 import { ensureUser, userSyncUnavailable } from "@/server/users";
-
-const MAX_TRIPS = 5;
 
 const createTripSchema = z.object({
   destination: z.string().trim().min(1).max(120),
@@ -99,7 +98,7 @@ export async function POST(request: Request) {
   if (!trip) {
     return Response.json(
       {
-        error: `You've reached the limit of ${MAX_TRIPS} trips. Delete one to plan a new trip.`,
+        error: TRIP_LIMIT_MESSAGE,
         code: "TRIP_LIMIT_REACHED",
       },
       { status: 409 },

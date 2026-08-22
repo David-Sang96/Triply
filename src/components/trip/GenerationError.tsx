@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
@@ -8,10 +8,15 @@ export function GenerationError({
   message,
   onRetry,
   onBack,
+  retrying = false,
 }: {
   message: string;
   onRetry: () => void;
   onBack: () => void;
+  // Retrying is a round trip to the server before the screen changes. Without
+  // this the button looks dead for a second and invites a second tap, which
+  // would queue the generation twice.
+  retrying?: boolean;
 }) {
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
@@ -45,12 +50,22 @@ export function GenerationError({
 
         <Pressable
           onPress={onRetry}
+          disabled={retrying}
+          // Inline opacity, not a `disabled:` class — NativeWind's opacity
+          // modifiers are unreliable here (see the notes on bg-black/30).
+          style={{ opacity: retrying ? 0.6 : 1 }}
           className="mt-8 h-[52px] w-full flex-row items-center justify-center rounded-xl bg-brand active:opacity-90"
         >
-          <Ionicons name="refresh" size={18} color={colors.surface} />
-          <Text className="ml-2 font-psemibold text-[15px] text-white">
-            Try again
-          </Text>
+          {retrying ? (
+            <ActivityIndicator color={colors.surface} />
+          ) : (
+            <>
+              <Ionicons name="refresh" size={18} color={colors.surface} />
+              <Text className="ml-2 font-psemibold text-[15px] text-white">
+                Try again
+              </Text>
+            </>
+          )}
         </Pressable>
 
         <Pressable onPress={onBack} className="mt-4 active:opacity-70" hitSlop={8}>

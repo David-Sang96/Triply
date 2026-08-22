@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Linking, View } from "react-native";
 import { WebView } from "react-native-webview";
 
 export type MapPlace = {
@@ -8,14 +8,50 @@ export type MapPlace = {
   day: number;
 };
 
-// A Leaflet + OpenStreetMap map rendered inside a WebView (no API key, card-free,
-// matching the Nominatim/OSM stack). Leaflet is loaded from its CDN, so the map
-// needs network. Note: OSM's public tile server is fine for light/personal use;
-// a production app should use a dedicated tile provider.
+// Tile source.
+//
+// OpenStreetMap's public tile server is licensed for light and personal use
+// only — it is explicitly not for production traffic — so it is the *fallback*
+// here, used when no MapTiler key is configured (a fresh clone, or a developer
+// who has not filled in `.env`). Real builds set EXPO_PUBLIC_MAPTILER_KEY and
+// get MapTiler, whose free tier covers roughly 100k tile requests a month.
+//
+// The key is an EXPO_PUBLIC_ variable, so it is bundled into the app and can be
+// read by anyone who unpacks it. That is unavoidable for a client-rendered map:
+// proxying tiles through our own Worker would keep it secret but would spend a
+// Cloudflare subrequest per tile, which is a budget we already watch. The
+// exposure is survivable — the worst case is somebody burning the monthly quota
+// and the map going blank until the key is rotated in the MapTiler dashboard.
+//
+// `{r}` is Leaflet's retina placeholder: it becomes "@2x" on high-density
+// screens (every phone), which is the same number of requests for a sharper
+// tile. `detectRetina` is deliberately left off — that option doubles the
+// request count as well.
+const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_KEY;
+
+// Attribution is a licence condition, not decoration: MapTiler and OSM both
+// require the credit to stay visible. `attributionControl` is on below.
+const TILES = MAPTILER_KEY
+  ? {
+      url: `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}{r}.png?key=${MAPTILER_KEY}`,
+      attribution:
+        '<a href="https://www.maptiler.com/copyright/">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>',
+    }
+  : {
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attribution:
+        '<a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>',
+    };
+
+// A Leaflet map rendered inside a WebView. Leaflet is loaded from its CDN, so
+// the map needs network.
 function buildHtml(places: MapPlace[]): string {
   // A place name containing "</script>" would otherwise close this script
   // block before the JSON is parsed — escape "<" so it stays inside the string.
+  // The tile config goes through the same escaping: its attribution is HTML,
+  // and the key comes from the environment rather than from this file.
   const data = JSON.stringify(places).replace(/</g, "\\u003c");
+  const tiles = JSON.stringify(TILES).replace(/</g, "\\u003c");
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -32,10 +68,11 @@ function buildHtml(places: MapPlace[]): string {
 <script>
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   var places = ${data};
+  var tiles = ${tiles};
   var map = L.map('map', { zoomControl: true, attributionControl: true });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer(tiles.url, {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: tiles.attribution
   }).addTo(map);
   var markers = [];
   places.forEach(function(p){
@@ -68,6 +105,18 @@ export function TripMap({ places }: { places: MapPlace[] }) {
           style={{ flex: 1, backgroundColor: "transparent" }}
           scrollEnabled={false}
           nestedScrollEnabled
+          // The attribution credits are links, and both licences expect them to
+          // lead somewhere. Inside a WebView they would do nothing, so hand any
+          // top-level navigation to the system browser instead. This fires for
+          // frame navigations only — tile images and the Leaflet script are
+          // subresources and are not affected.
+          onShouldStartLoadWithRequest={(req) => {
+            if (/^https?:/i.test(req.url)) {
+              Linking.openURL(req.url).catch(() => {});
+              return false;
+            }
+            return true;
+          }}
         />
       </View>
     </View>

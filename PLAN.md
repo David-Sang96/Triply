@@ -57,9 +57,14 @@ this file drifted badly once by ticking boxes on code that had never run.
 
 - [x] Change `app.json` → `web.output` from `"static"` to `"server"`
 - [x] Create `eas.json` (EAS Build + Hosting config)
-- [ ] Create `src/app/api/health+api.ts` returning `{ ok: true }`
-      *(never built, and no longer needed — the real routes are verified in
-      production.)*
+- [~] Create `src/app/api/health+api.ts` returning `{ ok: true }` — **written 22
+      Aug, not yet deployed.** Verify with
+      `curl https://triply-app.expo.app/api/health` after the next `eas deploy`.
+      Deliberately touches no database and needs no auth, so a red health check
+      means the deploy is down rather than a dependency — `/api/trips` (a clean
+      401 when signed out) is what proves the auth path. Keeping it free of DB
+      calls also keeps an every-minute uptime monitor off the Cloudflare
+      subrequest budget.
 - [x] Run `npx expo export --platform web`
 - [x] Run `eas deploy` → **`https://triply-app.expo.app`**
 - [x] **Verify:** deployed routes respond *(clean 401 JSON on `/api/trips` and
@@ -161,8 +166,30 @@ this file drifted badly once by ticking boxes on code that had never run.
         single query left trips with no cover at all)*
   - [x] persist days + activities in one `db.batch`, set `status='ready'`
   - [x] `onFailure`: `status='failed'` + friendly `error_message`
-- [ ] Add a retry path for the Retry button *(re-send the event / reset to
-      `queued`)*
+- [~] Add a retry path for the Retry button — **written 22 Aug, not yet run.**
+      `POST /api/trips/:id/retry` (`src/app/api/trips/[id]/retry+api.ts`) resets
+      the row to `queued`, clears `error_message`, and re-sends `trip/requested`
+      with the parameters already stored on the trip. The screen no longer
+      navigates: `useRetryTrip` invalidates the status query, which restarts the
+      3s poll, and the loading steps take over in place.
+      Before this, Retry called `router.replace("/generate")` — a *different*
+      trip, with the destination and interests typed again, and the dead row
+      left in the list.
+      Three things that are easy to get wrong here, all handled:
+      - **The cap.** A failed trip has `counts_against_cap = false`. Setting it
+        back to `true` on retry is what lets a user at 5 good trips + 1 failed
+        one reach 6, so the flag is restored inside the same guarded `UPDATE`
+        that re-counts the cap — the same single-statement trick `POST /trips`
+        uses, because `neon-http` has no interactive transactions.
+      - **Stale days.** `finalize` inserts days with a unique constraint on
+        `(trip_id, day_number)`. Any leftover row would make every future retry
+        fail on the constraint instead of on the real problem, so days are
+        deleted first (activities cascade).
+      - **Sentry.** `useTripStatus` logged a terminal status once per trip id.
+        A retry that also failed was therefore invisible — the exact case worth
+        seeing. The guard now clears when the status goes back to live.
+      **To verify:** force a failure with the invalid-UUID trick in Phase 7,
+      then tap Retry and watch the same trip id go `queued → … → ready`.
 - [x] **Verify (happy path):** form → poll → detail screen with geocoded places
       and a cover photo, in production
 - [ ] **Verify (failure):** forced error → retries → `failed` → Retry works, and
@@ -336,10 +363,40 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 - [x] Custom trip cover columns migrated *(`customCoverImageUrl`,
       `useCustomCover` — 10/10 migrations applied)*
 - [x] Geocoder usage within policy *(1 req/s throttle + cache table)*
-- [ ] OSM's **public tile server** is for light and personal use only
-      (`src/components/trip/TripMap.tsx`). Real traffic needs a proper tile
-      provider — worth settling before a public launch, not after.
-- [ ] No test framework — `npx tsc --noEmit` and `npm run lint` are the only gate
+- [~] OSM's **public tile server** is for light and personal use only
+      (`src/components/trip/TripMap.tsx`). **Code switched to MapTiler on 22
+      Aug; blocked on the key.** The tile URL now comes from
+      `EXPO_PUBLIC_MAPTILER_KEY`, and OSM is the *fallback* used only when that
+      is unset — so a fresh clone still shows a map, and a real build does not
+      use OSM at all. Free tier is ~100k tile requests/month, no card.
+      **To finish:** create the MapTiler account, put the key in `.env` **and in
+      EAS** (it is read at build time, so a local-only value reaches nothing),
+      then open a trip and confirm the credit line reads "© MapTiler ©
+      OpenStreetMap contributors". Ships with `eas update` — no rebuild.
+      *The key is `EXPO_PUBLIC_`, so it is readable by anyone who unpacks the
+      app. That is unavoidable for a client-rendered map: proxying tiles through
+      our Worker would hide it but spend a Cloudflare subrequest per tile.
+      Worst case is a burned quota and a blank map until the key is rotated.*
+      *Still outstanding, separately: Leaflet itself is loaded from the unpkg
+      CDN inside the WebView, so the map depends on unpkg staying up.*
+- [~] No test framework — `npx tsc --noEmit` and `npm run lint` are the only
+      gate, and until 22 Aug nothing ran them except a human remembering to.
+      `.github/workflows/ci.yml` now runs both on every pull request and on
+      pushes to `main`. **Not yet proven** — it has never run; the first PR
+      after this is what confirms it.
+      Both pass locally as of 22 Aug (0 type errors; 0 lint errors, 1 pre-existing
+      warning in the generated `.expo/types/router.d.ts`, which `expo lint` does
+      not fail on).
+      Two decisions worth keeping: the workflow calls `npx tsc --noEmit` and
+      `npm run lint` **directly** rather than adding `package.json` scripts,
+      because a new script changes the Expo fingerprint and a changed
+      fingerprint means the next `eas update` cannot reach the current build.
+      And it reads Node from `.nvmrc`, so CI can never drift onto the Node 24
+      that breaks three things in this project.
+      *Checked, because it would otherwise fail on every run: `expo-env.d.ts`
+      and `.expo/types/` are both gitignored and absent in CI. `tsc --noEmit`
+      was run with both removed and still reported no errors, so no typegen step
+      is needed.*
 - [ ] Cloudflare **subrequest limit** watch — every `neon-http` query counts as
       one. Seen once on 3 Aug with no failures; see "Known limits" in
       `docs/RELEASE.md`.
