@@ -167,11 +167,40 @@ this file drifted badly once by ticking boxes on code that had never run.
         single query left trips with no cover at all)*
   - [x] persist days + activities in one `db.batch`, set `status='ready'`
   - [x] `onFailure`: `status='failed'` + friendly `error_message`
-- [~] Add a retry path for the Retry button — **server side deployed and live 22
-      Aug; the round trip is still untested.** `POST /api/trips/:id/retry`
-      answers `401 application/json` without a token, which is the proof the
-      route is really deployed: an *undeployed* route returns `404 text/html`,
-      because the request falls through to the single-page app.
+- [x] Add a retry path for the Retry button — **round trip run end to end on the
+      emulator, 22 Aug.** A trip was put into the exact state `onFailure`
+      leaves (`failed`, `counts_against_cap = false`), the error screen appeared,
+      Retry was tapped, and the database was sampled every 1.5s throughout:
+
+      ```text
+       0.1s  status=failed      cap=false  days=3  trips_total=1
+       3.2s  status=failed      cap=false  days=0  trips_total=1
+       4.7s  status=queued      cap=true   days=0  trips_total=1
+       6.2s  status=generating  cap=true   days=0  trips_total=1
+      23.0s  status=enriching   cap=true   days=0  trips_total=1
+      36.7s  status=ready       cap=true   days=3  trips_total=1
+      ```
+
+      Every design decision is visible in those six lines:
+      - **days=3 → 0 while still `failed`** — stale days are cleared *before* the
+        status flips, so a failure mid-way leaves the row untouched rather than
+        queued with no job.
+      - **cap=false → true at the same instant as `queued`** — the exemption is
+        restored inside the guarded `UPDATE`, not as a second statement.
+      - **trips_total=1 the whole way** — the same trip re-ran. The old
+        behaviour would have left this row dead and made a second one.
+      - The screen never navigated: it went straight from the error to the
+        generation steps and then to the finished itinerary, same trip id.
+
+      Run against the local stack (Metro on 8081 serving the API routes, the
+      Inngest dev server on 8288, dev Neon branch), so the whole pipeline was
+      real — Gemini, geocoding and Unsplash all ran.
+      *The trip was snapshotted first and restored afterwards, so this cost one
+      generation and left no trace.*
+      `POST /api/trips/:id/retry` also answers `401 application/json` without a
+      token on the deployed backend, which is the proof the route is really
+      deployed: an *undeployed* route returns `404 text/html`, because the
+      request falls through to the single-page app.
       **The app side shipped to `preview` on 22 Aug**, runtime
       `27878b8ddbebfc8f45dffac304069c5faa3988c4` — the same runtime as the
       installed APK, so it can actually be accepted. Confirmed with
@@ -210,8 +239,14 @@ this file drifted badly once by ticking boxes on code that had never run.
       then tap Retry and watch the same trip id go `queued → … → ready`.
 - [x] **Verify (happy path):** form → poll → detail screen with geocoded places
       and a cover photo, in production
-- [ ] **Verify (failure):** forced error → retries → `failed` → Retry works, and
-      the failure is excluded from the cap
+- [x] **Verify (failure):** forced error → retries → `failed` → Retry works, and
+      the failure is excluded from the cap — **proven in two halves, 17 and 22
+      Aug.**
+      *Retries → `failed` → reported:* the invalid-UUID event on 17 Aug (see
+      Phase 7). Inngest retried twice, `onFailure` ran, and Sentry received it.
+      *`failed` → Retry works, cap excluded:* the emulator run on 22 Aug above.
+      `counts_against_cap` is visibly `false` for as long as the trip is failed
+      and returns to `true` only when it re-queues.
 - [ ] **Verify (privacy):** the Gemini request payload carries no name, email or
       Clerk id
 
@@ -387,20 +422,27 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       `EXPO_PUBLIC_MAPTILER_KEY`, and OSM is the *fallback* used only when that
       is unset — so a fresh clone still shows a map, and a real build does not
       use OSM at all. Free tier is ~100k tile requests/month, no card.
-      **Proof:** a trip's map draws MapTiler tiles and the credit line reads
-      "Leaflet | © MapTiler © OpenStreetMap contributors". The key is set in
+      **Proof, twice, and the second one is the one that counts.** First in the
+      dev app, which reads `.env` off this machine. Then — after
+      `eas update:republish` put the bundle on the `preview` channel — in the
+      **installed APK**, where the credit line also reads "Leaflet | © MapTiler
+      © OpenStreetMap contributors". That second check is what proves
+      `EXPO_PUBLIC_MAPTILER_KEY` in EAS is actually inlined at bundle time; the
+      dev app would look identical with EAS completely unset. The key is in
       `.env` and in **all three** EAS environments (`development`, `preview`,
-      `production`, plaintext) — checked with `eas env:list`, because a
-      local-only value reaches no real build. Ships with `eas update`; no
-      rebuild needed.
+      `production`, plaintext) — checked with `eas env:list`. Ships with
+      `eas update`; no rebuild needed.
       *Tiles are requested as `.webp`, not `.png`: measured against the live
       endpoint on a central-Paris tile at z12, 141 KB against 268 KB for the
       same picture. A map view pulls roughly eight tiles, so that is about 1 MB
       saved per trip opened. Retina (`{r}` → `@2x`) stays on — dropping it would
       save more, 46 KB a tile, but a blurry map is a visible cost.*
-      **Still to do:** lock the key. In the MapTiler key settings set **Allowed
-      user-agent header** to `TriplyApp`, then re-open a trip to confirm it
-      still draws. Until that is set, a copied key works for anyone.
+      **The key is locked, 22 Aug.** Its **Allowed user-agent header** is
+      `TriplyApp`, and tiles still load — confirmed by screenshots taken after
+      the restriction was applied, which is the only check that means anything
+      here: if `applicationNameForUserAgent` were not reaching the tile
+      requests, the map would be blank rather than subtly wrong.
+      **Allowed HTTP Origins is empty and must stay that way.**
       *`TriplyApp` is deliberately not `Triply`: `NOMINATIM_USER_AGENT` is
       already `Triply/1.0`, and a substring match on `Triply` would also match
       the geocoder's traffic.*

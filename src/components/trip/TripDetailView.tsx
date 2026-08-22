@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/react-native";
 import { Image } from "expo-image";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,7 +21,7 @@ import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
 import { useToggleTripCover, useUploadTripCover } from "@/lib/trips";
 import { colors } from "@/theme/colors";
 
-import { TripMap, type MapPlace } from "./TripMap";
+import { TripMap, type MapFocus, type MapPlace } from "./TripMap";
 
 const HERO_HEIGHT = 280;
 const BOT_ICON = require("@/assets/images/chat-bot.png");
@@ -128,7 +128,25 @@ function CustomCover({ url }: { url: string }) {
   );
 }
 
-function ActivityRow({ activity, last }: { activity: Activity; last: boolean }) {
+// A place can be shown on the map only if the geocoder actually found it —
+// the same test that decides what gets a marker, so a tappable row and a
+// marker always agree.
+function isMappable(a: Activity): boolean {
+  return Boolean(a.placeVerified && a.lat != null && a.lng != null && a.placeName);
+}
+
+function ActivityRow({
+  activity,
+  last,
+  onPressPlace,
+  active,
+}: {
+  activity: Activity;
+  last: boolean;
+  onPressPlace?: () => void;
+  active?: boolean;
+}) {
+  const mappable = isMappable(activity) && Boolean(onPressPlace);
   return (
     <View className="flex-row">
       <View className="items-center">
@@ -149,16 +167,44 @@ function ActivityRow({ activity, last }: { activity: Activity; last: boolean }) 
         ) : null}
         <View className="mt-1.5 flex-row items-center">
           {activity.placeName ? (
-            <>
-              <Ionicons
-                name="location-outline"
-                size={13}
-                color={activity.placeVerified ? colors.success : colors.faint}
-              />
-              <Text className="ml-1 flex-shrink font-sans text-[12px] text-muted">
-                {activity.placeName}
-              </Text>
-            </>
+            mappable ? (
+              // Only mapped places are pressable. An unverified place has no
+              // coordinates, so a tap could not go anywhere — better that it
+              // does not look tappable at all than that it looks broken.
+              <Pressable
+                onPress={onPressPlace}
+                hitSlop={8}
+                className="flex-shrink flex-row items-center active:opacity-70"
+              >
+                <Ionicons
+                  name={active ? "location" : "location-outline"}
+                  size={13}
+                  color={active ? colors.brand : colors.success}
+                />
+                {/* Underlined so it reads as tappable, but kept at the normal
+                    weight — most places in a trip are verified, and bolding
+                    them all would turn the itinerary into a wall of emphasis.
+                    The active one earns the weight and the brand colour. */}
+                <Text
+                  className={`ml-1 flex-shrink text-[12px] underline ${
+                    active ? "font-psemibold text-brand" : "font-sans text-muted"
+                  }`}
+                >
+                  {activity.placeName}
+                </Text>
+              </Pressable>
+            ) : (
+              <>
+                <Ionicons
+                  name="location-outline"
+                  size={13}
+                  color={activity.placeVerified ? colors.success : colors.faint}
+                />
+                <Text className="ml-1 flex-shrink font-sans text-[12px] text-muted">
+                  {activity.placeName}
+                </Text>
+              </>
+            )
           ) : null}
           {activity.estCostUsd != null ? (
             <Text className="ml-auto pl-2 font-psemibold text-[12px] text-ink">
@@ -175,10 +221,14 @@ function DayAccordion({
   day,
   open,
   onToggle,
+  onPressPlace,
+  activeActivityId,
 }: {
   day: Day;
   open: boolean;
   onToggle: () => void;
+  onPressPlace: (activity: Activity) => void;
+  activeActivityId: string | null;
 }) {
   return (
     <View className="mb-3 overflow-hidden rounded-2xl border border-line bg-surface">
@@ -213,6 +263,8 @@ function DayAccordion({
               key={activity.id}
               activity={activity}
               last={i === day.activities.length - 1}
+              onPressPlace={() => onPressPlace(activity)}
+              active={activeActivityId === activity.id}
             />
           ))}
         </View>
@@ -259,6 +311,8 @@ export function TripDetailView({
   const uploadCover = useUploadTripCover(trip.id);
   const toggleCover = useToggleTripCover(trip.id);
   const [coverError, setCoverError] = useState<string | null>(null);
+  // null = the map shows the whole trip. Set = zoomed to one activity's place.
+  const [mapFocus, setMapFocus] = useState<MapFocus | null>(null);
 
   const pickCover = async () => {
     setCoverError(null);
@@ -358,22 +412,47 @@ export function TripDetailView({
 
   // Only verified places (those Nominatim geocoded) can be plotted.
   const mapPlaces: MapPlace[] = trip.days.flatMap((day) =>
-    day.activities
-      .filter(
-        (a) =>
-          a.placeVerified && a.lat != null && a.lng != null && a.placeName,
-      )
-      .map((a) => ({
-        name: a.placeName as string,
-        lat: a.lat as number,
-        lng: a.lng as number,
-        day: day.dayNumber,
-      })),
+    day.activities.filter(isMappable).map((a) => ({
+      name: a.placeName as string,
+      lat: a.lat as number,
+      lng: a.lng as number,
+      day: day.dayNumber,
+    })),
   );
+
+  // Tapping a place in the itinerary zooms the map to it. The map lives above
+  // the itinerary, so it is usually scrolled off-screen when the tap happens —
+  // hence the scroll as well as the zoom, otherwise the tap looks like it did
+  // nothing at all.
+  const scrollRef = useRef<ScrollView>(null);
+  const bodyYRef = useRef(0);
+  const mapYRef = useRef(0);
+
+  const onPressPlace = (activity: Activity) => {
+    // Tapping the active place again clears it — the same gesture undoes
+    // itself, so the chip is a convenience rather than the only way out.
+    if (mapFocus?.key === activity.id) {
+      setMapFocus(null);
+      return;
+    }
+    setMapFocus({
+      key: activity.id,
+      lat: activity.lat as number,
+      lng: activity.lng as number,
+    });
+    // `y` from onLayout is relative to the parent, so the map's real offset in
+    // the scroll content is the body's offset plus the map's offset inside it.
+    // The 12 leaves the section heading just visible above the map.
+    scrollRef.current?.scrollTo({
+      y: Math.max(bodyYRef.current + mapYRef.current - 12, 0),
+      animated: true,
+    });
+  };
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-canvas">
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-10"
       >
@@ -450,7 +529,10 @@ export function TripDetailView({
         </View>
 
         {/* Body */}
-        <View className="px-5 pt-4">
+        <View
+          className="px-5 pt-4"
+          onLayout={(e) => (bodyYRef.current = e.nativeEvent.layout.y)}
+        >
           {coverError ? (
             <View className="mb-3 rounded-xl border border-error bg-error/10 px-3 py-2">
               <Text className="font-sans text-[13px] text-error">
@@ -511,18 +593,27 @@ export function TripDetailView({
           ) : null}
 
           {mapPlaces.length > 0 ? (
-            <>
+            <View
+              onLayout={(e) => (mapYRef.current = e.nativeEvent.layout.y)}
+            >
               <Text className="mt-6 font-psemibold text-[18px] text-ink">
                 Trip map
               </Text>
               <Text className="mt-1 font-sans text-[12px] text-muted">
-                {mapPlaces.length} verified{" "}
-                {mapPlaces.length === 1 ? "place" : "places"}
+                {mapFocus
+                  ? "Showing one place"
+                  : `${mapPlaces.length} verified ${
+                      mapPlaces.length === 1 ? "place" : "places"
+                    }`}
               </Text>
               <View className="mt-3">
-                <TripMap places={mapPlaces} />
+                <TripMap
+                  places={mapPlaces}
+                  focus={mapFocus}
+                  onShowAll={() => setMapFocus(null)}
+                />
               </View>
-            </>
+            </View>
           ) : null}
 
           <Text className="mt-6 font-psemibold text-[18px] text-ink">
@@ -535,6 +626,8 @@ export function TripDetailView({
                 day={day}
                 open={openDays.has(day.id)}
                 onToggle={() => toggle(day.id)}
+                onPressPlace={onPressPlace}
+                activeActivityId={mapFocus?.key ?? null}
               />
             ))}
           </View>

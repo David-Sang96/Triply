@@ -1,11 +1,25 @@
-import { Linking, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useEffect, useRef } from "react";
+import { Linking, Pressable, Text, View } from "react-native";
 import { WebView } from "react-native-webview";
+
+import { colors, shadows } from "@/theme/colors";
 
 export type MapPlace = {
   name: string;
   lat: number;
   lng: number;
   day: number;
+};
+
+// A single place the itinerary has asked the map to zoom to. `key` is the
+// activity id, not the name: the same place can appear on two days, and the
+// caller needs to know which row is currently active so tapping it again can
+// clear it.
+export type MapFocus = {
+  key: string;
+  lat: number;
+  lng: number;
 };
 
 // Tile source.
@@ -84,6 +98,10 @@ function buildHtml(places: MapPlace[]): string {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  // Pixels to push the focused pin below centre, sized from the parts above it:
+  // a 41px marker plus a two-line popup and its tip. With MAP_HEIGHT 220 this
+  // puts the pin ~165px down, leaving the bubble clear of the top edge.
+  var POPUP_HEADROOM = 55;
   var places = ${data};
   var tiles = ${tiles};
   var map = L.map('map', { zoomControl: true, attributionControl: true });
@@ -94,31 +112,101 @@ function buildHtml(places: MapPlace[]): string {
   var markers = [];
   places.forEach(function(p){
     var m = L.marker([p.lat, p.lng]).addTo(map);
-    m.bindPopup('<b>' + esc(p.name) + '</b><br/>Day ' + p.day);
+    // autoPan off, and __focus below positions the map instead. Leaflet's
+    // auto-pan fights the zoom animation in a box this small: it measures
+    // against a mid-animation viewport and drags the popup off to one side.
+    // maxWidth keeps a long place name from running past the edges.
+    m.bindPopup('<b>' + esc(p.name) + '</b><br/>Day ' + p.day, {
+      autoPan: false,
+      maxWidth: 200
+    });
     markers.push(m);
   });
-  if (markers.length === 1) {
-    map.setView(markers[0].getLatLng(), 14);
-  } else if (markers.length > 1) {
-    map.fitBounds(L.featureGroup(markers).getBounds().pad(0.3));
-  } else {
-    map.setView([20, 0], 2);
-  }
+
+  // Both view states live in functions so React Native can drive them with
+  // injectJavaScript. Rebuilding this HTML instead would remount the WebView
+  // and re-download every tile, which is the whole reason the map is imperative
+  // here rather than a prop.
+  window.__showAll = function(){
+    map.closePopup();
+    if (markers.length === 1) {
+      map.setView(markers[0].getLatLng(), 14);
+    } else if (markers.length > 1) {
+      map.fitBounds(L.featureGroup(markers).getBounds().pad(0.3));
+    } else {
+      map.setView([20, 0], 2);
+    }
+  };
+
+  // Matched on coordinates rather than name: two activities can share a place
+  // name, and the coordinates are what actually identify a marker. Nearest
+  // wins, so tiny float differences between the row and the marker are fine.
+  window.__focus = function(lat, lng){
+    var target = null, best = Infinity;
+    markers.forEach(function(m){
+      var ll = m.getLatLng();
+      var d = Math.abs(ll.lat - lat) + Math.abs(ll.lng - lng);
+      if (d < best) { best = d; target = m; }
+    });
+    if (!target) return;
+    var z = 16;
+    // Do NOT centre the marker. The popup opens upward and this map is only
+    // 220px tall, so a centred pin leaves ~110px of headroom and the bubble
+    // gets clipped by the top edge. Shift the centre up in *pixel* space so
+    // the pin sits in the lower half with the popup fully above it.
+    // Projected y grows downward, so subtracting moves the centre up.
+    var pt = map.project(target.getLatLng(), z).subtract([0, POPUP_HEADROOM]);
+    map.setView(map.unproject(pt, z), z, { animate: true });
+    target.openPopup();
+  };
+
+  window.__showAll();
 </script>
 </body>
 </html>`;
 }
 
-export function TripMap({ places }: { places: MapPlace[] }) {
+export function TripMap({
+  places,
+  focus = null,
+  onShowAll,
+}: {
+  places: MapPlace[];
+  // Set by the itinerary when a place row is tapped; null means "whole trip".
+  focus?: MapFocus | null;
+  onShowAll?: () => void;
+}) {
   const html = buildHtml(places);
+  const webRef = useRef<WebView>(null);
+  // The page has to finish loading before window.__focus exists. A tap can
+  // arrive first on a slow connection, so the effect re-runs on this too and
+  // applies whatever focus was pending.
+  const readyRef = useRef(false);
+
+  useEffect(() => {
+    if (!readyRef.current) return;
+    const js = focus
+      ? `window.__focus && window.__focus(${focus.lat}, ${focus.lng}); true;`
+      : `window.__showAll && window.__showAll(); true;`;
+    webRef.current?.injectJavaScript(js);
+  }, [focus]);
 
   return (
     <View className="h-[220px] w-full overflow-hidden rounded-2xl border border-line bg-line">
       {/* Claim the touch gesture so panning the map doesn't scroll the page. */}
       <View style={{ flex: 1 }} onStartShouldSetResponder={() => true}>
         <WebView
+          ref={webRef}
           originWhitelist={["*"]}
           source={{ html }}
+          onLoadEnd={() => {
+            readyRef.current = true;
+            if (focus) {
+              webRef.current?.injectJavaScript(
+                `window.__focus && window.__focus(${focus.lat}, ${focus.lng}); true;`,
+              );
+            }
+          }}
           style={{ flex: 1, backgroundColor: "transparent" }}
           scrollEnabled={false}
           nestedScrollEnabled
@@ -142,6 +230,23 @@ export function TripMap({ places }: { places: MapPlace[] }) {
           }}
         />
       </View>
+
+      {/* Rendered in React Native rather than inside the page: it has to sit
+          above the WebView, follow the app's fonts and colours, and keep
+          working even if Leaflet fails to load from its CDN. */}
+      {focus && onShowAll ? (
+        <Pressable
+          onPress={onShowAll}
+          hitSlop={6}
+          className="absolute left-2 top-2 flex-row items-center rounded-full border border-line bg-surface px-3 py-1.5 active:opacity-80"
+          style={shadows.sm}
+        >
+          <Ionicons name="contract-outline" size={13} color={colors.brand} />
+          <Text className="ml-1.5 font-psemibold text-[12px] text-ink">
+            Show all places
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
