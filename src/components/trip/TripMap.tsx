@@ -98,6 +98,10 @@ function buildHtml(places: MapPlace[]): string {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  // Pixels to push the focused pin below centre, sized from the parts above it:
+  // a 41px marker plus a two-line popup and its tip. With MAP_HEIGHT 220 this
+  // puts the pin ~165px down, leaving the bubble clear of the top edge.
+  var POPUP_HEADROOM = 55;
   var places = ${data};
   var tiles = ${tiles};
   var map = L.map('map', { zoomControl: true, attributionControl: true });
@@ -108,7 +112,14 @@ function buildHtml(places: MapPlace[]): string {
   var markers = [];
   places.forEach(function(p){
     var m = L.marker([p.lat, p.lng]).addTo(map);
-    m.bindPopup('<b>' + esc(p.name) + '</b><br/>Day ' + p.day);
+    // autoPan off, and __focus below positions the map instead. Leaflet's
+    // auto-pan fights the zoom animation in a box this small: it measures
+    // against a mid-animation viewport and drags the popup off to one side.
+    // maxWidth keeps a long place name from running past the edges.
+    m.bindPopup('<b>' + esc(p.name) + '</b><br/>Day ' + p.day, {
+      autoPan: false,
+      maxWidth: 200
+    });
     markers.push(m);
   });
 
@@ -138,7 +149,14 @@ function buildHtml(places: MapPlace[]): string {
       if (d < best) { best = d; target = m; }
     });
     if (!target) return;
-    map.setView(target.getLatLng(), 16, { animate: true });
+    var z = 16;
+    // Do NOT centre the marker. The popup opens upward and this map is only
+    // 220px tall, so a centred pin leaves ~110px of headroom and the bubble
+    // gets clipped by the top edge. Shift the centre up in *pixel* space so
+    // the pin sits in the lower half with the popup fully above it.
+    // Projected y grows downward, so subtracting moves the centre up.
+    var pt = map.project(target.getLatLng(), z).subtract([0, POPUP_HEADROOM]);
+    map.setView(map.unproject(pt, z), z, { animate: true });
     target.openPopup();
   };
 
