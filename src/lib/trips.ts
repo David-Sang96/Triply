@@ -139,7 +139,15 @@ export function useTripStatus(id: string, enabled: boolean) {
   // trip id the first time its status resolves to a terminal state.
   const loggedForId = useRef<string | null>(null);
   useEffect(() => {
-    if (!status || !TERMINAL.includes(status) || loggedForId.current === id) return;
+    if (!status) return;
+    // A retry puts the trip back into a live status. Clear the guard so the
+    // next terminal state logs again — without this, a retry that also fails
+    // is invisible in Sentry, which is exactly the case worth seeing.
+    if (!TERMINAL.includes(status)) {
+      loggedForId.current = null;
+      return;
+    }
+    if (loggedForId.current === id) return;
     loggedForId.current = id;
     if (status === "ready") {
       Sentry.logger.info("Trip generation succeeded", { trip_id: id });
@@ -156,6 +164,28 @@ export function useTripStatus(id: string, enabled: boolean) {
   }, [status, id]);
 
   return query;
+}
+
+// Re-runs generation for a failed trip, re-using the parameters already on the
+// row. The server keeps the same trip id, so the screen stays where it is and
+// simply goes back to showing the loading steps.
+export function useRetryTrip(id: string) {
+  const apiFetch = useApiFetch();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ id: string }>(`/api/trips/${id}/retry`, { method: "POST" }),
+    onSuccess: () => {
+      Sentry.logger.info("Trip generation retried", { trip_id: id });
+      // useTripStatus stops its interval on a terminal status, and the interval
+      // function is only re-evaluated when the cached data changes. Nothing
+      // refetches on its own at that point, so the retry has to kick the query
+      // itself — otherwise the screen would sit on the error forever while the
+      // job ran happily in the background.
+      qc.invalidateQueries({ queryKey: ["trip", id] });
+      qc.invalidateQueries({ queryKey: ["trips"] });
+    },
+  });
 }
 
 export function useTrip(id: string, enabled: boolean) {
