@@ -17,11 +17,22 @@ export type MapPlace = {
 // get MapTiler, whose free tier covers roughly 100k tile requests a month.
 //
 // The key is an EXPO_PUBLIC_ variable, so it is bundled into the app and can be
-// read by anyone who unpacks it. That is unavoidable for a client-rendered map:
-// proxying tiles through our own Worker would keep it secret but would spend a
-// Cloudflare subrequest per tile, which is a budget we already watch. The
-// exposure is survivable — the worst case is somebody burning the monthly quota
-// and the map going blank until the key is rotated in the MapTiler dashboard.
+// read by anyone who unpacks it. Hiding it is not an option — proxying tiles
+// through our own Worker would spend a Cloudflare subrequest per tile, a budget
+// we already watch. So the key is *restricted* instead of hidden: MapTiler can
+// refuse any request whose User-Agent does not contain a chosen substring, and
+// TILE_USER_AGENT below is what this app appends to the WebView's agent.
+//
+// That turns a stolen key from "burn my quota" into "only works if you also
+// forge the header", which is not real security — a determined person can set
+// any User-Agent — but it does stop the casual copy-paste case, which is the
+// realistic one. Rotate the key in the MapTiler dashboard if the quota ever
+// moves without the users to explain it.
+//
+// Do NOT also fill in MapTiler's "Allowed HTTP Origins": Leaflet loads tiles as
+// plain <img> elements, which send no Origin header, and MapTiler rejects
+// "unknown" origins as soon as that list is non-empty. It would blank the map.
+const TILE_USER_AGENT = "TriplyApp/1.0";
 //
 // `{r}` is Leaflet's retina placeholder: it becomes "@2x" on high-density
 // screens (every phone), which is the same number of requests for a sharper
@@ -105,6 +116,12 @@ export function TripMap({ places }: { places: MapPlace[] }) {
           style={{ flex: 1, backgroundColor: "transparent" }}
           scrollEnabled={false}
           nestedScrollEnabled
+          // Appended to the WebView's own user agent (not a replacement — that
+          // is the `userAgent` prop, and overriding the whole string can change
+          // what a CDN serves). Every request the page makes carries it, tile
+          // images included, which is what lets the MapTiler key be locked to
+          // this app. Shared prop: applies on Android and iOS alike.
+          applicationNameForUserAgent={TILE_USER_AGENT}
           // The attribution credits are links, and both licences expect them to
           // lead somewhere. Inside a WebView they would do nothing, so hand any
           // top-level navigation to the system browser instead. This fires for

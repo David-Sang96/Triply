@@ -374,9 +374,16 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       then open a trip and confirm the credit line reads "© MapTiler ©
       OpenStreetMap contributors". Ships with `eas update` — no rebuild.
       *The key is `EXPO_PUBLIC_`, so it is readable by anyone who unpacks the
-      app. That is unavoidable for a client-rendered map: proxying tiles through
-      our Worker would hide it but spend a Cloudflare subrequest per tile.
-      Worst case is a burned quota and a blank map until the key is rotated.*
+      app, and hiding it is not an option — proxying tiles through our Worker
+      would spend a Cloudflare subrequest per tile. It is **restricted** instead:
+      set the key's **Allowed user-agent header** to `TriplyApp`, which is the
+      substring `TILE_USER_AGENT` appends to the WebView's agent via
+      `applicationNameForUserAgent` (a shared prop — Android and iOS both).
+      Not real security, since a header can be forged, but it stops the casual
+      copy-paste case, which is the realistic one.*
+      *Leave **Allowed HTTP Origins** empty. Leaflet loads tiles as plain `<img>`,
+      which sends no `Origin` header, and MapTiler rejects "unknown" origins as
+      soon as that list is non-empty — filling it in blanks the map.*
       *Still outstanding, separately: Leaflet itself is loaded from the unpkg
       CDN inside the WebView, so the map depends on unpkg staying up.*
 - [~] No test framework — `npx tsc --noEmit` and `npm run lint` are the only
