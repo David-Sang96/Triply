@@ -172,9 +172,19 @@ this file drifted badly once by ticking boxes on code that had never run.
       answers `401 application/json` without a token, which is the proof the
       route is really deployed: an *undeployed* route returns `404 text/html`,
       because the request falls through to the single-page app.
-      **The app side has not shipped.** The button that calls this route reaches
-      installed builds only via `eas update`; until then the server route exists
-      and nothing calls it.
+      **The app side shipped to `preview` on 22 Aug**, runtime
+      `27878b8ddbebfc8f45dffac304069c5faa3988c4` — the same runtime as the
+      installed APK, so it can actually be accepted. Confirmed with
+      `eas update:list --branch preview --limit 1`.
+      *It took three goes, and the lesson is in `docs/RELEASE.md`: the first
+      publish went to `--channel production`, which reaches nothing, because
+      every Android build this project has made is `preview` and there are zero
+      production-profile builds. Then two `eas update` runs died in the export
+      (`0xC0000005`). What worked was `eas update:republish`, which copies an
+      existing bundle to another channel and never re-bundles — safe here only
+      because `preview` and `production` hold identical `EXPO_PUBLIC_*` values.*
+      **What is still unproven is the round trip itself:** force a failure, tap
+      Retry, watch that same trip id go `queued → … → ready`.
       `POST /api/trips/:id/retry` (`src/app/api/trips/[id]/retry+api.ts`) resets
       the row to `queued`, clears `error_message`, and re-sends `trip/requested`
       with the parameters already stored on the trip. The screen no longer
