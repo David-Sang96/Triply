@@ -365,14 +365,27 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
 - [x] Geocoder usage within policy *(1 req/s throttle + cache table)*
 - [~] OSM's **public tile server** is for light and personal use only
       (`src/components/trip/TripMap.tsx`). **Code switched to MapTiler on 22
-      Aug; blocked on the key.** The tile URL now comes from
+      Aug — verified on device the same day.** The tile URL comes from
       `EXPO_PUBLIC_MAPTILER_KEY`, and OSM is the *fallback* used only when that
       is unset — so a fresh clone still shows a map, and a real build does not
       use OSM at all. Free tier is ~100k tile requests/month, no card.
-      **To finish:** create the MapTiler account, put the key in `.env` **and in
-      EAS** (it is read at build time, so a local-only value reaches nothing),
-      then open a trip and confirm the credit line reads "© MapTiler ©
-      OpenStreetMap contributors". Ships with `eas update` — no rebuild.
+      **Proof:** a trip's map draws MapTiler tiles and the credit line reads
+      "Leaflet | © MapTiler © OpenStreetMap contributors". The key is set in
+      `.env` and in **all three** EAS environments (`development`, `preview`,
+      `production`, plaintext) — checked with `eas env:list`, because a
+      local-only value reaches no real build. Ships with `eas update`; no
+      rebuild needed.
+      *Tiles are requested as `.webp`, not `.png`: measured against the live
+      endpoint on a central-Paris tile at z12, 141 KB against 268 KB for the
+      same picture. A map view pulls roughly eight tiles, so that is about 1 MB
+      saved per trip opened. Retina (`{r}` → `@2x`) stays on — dropping it would
+      save more, 46 KB a tile, but a blurry map is a visible cost.*
+      **Still to do:** lock the key. In the MapTiler key settings set **Allowed
+      user-agent header** to `TriplyApp`, then re-open a trip to confirm it
+      still draws. Until that is set, a copied key works for anyone.
+      *`TriplyApp` is deliberately not `Triply`: `NOMINATIM_USER_AGENT` is
+      already `Triply/1.0`, and a substring match on `Triply` would also match
+      the geocoder's traffic.*
       *The key is `EXPO_PUBLIC_`, so it is readable by anyone who unpacks the
       app, and hiding it is not an option — proxying tiles through our Worker
       would spend a Cloudflare subrequest per tile. It is **restricted** instead:
