@@ -387,12 +387,16 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       `EXPO_PUBLIC_MAPTILER_KEY`, and OSM is the *fallback* used only when that
       is unset — so a fresh clone still shows a map, and a real build does not
       use OSM at all. Free tier is ~100k tile requests/month, no card.
-      **Proof:** a trip's map draws MapTiler tiles and the credit line reads
-      "Leaflet | © MapTiler © OpenStreetMap contributors". The key is set in
+      **Proof, twice, and the second one is the one that counts.** First in the
+      dev app, which reads `.env` off this machine. Then — after
+      `eas update:republish` put the bundle on the `preview` channel — in the
+      **installed APK**, where the credit line also reads "Leaflet | © MapTiler
+      © OpenStreetMap contributors". That second check is what proves
+      `EXPO_PUBLIC_MAPTILER_KEY` in EAS is actually inlined at bundle time; the
+      dev app would look identical with EAS completely unset. The key is in
       `.env` and in **all three** EAS environments (`development`, `preview`,
-      `production`, plaintext) — checked with `eas env:list`, because a
-      local-only value reaches no real build. Ships with `eas update`; no
-      rebuild needed.
+      `production`, plaintext) — checked with `eas env:list`. Ships with
+      `eas update`; no rebuild needed.
       *Tiles are requested as `.webp`, not `.png`: measured against the live
       endpoint on a central-Paris tile at z12, 141 KB against 268 KB for the
       same picture. A map view pulls roughly eight tiles, so that is about 1 MB
