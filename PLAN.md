@@ -413,10 +413,22 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       fingerprint means the next `eas update` cannot reach the current build.
       And it reads Node from `.nvmrc`, so CI can never drift onto the Node 24
       that breaks three things in this project.
-      *Checked, because it would otherwise fail on every run: `expo-env.d.ts`
-      and `.expo/types/` are both gitignored and absent in CI. `tsc --noEmit`
-      was run with both removed and still reported no errors, so no typegen step
-      is needed.*
+      **A clean checkout is not the same as your machine, and the first run
+      proved it.** `expo-env.d.ts` and `.expo/types/` are both gitignored, so CI
+      has neither. `expo-env.d.ts` is what carries
+      `/// <reference types="expo/types" />`, and without it the CSS module
+      declarations are missing, so `import "../../global.css"` in
+      `src/app/_layout.tsx` fails with `TS2882`. Fixed by `types/global.d.ts`,
+      a committed file holding that same reference — repeating it is harmless
+      locally (TypeScript dedups) and is what makes a clean checkout pass.
+      Deliberately not un-ignoring the generated file, which says it should not
+      be edited and would show a diff on every regeneration.
+      `.expo/types/` (typed routes) turns out **not** to be needed: nothing
+      failed without it.
+      *This was checked before the first push and reported as passing — it was
+      not. The local command's output was trusted instead of its exit code. The
+      re-check runs `tsc` on a simulated clean checkout, writes the raw output
+      to a file, and reads `TSC_EXIT` explicitly.*
 - [ ] Cloudflare **subrequest limit** watch — every `neon-http` query counts as
       one. Seen once on 3 Aug with no failures; see "Known limits" in
       `docs/RELEASE.md`.
