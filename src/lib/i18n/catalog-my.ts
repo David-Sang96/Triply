@@ -113,6 +113,44 @@ export const my: Catalog<typeof en> = {
     fastDescription: "တတ်နိုင်သမျှ များများကြည့်ရန်",
   },
 
+  assistant: {
+    title: "အကူအညီပေးသူ",
+    newChat: "စကားပြောအသစ်",
+    loadError: "စကားပြောများ ဖတ်၍မရပါ",
+    emptyTitle: "စကားပြော မရှိသေးပါ",
+    emptyBody: "နောက်ခရီးစဉ်အကြောင်း ဘာမဆို မေးနိုင်ပါသည်။",
+    startChatting: "စတင်မေးမြန်းရန်",
+    deleteConversationTitle: "ဤစကားပြောကို ဖျက်မှာလား။",
+    deleteConversationBody: "စကားပြောနှင့် မက်ဆေ့ချ်များကို အပြီးအပိုင် ဖျက်ပါမည်။",
+    deleteConversationA11y: "စကားပြောကို ဖျက်ရန်",
+    deleteFailed: "ဖျက်၍မရပါ",
+    pleaseTryAgain: "ထပ်စမ်းကြည့်ပါ။",
+  },
+
+  chat: {
+    headerTitle: "Triply အကူအညီပေးသူ",
+    subtitleTrip: "သင့်ခရီးစဉ်အကြောင်း",
+    subtitleGeneral: "သင့်ခရီးသွားအကူ",
+    greetingTrip:
+      "မင်္ဂလာပါ။ ကျွန်ုပ်သည် Triply အကူဖြစ်ပါသည်။ {{destination}} အကြောင်း ဘာမဆိုမေးပါ — ပြင်ဆင်ချက်၊ အစားအသောက်၊ ပစ္စည်းထုပ်ခြင်း သို့မဟုတ် ဒေသဆိုင်ရာ အကြံပြုချက်များ။",
+    greetingTripFallback: "ခရီးစဉ်",
+    greeting:
+      "မင်္ဂလာပါ။ ကျွန်ုပ်သည် Triply ခရီးသွားအကူဖြစ်ပါသည်။ ခရီးစဉ်စီစဉ်ခြင်းအကြောင်း ဘာမဆိုမေးပါ။",
+    inputPlaceholder: "ခရီးစဉ်အကြောင်း မေးပါ…",
+    sendA11y: "မက်ဆေ့ချ် ပို့ရန်",
+    backA11y: "နောက်သို့",
+    replyFailed: "အဖြေ မရရှိပါ။",
+    deleteMessageTitle: "ဤမက်ဆေ့ချ်ကို ဖျက်မှာလား။",
+    deleteMessageBody: "သင့်မေးခွန်းနှင့် အဖြေ နှစ်ခုလုံးကို ဖျက်ပါမည်။",
+  },
+
+  time: {
+    justNow: "ခုနလေးတင်",
+    minutesAgo: "{{count}} မိနစ်က",
+    hoursAgo: "{{count}} နာရီက",
+    daysAgo: "{{count}} ရက်က",
+  },
+
   tabs: {
     home: "ပင်မ",
     assistant: "အကူ",

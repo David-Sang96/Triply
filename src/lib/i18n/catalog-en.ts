@@ -114,6 +114,47 @@ export const en = {
     fastDescription: "See as much as you can",
   },
 
+  assistant: {
+    title: "Assistant",
+    newChat: "New chat",
+    loadError: "Couldn't load your chats",
+    emptyTitle: "No conversations yet",
+    emptyBody: "Ask me anything about planning your next trip.",
+    startChatting: "Start chatting",
+    deleteConversationTitle: "Delete this conversation?",
+    deleteConversationBody:
+      "This permanently removes the conversation and its messages.",
+    deleteConversationA11y: "Delete conversation",
+    deleteFailed: "Couldn't delete",
+    pleaseTryAgain: "Please try again.",
+  },
+
+  chat: {
+    // "Triply" is the product name and stays untranslated.
+    headerTitle: "Triply Assistant",
+    subtitleTrip: "About your trip",
+    subtitleGeneral: "Your travel helper",
+    greetingTrip:
+      "Hi! I'm your Triply assistant. Ask me anything about your {{destination}} — tweaks, food, packing, or local tips.",
+    greetingTripFallback: "trip",
+    greeting:
+      "Hi! I'm your Triply travel assistant. Ask me anything about planning a trip.",
+    inputPlaceholder: "Ask about your trip…",
+    sendA11y: "Send message",
+    backA11y: "Go back",
+    replyFailed: "Couldn't get a reply.",
+    deleteMessageTitle: "Delete this message?",
+    deleteMessageBody: "This removes both your question and the reply.",
+  },
+
+  // Relative timestamps on the conversation list.
+  time: {
+    justNow: "Just now",
+    minutesAgo: "{{count}}m ago",
+    hoursAgo: "{{count}}h ago",
+    daysAgo: "{{count}}d ago",
+  },
+
   tabs: {
     home: "Home",
     assistant: "Assistant",
