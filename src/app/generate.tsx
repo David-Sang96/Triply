@@ -6,13 +6,13 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { InterestChip } from "@/components/generate/InterestChip";
 import { PaceOption } from "@/components/generate/PaceOption";
 import { SegmentedControl } from "@/components/generate/SegmentedControl";

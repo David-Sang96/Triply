@@ -1,8 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef } from "react";
-import { Linking, Pressable, Text, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  View,
+} from "react-native";
 import { WebView } from "react-native-webview";
 
+import { Text } from "@/components/Text";
 import { colors, shadows } from "@/theme/colors";
 
 export type MapPlace = {

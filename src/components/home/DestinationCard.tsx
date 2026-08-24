@@ -1,7 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { Pressable, Text, View } from "react-native";
+import {
+  Pressable,
+  View,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import type { Destination } from "@/lib/destinations";
 import { colors } from "@/theme/colors";
 

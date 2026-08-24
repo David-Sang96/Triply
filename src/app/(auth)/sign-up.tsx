@@ -3,10 +3,16 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 
+import { Text } from "@/components/Text";
 import { AuthField } from "@/components/AuthField";
 import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
 import { links } from "@/lib/links";

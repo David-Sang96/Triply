@@ -1,8 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import type { HeroSlide } from "@/lib/destinations";
 import { colors, shadows } from "@/theme/colors";
 

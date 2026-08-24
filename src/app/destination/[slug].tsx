@@ -1,7 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  View,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import { DestinationDetailView } from "@/components/destination/DestinationDetailView";
 import { useDestination } from "@/lib/destinations";
 import { colors } from "@/theme/colors";

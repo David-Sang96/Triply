@@ -4,9 +4,15 @@ import * as Sentry from "@sentry/react-native";
 import { useRouter, type ErrorBoundaryProps } from "expo-router";
 import { Image } from "expo-image";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { AuthField } from "@/components/AuthField";
 import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
 

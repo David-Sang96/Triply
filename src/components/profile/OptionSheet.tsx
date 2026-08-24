@@ -1,7 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
 type Props<T extends string> = {
@@ -11,6 +12,12 @@ type Props<T extends string> = {
   value: T;
   onSelect: (next: T) => void;
   onClose: () => void;
+  /**
+   * How to display an option. Defaults to the value itself, which is right for
+   * currencies and budgets. Language options are codes ("en"/"my"), so that
+   * row passes a lookup instead — otherwise the sheet would offer "en".
+   */
+  labelOf?: (option: T) => string;
 };
 
 /**
@@ -24,6 +31,7 @@ export function OptionSheet<T extends string>({
   value,
   onSelect,
   onClose,
+  labelOf = (option) => option,
 }: Props<T>) {
   const insets = useSafeAreaInsets();
 
@@ -87,7 +95,7 @@ export function OptionSheet<T extends string>({
                       selected ? "font-psemibold text-brand" : "font-sans text-ink"
                     }`}
                   >
-                    {option}
+                    {labelOf(option)}
                   </Text>
                   {selected ? (
                     <Ionicons name="checkmark" size={20} color={colors.brand} />

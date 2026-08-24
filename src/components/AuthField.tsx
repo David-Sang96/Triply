@@ -2,12 +2,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import {
   Pressable,
-  Text,
   TextInput,
   View,
   type KeyboardTypeOptions,
   type TextInputProps,
 } from "react-native";
+
+import { Text } from "@/components/Text";
 
 type AuthFieldProps = {
   label: string;

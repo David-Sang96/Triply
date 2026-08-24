@@ -11,12 +11,12 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import { useChatHistory, useDeleteMessage, useSendChat } from "@/lib/chat";
 import { colors } from "@/theme/colors";

@@ -2,9 +2,15 @@ import { useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { DestinationCard } from "@/components/home/DestinationCard";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { InspirationPill } from "@/components/home/InspirationPill";

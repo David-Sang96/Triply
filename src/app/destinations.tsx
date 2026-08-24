@@ -4,12 +4,12 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { DestinationCard } from "@/components/home/DestinationCard";
 import { useDestinations } from "@/lib/destinations";
 import { colors } from "@/theme/colors";

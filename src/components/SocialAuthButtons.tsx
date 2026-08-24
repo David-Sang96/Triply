@@ -3,8 +3,13 @@ import * as Sentry from "@sentry/react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, Pressable, Text } from "react-native";
+import {
+  Alert,
+  Pressable,
+} from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+
+import { Text } from "@/components/Text";
 
 /**
  * "Continue with Google" — browser SSO via Clerk `useSSO`.

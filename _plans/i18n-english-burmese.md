@@ -140,26 +140,50 @@ A package rather than raw `.ttf` files in `assets/`: the fingerprint is
 changing anyway because of `i18next`, so the one advantage of hand-bundling —
 leaving `package.json` untouched — buys nothing here.
 
-At the app root, one `View` overrides the theme tokens at runtime:
+### How the family is swapped — settled by measurement, 24 Aug
 
-```tsx
-style={vars({
-  "--font-sans":      isMy ? "NotoSansMyanmar_400Regular" : "Poppins_400Regular",
-  "--font-pmedium":   isMy ? "NotoSansMyanmar_500Medium"  : "Poppins_500Medium",
-  "--font-psemibold": isMy ? "NotoSansMyanmar_600SemiBold": "Poppins_600SemiBold",
-  "--font-pbold":     isMy ? "NotoSansMyanmar_700Bold"    : "Poppins_700Bold",
-})}
-```
+The original plan was to override the `@theme` tokens at the root with
+NativeWind's `vars()`, so all 177 classes would follow with no edit to those
+33 files. **That was spiked on the emulator and it does not work.**
 
-NativeWind's `vars()` follows standard CSS variable inheritance, so all 177
-classes pick up the new family **with no edit to those 33 files**.
+Method: render the identical string `Aa Bb Gg` several ways, screenshot with
+`adb`, and compare crops by mean per-column ink difference. `0.00` is
+pixel-identical; the same string in Poppins vs Noto measures ~9.8 apart.
 
-This is the single assumption the design rests on, so it is verified first —
-see Build order step 1. If NativeWind v5 turns out to bake the token in at
-build time rather than emitting `var(--font-sans)`, the fallback is a shared
-`<AppText>` wrapper plus a mechanical sweep of all 177 sites. That is a much
-larger job, and it must be discovered on day one rather than after 16 screens
-have been translated.
+| Comparison | Diff | Meaning |
+| ---------- | ---- | ------- |
+| `font-psemibold` outside `vars()` **vs** inside a `vars()` overriding `--font-psemibold` | **0.03** | `vars()` has no effect on the font token |
+| `className` + explicit `style` fontFamily **vs** explicit Noto | **0.02** | an inline `style` **wins** over the class |
+| explicit Noto **vs** a deliberately bogus family name | 6.18 | both fonts really are loaded |
+
+NativeWind v5 inlines the family at build time, so no runtime variable can
+reach it. What *does* work is an explicit `style`, so the swap is done by a
+thin `Text` re-export (`src/components/Text.tsx`): it reads the active
+language, looks at the `className` it was given, and injects the matching
+family. Existing `className`s stay exactly as they are; only the **import
+line** changes, in 33 files.
+
+`TextInput` needs the same treatment (`AuthField`), placeholder included.
+
+### A pre-existing bug the spike found: `font-sans` is not Poppins
+
+Measured outside any `vars()`, `font-sans` renders **0.02** from a
+*nonexistent* font name — it silently falls back to the system font. The cause
+is that `font-sans` is a Tailwind **built-in**: `tailwindcss/theme.css` gives
+it a comma-separated CSS stack, and a stack is not a valid React Native
+`fontFamily`. The project's own tokens are unaffected — `font-pmedium`,
+`font-psemibold` and `font-pbold` (121 uses) all resolve.
+
+So **56 `font-sans` sites ship in Roboto today, not Poppins** — including the
+email on the Profile screen and the value column of every settings row.
+`global.css` plainly intends Poppins, so this is a bug, not a choice.
+
+Decision: **fix it inside the same wrapper** — `font-sans` maps to
+`Poppins_400Regular` in English and `NotoSansMyanmar_400Regular` in Burmese.
+It costs nothing extra once the wrapper exists, and the alternative is
+shipping a Burmese UI that is correct where the English one is still wrong.
+It does change the appearance of 56 English sites, so those need the same
+screenshot sweep as the translations.
 
 Burmese stacked glyphs also need more line height than Latin or they clip.
 The amount is measured from a device screenshot, not guessed.
@@ -212,9 +236,10 @@ This also tightens telemetry: a code is exactly the "fixed category" that
 Each step is verifiable on its own. Steps 1–3 change no user-visible behaviour,
 so they can land incrementally.
 
-1. **Font spike.** Bundle Noto Sans Myanmar, wrap the root in `vars()`,
-   hardcode Burmese on one screen, screenshot with `adb`. Proves or kills the
-   font approach before any string is extracted.
+1. ~~**Font spike.**~~ **Done, 24 Aug — it killed the `vars()` approach.**
+   Results and the replacement are in "How the family is swapped" above. Doing
+   this first was worth it: the alternative was discovering it after 16 screens
+   had been translated.
 2. i18n scaffolding, `PreferencesProvider`, two-language picker. App still
    entirely English, everything wired.
 3. String extraction, screen by screen — roughly 16 reviewable commits.
@@ -238,7 +263,7 @@ names came back Latin and the map still has its pins.
 
 | Risk | Mitigation |
 | ---- | ---------- |
-| `vars()` does not override theme tokens at runtime | Step 1 spike, before anything depends on it. Fallback is an `<AppText>` wrapper across 177 sites |
+| ~~`vars()` does not override theme tokens at runtime~~ | **Happened.** Spiked first and measured; replaced by the `Text` re-export, which costs 33 import lines rather than 177 class edits |
 | Device carries a Zawgyi font and mangles Unicode Burmese | Bundling our own font makes the app immune; this is why system fallback is not used |
 | Burmese overflows fixed-size UI | Screenshot sweep during step 3 |
 | Gemini ignores "keep names in original script" | Verified on a real generation; if it drifts, require a Latin `name` in the response schema |

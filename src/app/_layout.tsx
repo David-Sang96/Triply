@@ -1,6 +1,12 @@
 import { ClerkProvider } from "@clerk/expo";
 
 import {
+  NotoSansMyanmar_400Regular,
+  NotoSansMyanmar_500Medium,
+  NotoSansMyanmar_600SemiBold,
+  NotoSansMyanmar_700Bold,
+} from "@expo-google-fonts/noto-sans-myanmar";
+import {
   Poppins_400Regular,
   Poppins_500Medium,
   Poppins_600SemiBold,
@@ -12,11 +18,17 @@ import * as Sentry from "@sentry/react-native";
 import { Stack, useNavigationContainerRef } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { SplashScreenView } from "@/components/SplashScreenView";
+import "@/lib/i18n";
+import {
+  loadStoredPreferences,
+  PreferencesProvider,
+  type Preferences,
+} from "@/lib/preferences";
 import { queryClient, useAppStateFocus } from "@/lib/query";
 import { tokenCache } from "@/lib/token-cache";
 
@@ -71,43 +83,64 @@ function RootLayout() {
     Poppins_500Medium,
     Poppins_600SemiBold,
     Poppins_700Bold,
+    // Burmese. Poppins has no Myanmar glyphs at all, so without these the app
+    // would fall back to whatever the device has — which on Myanmar phones is
+    // often a Zawgyi-encoded font that renders Unicode Burmese as garbage.
+    NotoSansMyanmar_400Regular,
+    NotoSansMyanmar_500Medium,
+    NotoSansMyanmar_600SemiBold,
+    NotoSansMyanmar_700Bold,
   });
   const navigationRef = useNavigationContainerRef();
+
+  // The saved language has to be applied BEFORE the first frame, or a Burmese
+  // user sees a flash of English. There is already a gate here for fonts, so
+  // this joins it rather than adding a second loading state.
+  const [preferences, setPreferences] = useState<Preferences | null>(null);
+
+  useEffect(() => {
+    loadStoredPreferences().then(setPreferences);
+  }, []);
 
   // Stops trip-status polling while the app is backgrounded. React Query cannot
   // work this out by itself on React Native — see the note in src/lib/query.ts.
   useAppStateFocus();
 
+  const ready = fontsLoaded && preferences !== null;
+
   useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
 
   useEffect(() => {
     navigationIntegration.registerNavigationContainer(navigationRef);
   }, [navigationRef]);
 
   // The native splash (expo-splash-screen) still covers the screen at this
-  // point — hideAsync only runs once the fonts are in — so this render is what
-  // is revealed underneath it, already painted and using Poppins.
-  if (!fontsLoaded) return <SplashScreenView />;
+  // point — hideAsync only runs once the fonts and the stored language are in
+  // — so this render is what is revealed underneath it, already painted in the
+  // right font and the right language.
+  if (!ready) return <SplashScreenView />;
 
   return (
     // Required for react-native-gesture-handler's Swipeable (chats.tsx) to
     // reliably receive pan gestures, especially on Android.
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <QueryClientProvider client={queryClient}>
-          <SafeAreaProvider>
-            <StatusBar style="dark" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: "#FFFFFF" },
-              }}
-            />
-          </SafeAreaProvider>
-        </QueryClientProvider>
-      </ClerkProvider>
+      <PreferencesProvider initial={preferences}>
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <QueryClientProvider client={queryClient}>
+            <SafeAreaProvider>
+              <StatusBar style="dark" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: "#FFFFFF" },
+                }}
+              />
+            </SafeAreaProvider>
+          </QueryClientProvider>
+        </ClerkProvider>
+      </PreferencesProvider>
     </GestureHandlerRootView>
   );
 }

@@ -10,12 +10,12 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
 import { useToggleTripCover, useUploadTripCover } from "@/lib/trips";

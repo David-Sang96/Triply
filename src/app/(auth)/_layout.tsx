@@ -2,8 +2,13 @@ import { useAuth } from "@clerk/expo";
 import * as Sentry from "@sentry/react-native";
 import { Redirect, Stack, type ErrorBoundaryProps } from "expo-router";
 import { useEffect } from "react";
-import { Pressable, ScrollView, Text } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { Text } from "@/components/Text";
 
 // Route-level error boundary. This catches errors before they reach Sentry's
 // root wrap, so report explicitly. Raw details are shown only in development;

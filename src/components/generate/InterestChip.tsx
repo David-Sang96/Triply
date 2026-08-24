@@ -1,6 +1,9 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { Pressable, Text } from "react-native";
+import {
+  Pressable,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import type { Interest } from "@/data/generate";
 import { colors } from "@/theme/colors";
 

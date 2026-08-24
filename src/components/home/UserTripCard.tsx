@@ -1,7 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  View,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import type { TripListItem } from "@/lib/trips";
 import { colors } from "@/theme/colors";
 

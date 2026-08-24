@@ -1,5 +1,9 @@
-import { Pressable, Text, View } from "react-native";
+import {
+  Pressable,
+  View,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import type { Inspiration } from "@/data/home";
 
 // A small "AI inspiration" tile: a tinted card with an emoji chip and a

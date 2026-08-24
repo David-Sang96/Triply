@@ -6,7 +6,6 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  Text,
   View,
 } from "react-native";
 // The `Swipeable` exported from the package barrel is deprecated in favour of
@@ -19,6 +18,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import { useConversations, useDeleteConversation, type Conversation } from "@/lib/chat";
 import { colors } from "@/theme/colors";
