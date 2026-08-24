@@ -1,6 +1,7 @@
 # Multi-language support — English + Burmese
 
-**Status:** design agreed 24 Aug 2026, not yet implemented.
+**Status:** design agreed 24 Aug 2026; implemented 24–25 Aug. Remaining: apply
+the migration, then verify on a device.
 **Goal:** the whole app in English or Burmese, switched from Profile →
 Preferences, applying instantly — no restart, no reload.
 
@@ -240,11 +241,27 @@ so they can land incrementally.
    Results and the replacement are in "How the family is swapped" above. Doing
    this first was worth it: the alternative was discovering it after 16 screens
    had been translated.
-2. i18n scaffolding, `PreferencesProvider`, two-language picker. App still
-   entirely English, everything wired.
-3. String extraction, screen by screen — roughly 16 reviewable commits.
-4. Migration, prompt threading, `friendlyError` → codes.
-5. Fill the Burmese catalog.
+2. ~~i18n scaffolding, `PreferencesProvider`, two-language picker.~~ **Done.**
+3. ~~String extraction, screen by screen.~~ **Done** — every screen and
+   component listed in scope.
+4. ~~Migration, prompt threading, `friendlyError` → codes.~~ **Code done**; the
+   migration itself is developer-run and still to be applied.
+5. ~~Fill the Burmese catalog.~~ **Done.**
+
+**Open:** apply the migration (`db:generate` → `db:migrate` → `db:check` →
+`db:migrate:prod`), then the device sweep in both languages.
+
+### Two things worth knowing for the sweep
+
+**Fast Refresh cannot be trusted for this work.** Several files did not reach
+the running app this session — `(tabs)/_layout.tsx` and `(tabs)/assistant.tsx`
+provably, others unknown. A temporary `tintColor` change to red produced zero
+red pixels in a screenshot, which is what identified it. Verify after a full
+reload, never off a hot update, or you will "confirm" stale code.
+
+**A layout break is the expected failure, not a missing string.** Burmese runs
+longer than English: the first one found was the Home section title running
+into "See all". Look for collisions and clipping, not for English text.
 
 ## Verification
 
