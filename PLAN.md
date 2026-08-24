@@ -459,14 +459,20 @@ See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
       soon as that list is non-empty — filling it in blanks the map.*
       *Still outstanding, separately: Leaflet itself is loaded from the unpkg
       CDN inside the WebView, so the map depends on unpkg staying up.*
-- [~] No test framework — `npx tsc --noEmit` and `npm run lint` are the only
+- [x] No test framework — `npx tsc --noEmit` and `npm run lint` are the only
       gate, and until 22 Aug nothing ran them except a human remembering to.
       `.github/workflows/ci.yml` now runs both on every pull request and on
-      pushes to `main`. **Not yet proven** — it has never run; the first PR
-      after this is what confirms it.
-      Both pass locally as of 22 Aug (0 type errors; 0 lint errors, 1 pre-existing
-      warning in the generated `.expo/types/router.d.ts`, which `expo lint` does
-      not fail on).
+      pushes to `main`. **Proven — 10 runs, 22 Aug.** The very first one
+      (PR #41) failed, on exactly the clean-checkout `TS2882` described below;
+      `types/global.d.ts` fixed it, and the nine since are green, across PRs
+      #41–#44 and each merge to `main`. So both halves are now demonstrated:
+      the workflow really runs on pull requests *and* on pushes, and it really
+      fails the build rather than reporting a green tick over a type error.
+      Both also pass locally as of 22 Aug (0 type errors; 0 lint errors, 1
+      pre-existing warning in the generated `.expo/types/router.d.ts`, which
+      `expo lint` does not fail on).
+      *A framework is still absent — this box says the gate is enforced, not
+      that there are tests.*
       Two decisions worth keeping: the workflow calls `npx tsc --noEmit` and
       `npm run lint` **directly** rather than adding `package.json` scripts,
       because a new script changes the Expo fingerprint and a changed
