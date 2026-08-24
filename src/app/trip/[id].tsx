@@ -7,6 +7,7 @@ import { ActivityIndicator, Alert, View } from "react-native";
 import { GenerationError } from "@/components/trip/GenerationError";
 import { GenerationLoading } from "@/components/trip/GenerationLoading";
 import { TripDetailView } from "@/components/trip/TripDetailView";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { ApiError } from "@/lib/api";
@@ -24,6 +25,29 @@ function Centered() {
 // One screen for the whole lifecycle of a trip: it polls status, shows the
 // loading steps while generating, an error + retry on failure, and the full
 // itinerary once ready.
+// Turns what the server reports into copy in the active language.
+//
+// The order matters. A CODE is preferred because it can be translated. The
+// stored MESSAGE is the legacy path: rows written before error_code existed
+// carry English prose, and showing that beats showing nothing. Only when
+// there is neither does the generic fallback apply.
+function failureMessage(
+  code: string | null,
+  message: string | null,
+  t: TFunction,
+): string {
+  switch (code) {
+    case "ai_rate_limited":
+      return t("generation.failureAiRateLimited");
+    case "generation_failed":
+      return t("generation.failureGenerationFailed");
+    case "enqueue_failed":
+      return t("generation.failureEnqueueFailed");
+    default:
+      return message ?? t("generation.failureDefault");
+  }
+}
+
 export default function TripScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -92,10 +116,11 @@ export default function TripScreen() {
   if (status === "failed") {
     return (
       <GenerationError
-        message={
-          statusQuery.data?.errorMessage ??
-          "We couldn't build this itinerary. Please try again."
-        }
+        message={failureMessage(
+          statusQuery.data?.errorCode ?? null,
+          statusQuery.data?.errorMessage ?? null,
+          t,
+        )}
         onRetry={onRetry}
         retrying={retryTrip.isPending}
         onBack={goBack}

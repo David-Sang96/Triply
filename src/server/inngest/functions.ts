@@ -159,12 +159,15 @@ export const syncUserDeleted = inngest.createFunction(
   },
 );
 
-// A short, user-facing reason for a failed generation (never leak internals).
-function friendlyError(err: unknown): string {
-  if (isRateLimitError(err)) {
-    return "Our AI is busy right now (free-tier limit reached). Please wait a minute and try again.";
-  }
-  return "We couldn't build this itinerary. Please try again.";
+// A fixed failure category for a failed generation. The app turns this into
+// user-facing copy in the active language; the server deliberately no longer
+// writes prose, because prose cannot be translated on the client and English
+// text at the moment a trip fails is the worst place to leave it.
+//
+// This also matches the telemetry rule in AGENTS.md: a code is an enum-like
+// value and may go to Sentry, where the user-facing message may not.
+function failureCode(err: unknown): "ai_rate_limited" | "generation_failed" {
+  return isRateLimitError(err) ? "ai_rate_limited" : "generation_failed";
 }
 
 // trip/requested → generate a full itinerary and persist it.
@@ -210,7 +213,10 @@ export const generateTrip = inngest.createFunction(
           .update(trips)
           .set({
             status: "failed",
-            errorMessage: friendlyError(error),
+            errorCode: failureCode(error),
+            // Cleared so a retry that fails again cannot leave stale English
+            // prose from an older build sitting next to a fresh code.
+            errorMessage: null,
             countsAgainstCap: false,
           })
           .where(eq(trips.id, tripId));
@@ -235,6 +241,9 @@ export const generateTrip = inngest.createFunction(
         budgetLevel: row.budgetLevel,
         interests: row.interests,
         pace: row.pace,
+        // Null on trips created before multi-language support; those are
+        // English.
+        language: row.language ?? "en",
       };
     });
     if (!params) return { skipped: "trip-missing" };

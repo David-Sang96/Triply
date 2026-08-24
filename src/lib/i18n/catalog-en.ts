@@ -183,6 +183,14 @@ export const en = {
     didYouKnow: "Did you know?",
     didYouKnowBody:
       "We verify every place and optimize the route to give you the best experience.",
+    // Keyed by trips.error_code. failureDefault covers both an unknown code
+    // and a legacy row that has neither a code nor stored prose.
+    failureAiRateLimited:
+      "Our AI is busy right now (free-tier limit reached). Please wait a minute and try again.",
+    failureGenerationFailed: "We couldn't build this itinerary. Please try again.",
+    failureEnqueueFailed:
+      "We couldn't start generating this trip. Please try again.",
+    failureDefault: "We couldn't build this itinerary. Please try again.",
     errorHeader: "Trip not created",
     errorTitle: "Couldn't build this trip",
     backToHome: "Back to home",

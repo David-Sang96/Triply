@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ChatUsage, SendChatResponse } from "@/shared/chat-contract";
 
 import { ApiError, useApiFetch } from "./api";
+import { useLanguage } from "./preferences";
 
 export type ChatRole = "user" | "assistant";
 
@@ -94,6 +95,9 @@ export function useChatHistory(ref: ThreadRef) {
 // general mode with no conversationId yet, the server creates one and returns
 // its id (the caller should adopt it for subsequent messages/history).
 export function useSendChat(ref: ThreadRef) {
+  // Read once here so every send carries it — see the same note in
+  // useCreateTrip.
+  const language = useLanguage();
   const apiFetch = useApiFetch();
   const qc = useQueryClient();
   return useMutation({
@@ -132,6 +136,7 @@ export function useSendChat(ref: ThreadRef) {
                   message,
                   tripId: ref.tripId ?? null,
                   conversationId: ref.conversationId ?? null,
+                  language,
                 },
               });
 

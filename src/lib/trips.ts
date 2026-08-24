@@ -7,6 +7,7 @@ import {
 import { useEffect, useRef } from "react";
 
 import { useApiFetch } from "./api";
+import { useLanguage } from "./preferences";
 
 // Client-side mirrors of the server shapes (kept plain so no server/db code is
 // pulled into the app bundle).
@@ -98,9 +99,16 @@ export function useTrips() {
 export function useCreateTrip() {
   const apiFetch = useApiFetch();
   const qc = useQueryClient();
+  // Read here rather than at the call site so every caller sends it and none
+  // can forget. The server stores it on the trip, so a retry regenerates in
+  // the same language and switching language later leaves old trips alone.
+  const language = useLanguage();
   return useMutation({
     mutationFn: (input: CreateTripInput) =>
-      apiFetch<{ id: string }>("/api/trips", { method: "POST", json: input }),
+      apiFetch<{ id: string }>("/api/trips", {
+        method: "POST",
+        json: { ...input, language },
+      }),
     onSuccess: (data, input) => {
       Sentry.logger.info("Trip requested", {
         trip_id: data.id,
@@ -125,7 +133,11 @@ export function useTripStatus(id: string, enabled: boolean) {
     queryKey: ["trip", id, "status"],
     enabled,
     queryFn: () =>
-      apiFetch<{ status: TripStatus; errorMessage: string | null }>(
+      apiFetch<{
+        status: TripStatus;
+        errorCode: string | null;
+        errorMessage: string | null;
+      }>(
         `/api/trips/${id}/status`,
       ),
     refetchInterval: (query) => {
