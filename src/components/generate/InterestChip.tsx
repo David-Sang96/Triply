@@ -3,6 +3,8 @@ import {
   Pressable,
 } from "react-native";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import type { Interest } from "@/data/generate";
 import { colors } from "@/theme/colors";
@@ -25,6 +27,7 @@ export function InterestChip({
   onToggle,
   width,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={onToggle}
@@ -46,7 +49,11 @@ export function InterestChip({
           selected ? "text-white" : "text-ink"
         }`}
       >
-        {interest.label}
+        {/* The cast is the escape hatch for a dynamic key: interest.id is
+            typed `string`, so the template literal cannot be proved to be a
+            real catalog key. Every id in src/data/generate.ts has one, and a
+            missing key would render the id rather than crash. */}
+        {t(`interests.${interest.id}` as "interests.food")}
       </Text>
     </Pressable>
   );

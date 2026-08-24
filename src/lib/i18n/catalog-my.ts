@@ -63,6 +63,56 @@ export const my: Catalog<typeof en> = {
     hello: "မင်္ဂလာပါ {{name}}",
   },
 
+  trips: {
+    title: "ကျွန်ုပ်၏ ခရီးစဉ်များ",
+    count_one: "ခရီးစဉ် {{count}} ခု",
+    count_other: "ခရီးစဉ် {{count}} ခု",
+    emptyTitle: "ခရီးစဉ် မရှိသေးပါ",
+    emptyBody: "စီစဉ်ထားသော ခရီးစဉ်များ ဤနေရာတွင် ပေါ်လာပါမည်။",
+  },
+
+  generate: {
+    headerTitle: "ခရီးစဉ်ဖန်တီးမည်",
+    intro: "သင့်အတွက် အကောင်းဆုံးခရီးစဉ်ကို စီစဉ်ကြမည်",
+    introBody:
+      "အချက်အလက်အနည်းငယ် ဖြည့်ပေးပါ။ AI မှ အကောင်းဆုံးခရီးစဉ်ကို ဖန်တီးပေးပါမည်။",
+    whereLabel: "ဘယ်ကိုသွားချင်ပါသလဲ။",
+    wherePlaceholder: "နေရာရှာရန်",
+    whereRequired: "သွားလိုသောနေရာကို ထည့်ပါ။",
+    daysLabel: "ဘယ်နှစ်ရက်ကြာမလဲ။",
+    daysHelper: "၁ - ၇ ရက်",
+    travelersLabel: "ခရီးသွား ဘယ်နှစ်ဦးလဲ။",
+    travelersHelper: "၁ - ၁၀ ဦး",
+    budgetLabel: "ခရီးစရိတ်အဆင့်",
+    interestsLabel: "ဘာတွေကို စိတ်ဝင်စားပါသလဲ။",
+    interestsHint: "({{max}} ခုအထိ ရွေးနိုင်သည်)",
+    paceLabel: "ခရီးသွားနှုန်း",
+    submit: "ခရီးစဉ်ဖန်တီးမည်",
+    submitting: "စတင်နေသည်…",
+    noPayment: "ငွေပေးချေရန် မလိုပါ",
+    startFailedTitle: "ခရီးစဉ် မစတင်နိုင်ပါ",
+  },
+
+  interests: {
+    food: "အစားအသောက်",
+    history: "သမိုင်း",
+    nature: "သဘာဝ",
+    nightlife: "ညဘဝ",
+    adventure: "စွန့်စားခန်း",
+    culture: "ယဉ်ကျေးမှု",
+    shopping: "ဈေးဝယ်",
+    relaxation: "အပန်းဖြေ",
+  },
+
+  paces: {
+    relaxedLabel: "အေးဆေး",
+    relaxedDescription: "ရပ်နားချိန်များပြီး နေရာနည်းနည်း",
+    balancedLabel: "မျှတ",
+    balancedDescription: "နေ့စဉ် သင့်တင့်သောအစီအစဉ်",
+    fastLabel: "မြန်ဆန်",
+    fastDescription: "တတ်နိုင်သမျှ များများကြည့်ရန်",
+  },
+
   tabs: {
     home: "ပင်မ",
     assistant: "အကူ",

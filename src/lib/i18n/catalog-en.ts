@@ -61,6 +61,59 @@ export const en = {
     hello: "Hello, {{name}}",
   },
 
+  trips: {
+    title: "My Trips",
+    count_one: "{{count}} trip",
+    count_other: "{{count}} trips",
+    emptyTitle: "No trips yet",
+    emptyBody: "Your planned and saved trips will show up here.",
+  },
+
+  generate: {
+    headerTitle: "Generate a trip",
+    intro: "Let's plan your perfect trip",
+    introBody:
+      "Tell us a few details and our AI will generate the best itinerary for you.",
+    whereLabel: "Where do you want to go?",
+    wherePlaceholder: "Search destination",
+    whereRequired: "Please enter where you want to go.",
+    daysLabel: "How many days?",
+    daysHelper: "1 - 7 days",
+    travelersLabel: "How many travelers?",
+    travelersHelper: "1 - 10 travelers",
+    budgetLabel: "Budget level",
+    interestsLabel: "What are you interested in?",
+    interestsHint: "(Select up to {{max}})",
+    paceLabel: "Travel Pace",
+    submit: "Generate trip",
+    submitting: "Starting...",
+    noPayment: "No payment required",
+    startFailedTitle: "Couldn't start your trip",
+  },
+
+  // Keyed by the ids in src/data/generate.ts. The `label` there stays English
+  // and is what gets SENT to the server for the Gemini prompt; these are only
+  // what the user sees, so translating them cannot change generation.
+  interests: {
+    food: "Food",
+    history: "History",
+    nature: "Nature",
+    nightlife: "Nightlife",
+    adventure: "Adventure",
+    culture: "Culture",
+    shopping: "Shopping",
+    relaxation: "Relaxation",
+  },
+
+  paces: {
+    relaxedLabel: "Relaxed",
+    relaxedDescription: "Fewer stops, more downtime",
+    balancedLabel: "Balanced",
+    balancedDescription: "A comfortable mix each day",
+    fastLabel: "Fast-paced",
+    fastDescription: "See as much as you can",
+  },
+
   tabs: {
     home: "Home",
     assistant: "Assistant",

@@ -3,6 +3,8 @@ import {
   View,
 } from "react-native";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 
 type Props<T extends string> = {
@@ -17,6 +19,7 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
 }: Props<T>) {
+  const { t } = useTranslation();
   return (
     <View className="flex-row gap-2.5" accessibilityRole="radiogroup">
       {options.map((option) => {
@@ -36,7 +39,7 @@ export function SegmentedControl<T extends string>({
                 selected ? "text-white" : "text-ink"
               }`}
             >
-              {option}
+              {t(`budget.${option}` as "budget.Budget")}
             </Text>
           </Pressable>
         );
