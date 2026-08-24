@@ -4,6 +4,8 @@ import * as Sentry from "@sentry/react-native";
 import { useRouter, type ErrorBoundaryProps } from "expo-router";
 import { Image } from "expo-image";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Pressable,
   ScrollView,
@@ -19,6 +21,8 @@ import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
 // Route-level boundary. Catches errors before Sentry's root wrap, so report
 // explicitly. Raw details are shown only in development; release shows generic copy.
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -26,7 +30,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <SafeAreaView className="flex-1 bg-white px-5">
       <Text className="mt-4 text-lg font-pbold text-red-600">
-        Something went wrong
+        {t("signIn.errorTitle")}
       </Text>
       {__DEV__ ? (
         <ScrollView className="mt-3 flex-1">
@@ -39,14 +43,14 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         </ScrollView>
       ) : (
         <Text className="mt-3 flex-1 text-[15px] text-slate-500">
-          We couldn&apos;t sign you in. Please try again.
+          {t("signIn.errorBody")}
         </Text>
       )}
       <Pressable
         onPress={retry}
         className="my-4 h-[48px] items-center justify-center rounded-xl bg-[#208AEF]"
       >
-        <Text className="font-psemibold text-white">Try again</Text>
+        <Text className="font-psemibold text-white">{t("common.tryAgain")}</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -68,17 +72,23 @@ function errMessage(err: unknown, fallback: string): string {
 type FieldErrors = { email?: string; password?: string };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function fieldRules(v: { email: string; password: string }): FieldErrors {
+// Takes `t` rather than calling useTranslation: this is a plain function, and
+// the messages have to change with the language like everything else.
+function fieldRules(
+  v: { email: string; password: string },
+  t: TFunction,
+): FieldErrors {
   const e: FieldErrors = {};
   const email = v.email.trim();
-  if (!email) e.email = "Email is required.";
-  else if (!EMAIL_RE.test(email)) e.email = "Enter a valid email address.";
-  if (!v.password) e.password = "Password is required.";
+  if (!email) e.email = t("auth.emailRequired");
+  else if (!EMAIL_RE.test(email)) e.email = t("auth.emailInvalid");
+  if (!v.password) e.password = t("auth.passwordRequired");
   return e;
 }
 
 export default function SignIn() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { isLoaded, signIn, setActive } = useSignIn();
 
   const [emailAddress, setEmailAddress] = useState("");
@@ -105,7 +115,7 @@ export default function SignIn() {
   const [codeFactor, setCodeFactor] = useState<"first" | "second">("second");
 
   // Errors derived live from current values; shown once touched or submitted.
-  const allErrors = fieldRules({ email: emailAddress, password });
+  const allErrors = fieldRules({ email: emailAddress, password }, t);
   const touch = (k: keyof FieldErrors) => setTouched((t) => ({ ...t, [k]: true }));
   const errFor = (k: keyof FieldErrors) =>
     submitted || touched[k] ? allErrors[k] : undefined;
@@ -178,13 +188,9 @@ export default function SignIn() {
           secondFactors: attempt.supportedSecondFactors?.map((f) => f.strategy),
         },
       });
-      setFormError(
-        "We couldn't finish signing you in. Please try again, or use Continue with Google.",
-      );
+      setFormError(t("signIn.didNotComplete"));
     } catch (err) {
-      setFormError(
-        errMessage(err, "Could not sign in. Check your details and try again."),
-      );
+      setFormError(errMessage(err, t("signIn.couldNotSignIn")));
     } finally {
       setBusy(false);
     }
@@ -214,11 +220,9 @@ export default function SignIn() {
           secondFactors: attempt.supportedSecondFactors?.map((f) => f.strategy),
         },
       });
-      setFormError(
-        "We couldn't finish signing you in. Please try Continue with Google.",
-      );
+      setFormError(t("signIn.codeNotComplete"));
     } catch (err) {
-      setFormError(errMessage(err, "That code didn't work. Please try again."));
+      setFormError(errMessage(err, t("auth.codeFailed")));
     } finally {
       setBusy(false);
     }
@@ -244,7 +248,7 @@ export default function SignIn() {
       // Only clear the box once a new code is actually on its way.
       setCode("");
     } catch (err) {
-      setFormError(errMessage(err, "Could not resend the code."));
+      setFormError(errMessage(err, t("auth.resendFailed")));
     } finally {
       setResending(false);
     }
@@ -278,10 +282,10 @@ export default function SignIn() {
           />
 
           <Text className="mt-4 text-center text-[24px] font-pbold text-slate-900">
-            Confirm it&apos;s you
+            {t("signIn.confirmTitle")}
           </Text>
           <Text className="mt-2 text-center text-[14px] text-slate-500">
-            This is a new device, so we&apos;ve sent a 6-digit code to
+            {t("signIn.confirmBody")}
           </Text>
           <Text className="text-center text-[14px] font-psemibold text-[#208AEF]">
             {emailAddress.trim()}
@@ -330,17 +334,17 @@ export default function SignIn() {
             style={{ opacity: busy || code.length < 6 ? 0.6 : 1 }}
           >
             <Text className="text-base font-psemibold text-white">
-              {busy ? "Verifying…" : "Verify and sign in"}
+              {busy ? t("auth.verifying") : t("signIn.verifyAndSignIn")}
             </Text>
           </Pressable>
 
           <View className="mt-5 flex-row items-center justify-center">
             <Text className="text-[13px] text-slate-500">
-              Didn&apos;t receive the code?{" "}
+              {t("auth.didntReceiveCode")}{" "}
             </Text>
             <Pressable onPress={onResendCode} disabled={resending}>
               <Text className="text-[13px] font-psemibold text-[#208AEF]">
-                {resending ? "Sending…" : "Resend code"}
+                {resending ? t("auth.sending") : t("auth.resendCode")}
               </Text>
             </Pressable>
           </View>
@@ -363,35 +367,35 @@ export default function SignIn() {
 
         {/* Heading */}
         <Text className="mt-3 text-[26px] font-pbold text-slate-900">
-          Welcome back
+          {t("signIn.heading")}
         </Text>
         <Text className="mt-1 text-[15px] text-slate-500">
-          Sign in to continue planning.
+          {t("signIn.subheading")}
         </Text>
 
         {/* Fields */}
         <View className="mt-7 gap-5">
           <AuthField
-            label="Email"
+            label={t("auth.email")}
             icon="mail-outline"
             value={emailAddress}
             onChangeText={(v) => {
               setEmailAddress(v);
               touch("email");
             }}
-            placeholder="jane.doe@example.com"
+            placeholder={t("auth.emailPlaceholder")}
             keyboardType="email-address"
             error={errFor("email")}
           />
           <AuthField
-            label="Password"
+            label={t("auth.password")}
             icon="lock-closed-outline"
             value={password}
             onChangeText={(v) => {
               setPassword(v);
               touch("password");
             }}
-            placeholder="Your password"
+            placeholder={t("auth.passwordPlaceholder")}
             secure
             error={errFor("password")}
           />
@@ -416,14 +420,16 @@ export default function SignIn() {
           }}
         >
           <Text className="text-base font-psemibold text-white">
-            {busy ? "Signing in…" : "Sign in"}
+            {busy ? t("signIn.submitting") : t("signIn.submit")}
           </Text>
         </Pressable>
 
         {/* Divider */}
         <View className="my-5 flex-row items-center">
           <View className="h-px flex-1 bg-slate-200" />
-          <Text className="mx-3 text-[13px] text-slate-400">or continue with</Text>
+          <Text className="mx-3 text-[13px] text-slate-400">
+            {t("auth.orContinueWith")}
+          </Text>
           <View className="h-px flex-1 bg-slate-200" />
         </View>
 
@@ -432,9 +438,13 @@ export default function SignIn() {
 
         {/* Footer */}
         <View className="mt-6 flex-row items-center justify-center">
-          <Text className="text-[13px] text-slate-500">New to Triply? </Text>
+          <Text className="text-[13px] text-slate-500">
+            {t("welcome.newToTriply")}{" "}
+          </Text>
           <Pressable onPress={() => router.replace("/sign-up")}>
-            <Text className="text-[13px] font-psemibold text-[#208AEF]">Sign up</Text>
+            <Text className="text-[13px] font-psemibold text-[#208AEF]">
+              {t("welcome.signUp")}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>

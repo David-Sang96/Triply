@@ -23,6 +23,60 @@ export const my: Catalog<typeof en> = {
     somethingWentWrong: "တစ်ခုခုမှားယွင်းသွားပါသည်။ ထပ်စမ်းကြည့်ပါ။",
   },
 
+  welcome: {
+    tagline: "AI ခရီးစဉ်စီစဉ်ပေးသူ",
+    headline: "AI ဖြင့် ပိုမိုဉာဏ်ရှိသော\nခရီးစဉ်များကို စက္ကန့်ပိုင်းအတွင်း",
+    featureItinerariesTitle: "AI ဖြင့်ရေးဆွဲသော ခရီးစဉ်များ",
+    featureItinerariesSubtitle: "သင့်အတွက်သီးသန့် အစီအစဉ်များ စက္ကန့်ပိုင်းအတွင်း",
+    featureLocalTitle: "ဒေသတွင်း အကြံပြုချက်များ",
+    featureLocalSubtitle: "စားရန်၊ တည်းရန်နှင့် လည်ပတ်ရန် အကောင်းဆုံးနေရာများ",
+    featureTimeTitle: "အချိန်ကုန်သက်သာပြီး ပိုကောင်းသော ခရီး",
+    featureTimeSubtitle: "လိုအပ်သမျှ တစ်နေရာတည်းတွင်",
+    signIn: "ဝင်မည်",
+    newToTriply: "Triply ကို အသစ်လား။",
+    signUp: "အကောင့်ဖွင့်မည်",
+  },
+
+  tabs: {
+    home: "ပင်မ",
+    assistant: "အကူ",
+    trips: "ခရီးစဉ်",
+    profile: "ကိုယ်ရေး",
+  },
+
+  auth: {
+    email: "အီးမေးလ်",
+    emailPlaceholder: "jane.doe@example.com",
+    password: "စကားဝှက်",
+    passwordPlaceholder: "သင့်စကားဝှက်",
+    orContinueWith: "သို့မဟုတ် ဆက်လက်ရန်",
+    emailRequired: "အီးမေးလ် ထည့်ရန်လိုအပ်သည်။",
+    emailInvalid: "မှန်ကန်သော အီးမေးလ်လိပ်စာ ထည့်ပါ။",
+    passwordRequired: "စကားဝှက် ထည့်ရန်လိုအပ်သည်။",
+    didntReceiveCode: "ကုဒ်မရရှိပါသလား။",
+    sending: "ပို့နေသည်…",
+    resendCode: "ကုဒ်ပြန်ပို့မည်",
+    resendFailed: "ကုဒ်ပြန်မပို့နိုင်ပါ။",
+    codeFailed: "ကုဒ်မမှန်ပါ။ ထပ်စမ်းကြည့်ပါ။",
+    verifying: "စစ်ဆေးနေသည်…",
+  },
+
+  signIn: {
+    errorTitle: "တစ်ခုခုမှားယွင်းသွားပါသည်",
+    errorBody: "အကောင့်ဝင်၍မရပါ။ ထပ်စမ်းကြည့်ပါ။",
+    heading: "ပြန်လည်ကြိုဆိုပါသည်",
+    subheading: "ခရီးစဉ်ဆက်လက်စီစဉ်ရန် အကောင့်ဝင်ပါ။",
+    submit: "ဝင်မည်",
+    submitting: "ဝင်နေသည်…",
+    couldNotSignIn: "အကောင့်ဝင်၍မရပါ။ အချက်အလက်များ စစ်ဆေးပြီး ထပ်စမ်းကြည့်ပါ။",
+    didNotComplete:
+      "အကောင့်ဝင်ခြင်း မပြီးမြောက်ပါ။ ထပ်စမ်းကြည့်ပါ သို့မဟုတ် Google ဖြင့်ဆက်လက်ပါ။",
+    codeNotComplete: "အကောင့်ဝင်ခြင်း မပြီးမြောက်ပါ။ Google ဖြင့် ဆက်လက်ကြည့်ပါ။",
+    confirmTitle: "သင်ဖြစ်ကြောင်း အတည်ပြုပါ",
+    confirmBody: "ဤစက်ပစ္စည်းသည် အသစ်ဖြစ်သဖြင့် ဂဏန်း ၆ လုံးကုဒ်ကို ပို့ထားပါသည်",
+    verifyAndSignIn: "စစ်ဆေးပြီး ဝင်မည်",
+  },
+
   profile: {
     title: "ကိုယ်ရေးအချက်အလက်",
     fallbackName: "ခရီးသွား",
