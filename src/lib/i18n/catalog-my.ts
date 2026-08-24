@@ -37,6 +37,32 @@ export const my: Catalog<typeof en> = {
     signUp: "အကောင့်ဖွင့်မည်",
   },
 
+  home: {
+    greetingFallback: "မိတ်ဆွေ",
+    yourTrips: "သင့်ခရီးစဉ်များ",
+    popularDestinations: "ရေပန်းစားသော ခရီးစဉ်နေရာများ",
+    aiInspirations: "AI အကြံပြုချက်များ",
+    seeAll: "အားလုံးကြည့်ရန်",
+    tripsLoadError: "ခရီးစဉ်များ ဖတ်၍မရပါ",
+    destinationsLoadError: "နေရာများ ဖတ်၍မရပါ",
+    tapToTryAgain: "ထပ်စမ်းရန် နှိပ်ပါ။",
+    noTripsYet: "ခရီးစဉ် မရှိသေးပါ",
+    noTripsBody: "ပထမဆုံး AI ခရီးစဉ်ကို ဖန်တီးရန် နှိပ်ပါ။",
+  },
+
+  trip: {
+    days_one: "{{count}} ရက်",
+    days_other: "{{count}} ရက်",
+    travelers_one: "ခရီးသွား {{count}} ဦး",
+    travelers_other: "ခရီးသွား {{count}} ဦး",
+    generating: "ဖန်တီးနေသည်…",
+    failed: "မအောင်မြင်ပါ",
+    heroFallbackTitle: "နောက်ခရီးစဉ်အတွက်\nအဆင်သင့်ဖြစ်ပြီလား။",
+    heroFallbackSubtitle: "AI ဖြင့် နောက်ခရီးစဉ်ကို စီစဉ်လိုက်ပါ။",
+    generateATrip: "ခရီးစဉ်ဖန်တီးမည်",
+    hello: "မင်္ဂလာပါ {{name}}",
+  },
+
   tabs: {
     home: "ပင်မ",
     assistant: "အကူ",

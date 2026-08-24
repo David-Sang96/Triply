@@ -31,6 +31,36 @@ export const en = {
     signUp: "Sign up",
   },
 
+  home: {
+    // "Triply" is the product name and stays untranslated.
+    greetingFallback: "there",
+    yourTrips: "Your trips",
+    popularDestinations: "Popular destinations",
+    aiInspirations: "AI Inspirations",
+    seeAll: "See all",
+    tripsLoadError: "Couldn't load your trips",
+    destinationsLoadError: "Couldn't load destinations",
+    tapToTryAgain: "Tap to try again.",
+    noTripsYet: "No trips yet",
+    noTripsBody: "Tap to generate your first AI trip plan.",
+  },
+
+  trip: {
+    // i18next plural keys: it picks _one/_other from `count` via
+    // Intl.PluralRules. Burmese has no grammatical plural, so its catalog
+    // gives both forms the same string — that is correct, not a copy-paste slip.
+    days_one: "{{count}} day",
+    days_other: "{{count}} days",
+    travelers_one: "{{count}} traveler",
+    travelers_other: "{{count}} travelers",
+    generating: "Generating…",
+    failed: "Failed",
+    heroFallbackTitle: "Ready for your\nnext adventure?",
+    heroFallbackSubtitle: "Let AI plan your next trip.",
+    generateATrip: "Generate a trip",
+    hello: "Hello, {{name}}",
+  },
+
   tabs: {
     home: "Home",
     assistant: "Assistant",

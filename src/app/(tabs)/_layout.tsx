@@ -24,13 +24,14 @@ export default function TabsLayout() {
     // (Material defaults to showing the label only for the selected tab). No
     // effect on iOS, which always shows labels.
     // key={language} remounts the native tab bar when the language changes.
+    // Verified on the emulator: switching language repaints the four labels at
+    // the same moment as the screen, and the app stays on the tab it was on
+    // rather than resetting to Home.
     //
-    // Precautionary: it is not confirmed that NativeTabs.Trigger.Label updates
-    // in place, because this file does not appear to hot-reload — a temporary
-    // tintColor change to red produced 0 red pixels in a screenshot, so edits
-    // here were never live during testing. Whether the key is required needs a
-    // full app reload to establish. It is harmless either way: changing
-    // language is rare, and a remount is cheap.
+    // Whether the key is strictly required is not established — Fast Refresh
+    // does not apply to this file (a temporary red tintColor produced 0 red
+    // pixels), so the only way to test either version is a full reload. It is
+    // cheap and harmless: changing language is rare.
     <NativeTabs
       key={language}
       tintColor={colors.brand}
