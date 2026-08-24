@@ -91,7 +91,7 @@ export function UserTripCard({
           </Text>
           <Text className="mx-1.5 text-[11px] text-white/70">•</Text>
           <Text className="font-pmedium text-[11px] text-white/90">
-            {trip.budgetLevel}
+            {t(`budget.${trip.budgetLevel}` as "budget.Budget")}
           </Text>
         </View>
       </View>
