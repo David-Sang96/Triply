@@ -6,6 +6,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
@@ -23,6 +25,7 @@ export function GenerationError({
   // would queue the generation twice.
   retrying?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
       {/* Header */}
@@ -35,7 +38,7 @@ export function GenerationError({
           <Ionicons name="chevron-back" size={24} color={colors.ink} />
         </Pressable>
         <Text className="flex-1 text-center font-psemibold text-[17px] text-ink">
-          Trip not created
+          {t("generation.errorHeader")}
         </Text>
         <View className="h-8 w-8" />
       </View>
@@ -47,7 +50,7 @@ export function GenerationError({
         </View>
 
         <Text className="mt-6 text-center font-pbold text-[20px] text-ink">
-          Couldn&apos;t build this trip
+          {t("generation.errorTitle")}
         </Text>
         <Text className="mt-2 text-center font-sans text-[14px] leading-[20px] text-muted">
           {message}
@@ -67,7 +70,7 @@ export function GenerationError({
             <>
               <Ionicons name="refresh" size={18} color={colors.surface} />
               <Text className="ml-2 font-psemibold text-[15px] text-white">
-                Try again
+                {t("common.tryAgain")}
               </Text>
             </>
           )}
@@ -75,7 +78,7 @@ export function GenerationError({
 
         <Pressable onPress={onBack} className="mt-4 active:opacity-70" hitSlop={8}>
           <Text className="font-psemibold text-[14px] text-muted">
-            Back to home
+            {t("generation.backToHome")}
           </Text>
         </Pressable>
       </View>

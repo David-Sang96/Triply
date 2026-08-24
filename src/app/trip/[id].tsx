@@ -7,6 +7,8 @@ import { ActivityIndicator, Alert, View } from "react-native";
 import { GenerationError } from "@/components/trip/GenerationError";
 import { GenerationLoading } from "@/components/trip/GenerationLoading";
 import { TripDetailView } from "@/components/trip/TripDetailView";
+import { useTranslation } from "react-i18next";
+
 import { ApiError } from "@/lib/api";
 import { useDeleteTrip, useRetryTrip, useTrip, useTripStatus } from "@/lib/trips";
 import { colors } from "@/theme/colors";
@@ -23,6 +25,7 @@ function Centered() {
 // loading steps while generating, an error + retry on failure, and the full
 // itinerary once ready.
 export default function TripScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const tripId = typeof id === "string" ? id : "";
@@ -42,8 +45,8 @@ export default function TripScreen() {
       onSuccess: () => (router.canGoBack() ? router.back() : router.replace("/")),
       onError: (err) =>
         Alert.alert(
-          "Couldn't delete",
-          err instanceof ApiError ? err.message : "Please try again.",
+          t("generation.deleteFailed"),
+          err instanceof ApiError ? err.message : t("assistant.pleaseTryAgain"),
         ),
     });
 
@@ -77,8 +80,8 @@ export default function TripScreen() {
     retryTrip.mutate(undefined, {
       onError: (err) =>
         Alert.alert(
-          "Couldn't retry",
-          err instanceof ApiError ? err.message : "Please try again.",
+          t("generation.retryFailed"),
+          err instanceof ApiError ? err.message : t("assistant.pleaseTryAgain"),
         ),
     });
 

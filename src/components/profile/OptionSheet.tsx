@@ -2,6 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Modal, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
@@ -33,6 +35,7 @@ export function OptionSheet<T extends string>({
   onClose,
   labelOf = (option) => option,
 }: Props<T>) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
@@ -48,7 +51,7 @@ export function OptionSheet<T extends string>({
       <Pressable
         className="flex-1 justify-end"
         style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
-        accessibilityLabel="Close"
+        accessibilityLabel={t("common.close")}
         onPress={onClose}
       >
         {/* Swallows taps so pressing the sheet itself does not close it. */}
@@ -63,7 +66,7 @@ export function OptionSheet<T extends string>({
               onPress={onClose}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t("common.close")}
               className="h-8 w-8 items-center justify-center active:opacity-70"
             >
               <Ionicons name="close" size={20} color={colors.muted} />

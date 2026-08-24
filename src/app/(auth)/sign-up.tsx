@@ -2,7 +2,9 @@ import { useSignUp } from "@clerk/expo/legacy";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import type { TFunction } from "i18next";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Pressable,
   ScrollView,
@@ -49,33 +51,39 @@ type FieldErrors = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function fieldRules(v: {
-  fullName: string;
-  email: string;
-  password: string;
-  confirm: string;
-  agreed: boolean;
-}): FieldErrors {
+// Takes `t` for the same reason sign-in's does: a plain function whose every
+// message is user-facing.
+function fieldRules(
+  v: {
+    fullName: string;
+    email: string;
+    password: string;
+    confirm: string;
+    agreed: boolean;
+  },
+  t: TFunction,
+): FieldErrors {
   const e: FieldErrors = {};
   const name = v.fullName.trim();
-  if (!name) e.fullName = "Full name is required.";
-  else if (name.length < 3) e.fullName = "Name must be at least 3 characters.";
+  if (!name) e.fullName = t("signUp.fullNameRequired");
+  else if (name.length < 3) e.fullName = t("signUp.fullNameTooShort");
 
   const email = v.email.trim();
-  if (!email) e.email = "Email is required.";
-  else if (!EMAIL_RE.test(email)) e.email = "Enter a valid email address.";
+  if (!email) e.email = t("auth.emailRequired");
+  else if (!EMAIL_RE.test(email)) e.email = t("auth.emailInvalid");
 
-  if (!v.password) e.password = "Password is required.";
-  else if (v.password.length < 8) e.password = "Use at least 8 characters.";
+  if (!v.password) e.password = t("auth.passwordRequired");
+  else if (v.password.length < 8) e.password = t("signUp.passwordTooShort");
 
-  if (!v.confirm) e.confirm = "Please confirm your password.";
-  else if (v.confirm !== v.password) e.confirm = "Passwords do not match.";
+  if (!v.confirm) e.confirm = t("signUp.confirmRequired");
+  else if (v.confirm !== v.password) e.confirm = t("signUp.passwordsDoNotMatch");
 
-  if (!v.agreed) e.terms = "Please accept the Terms to continue.";
+  if (!v.agreed) e.terms = t("signUp.termsRequired");
   return e;
 }
 
 export default function SignUp() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { isLoaded, signUp, setActive } = useSignUp();
 
@@ -99,13 +107,16 @@ export default function SignUp() {
   const [resendNonce, setResendNonce] = useState(0);
 
   // Errors are derived live from the current values on every render.
-  const allErrors = fieldRules({
-    fullName,
-    email: emailAddress,
-    password,
-    confirm,
-    agreed,
-  });
+  const allErrors = fieldRules(
+    {
+      fullName,
+      email: emailAddress,
+      password,
+      confirm,
+      agreed,
+    },
+    t,
+  );
   // Show a field's error only once it's been touched or the form was submitted.
   const touch = (k: keyof FieldErrors) => setTouched((t) => ({ ...t, [k]: true }));
   const errFor = (k: keyof FieldErrors) =>
@@ -155,7 +166,7 @@ export default function SignUp() {
       setSecondsLeft(299);
       setStep("verify");
     } catch (err) {
-      const message = errMessage(err, "Could not create your account.");
+      const message = errMessage(err, t("signUp.couldNotCreate"));
       // Clerk enforces its password rules server-side (guessability, breach
       // lists), so it can refuse a password the local meter liked. Show that
       // against the password field, where the fix is, rather than at the foot
@@ -180,10 +191,10 @@ export default function SignUp() {
         await setActive({ session: attempt.createdSessionId });
         router.replace("/");
       } else {
-        setFormError("That code didn't work. Please try again.");
+        setFormError(t("auth.codeFailed"));
       }
     } catch (err) {
-      setFormError(errMessage(err, "Verification failed. Please try again."));
+      setFormError(errMessage(err, t("signUp.verificationFailed")));
     } finally {
       setBusy(false);
     }
@@ -200,7 +211,7 @@ export default function SignUp() {
       setSecondsLeft(299);
       setResendNonce((n) => n + 1);
     } catch (err) {
-      setFormError(errMessage(err, "Could not resend the code."));
+      setFormError(errMessage(err, t("auth.resendFailed")));
     } finally {
       setResending(false);
     }
@@ -232,10 +243,10 @@ export default function SignUp() {
           />
 
           <Text className="mt-4 text-center text-[24px] font-pbold text-slate-900">
-            Verify your email
+            {t("signUp.verifyHeading")}
           </Text>
           <Text className="mt-2 text-center text-[14px] text-slate-500">
-            We&apos;ve sent a 6-digit code to
+            {t("signUp.verifyBody")}
           </Text>
           <Text className="text-center text-[14px] font-psemibold text-[#208AEF]">
             {emailAddress}
@@ -298,14 +309,18 @@ export default function SignUp() {
             }}
           >
             <Text className="text-base font-psemibold text-white">
-              {busy ? "Verifying…" : "Verify email"}
+              {busy ? t("auth.verifying") : t("signUp.verifyEmail")}
             </Text>
           </Pressable>
 
           <View className="mt-5 flex-row items-center justify-center">
-            <Text className="text-[13px] text-slate-500">Didn&apos;t receive the code? </Text>
+            <Text className="text-[13px] text-slate-500">
+              {t("auth.didntReceiveCode")}{" "}
+            </Text>
             <Pressable onPress={onResend}>
-              <Text className="text-[13px] font-psemibold text-[#208AEF]">Resend code</Text>
+              <Text className="text-[13px] font-psemibold text-[#208AEF]">
+                {t("auth.resendCode")}
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -326,20 +341,20 @@ export default function SignUp() {
           </Pressable>
 
           <Text className="mt-3 text-[26px] font-pbold text-slate-900">
-            Create your account
+            {t("signUp.heading")}
           </Text>
           <Text className="mt-1 text-[15px] text-slate-500">Let&apos;s get you started</Text>
 
           <View className="mt-6 gap-5">
             <AuthField
-              label="Full name"
+              label={t("signUp.fullName")}
               icon="person-outline"
               value={fullName}
               onChangeText={(v) => {
                 setFullName(v);
                 touch("fullName");
               }}
-              placeholder="Jane Doe"
+              placeholder={t("signUp.fullNamePlaceholder")}
               autoCapitalize="words"
               error={errFor("fullName")}
             />
@@ -351,13 +366,13 @@ export default function SignUp() {
                 setEmailAddress(v);
                 touch("email");
               }}
-              placeholder="jane.doe@example.com"
+              placeholder={t("auth.emailPlaceholder")}
               keyboardType="email-address"
               error={errFor("email")}
             />
             <View>
               <AuthField
-                label="Password"
+                label={t("auth.password")}
                 icon="lock-closed-outline"
                 value={password}
                 onChangeText={(v) => {
@@ -366,7 +381,7 @@ export default function SignUp() {
                   // The server's verdict was about the old value.
                   setPasswordServerError(null);
                 }}
-                placeholder="At least 8 characters"
+                placeholder={t("signUp.passwordPlaceholder")}
                 secure
                 error={errFor("password") ?? passwordServerError ?? undefined}
               />
@@ -404,14 +419,14 @@ export default function SignUp() {
               ) : null}
             </View>
             <AuthField
-              label="Confirm password"
+              label={t("signUp.confirmPassword")}
               icon="lock-closed-outline"
               value={confirm}
               onChangeText={(v) => {
                 setConfirm(v);
                 touch("confirm");
               }}
-              placeholder="Re-enter your password"
+              placeholder={t("signUp.confirmPlaceholder")}
               secure
               error={errFor("confirm")}
             />
@@ -424,7 +439,7 @@ export default function SignUp() {
               hitSlop={6}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: agreed }}
-              accessibilityLabel="Agree to the Terms of Service and Privacy Policy"
+              accessibilityLabel={t("signUp.termsA11y")}
               className="mt-0.5 h-5 w-5 items-center justify-center rounded-md border"
               style={{
                 borderColor: errFor("terms")
@@ -438,19 +453,19 @@ export default function SignUp() {
               {agreed ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
             </Pressable>
             <Text className="ml-2 flex-1 text-[13px] leading-5 text-slate-500">
-              <Text onPress={toggleTerms}>I agree to the </Text>
+              <Text onPress={toggleTerms}>{t("signUp.agreePrefix")}</Text>
               <Text
                 onPress={() => openPolicy(links.terms)}
                 className="font-psemibold text-[#208AEF]"
               >
-                Terms of Service
+                {t("profile.termsOfService")}
               </Text>
-              <Text onPress={toggleTerms}> and </Text>
+              <Text onPress={toggleTerms}>{t("signUp.agreeAnd")}</Text>
               <Text
                 onPress={() => openPolicy(links.privacy)}
                 className="font-psemibold text-[#208AEF]"
               >
-                Privacy Policy
+                {t("profile.privacyPolicy")}
               </Text>
             </Text>
           </View>
@@ -479,13 +494,15 @@ export default function SignUp() {
             }}
           >
             <Text className="text-base font-psemibold text-white">
-              {busy ? "Creating account…" : "Create account"}
+              {busy ? t("signUp.submitting") : t("signUp.submit")}
             </Text>
           </Pressable>
 
           <View className="my-5 flex-row items-center">
             <View className="h-px flex-1 bg-slate-200" />
-            <Text className="mx-3 text-[13px] text-slate-400">or continue with</Text>
+            <Text className="mx-3 text-[13px] text-slate-400">
+              {t("auth.orContinueWith")}
+            </Text>
             <View className="h-px flex-1 bg-slate-200" />
           </View>
 
@@ -493,9 +510,13 @@ export default function SignUp() {
           <AppleButton />
 
           <View className="mt-6 flex-row items-center justify-center">
-            <Text className="text-[13px] text-slate-500">Already have an account? </Text>
+            <Text className="text-[13px] text-slate-500">
+              {t("signUp.alreadyHaveAccount")}{" "}
+            </Text>
             <Pressable onPress={() => router.replace("/sign-in")}>
-              <Text className="text-[13px] font-psemibold text-[#208AEF]">Sign in</Text>
+              <Text className="text-[13px] font-psemibold text-[#208AEF]">
+                {t("welcome.signIn")}
+              </Text>
             </Pressable>
           </View>
       </ScrollView>

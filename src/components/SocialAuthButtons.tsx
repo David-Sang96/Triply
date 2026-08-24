@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 
 /**
@@ -17,6 +19,7 @@ import { Text } from "@/components/Text";
  * just needs to be enabled in Clerk Dashboard → Social connections.
  */
 export function GoogleButton() {
+  const { t } = useTranslation();
   const { startSSOFlow } = useSSO();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -70,7 +73,7 @@ export function GoogleButton() {
         contentFit="contain"
       />
       <Text className="ml-3 text-base font-psemibold text-slate-800">
-        Continue with Google
+        {t("auth.continueWithGoogle")}
       </Text>
     </Pressable>
   );
@@ -82,6 +85,7 @@ export function GoogleButton() {
  * (Services ID + key), so this stays non-functional for now.
  */
 export function AppleButton() {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={() =>
@@ -94,7 +98,7 @@ export function AppleButton() {
     >
       <Ionicons name="logo-apple" size={20} color="#000000" />
       <Text className="ml-3 text-base font-psemibold text-slate-800">
-        Continue with Apple
+        {t("auth.continueWithApple")}
       </Text>
     </Pressable>
   );

@@ -143,6 +143,8 @@ function TypingBubble() {
 // user's message is already saved server-side even when the reply fails, so
 // Retry just resends the same text as a new turn.
 function FailedBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mb-3 items-center">
       <View className="max-w-[90%] flex-row items-center rounded-xl border border-error bg-error/10 px-3 py-2">
@@ -152,7 +154,7 @@ function FailedBanner({ message, onRetry }: { message: string; onRetry: () => vo
         </Text>
         <Pressable onPress={onRetry} hitSlop={8} className="ml-2 active:opacity-70">
           <Text className="font-psemibold text-[13px] text-error underline">
-            Retry
+            {t("common.retry")}
           </Text>
         </Pressable>
       </View>
@@ -366,7 +368,9 @@ export default function ChatScreen() {
             Couldn&apos;t load this conversation
           </Text>
           <Pressable onPress={() => history.refetch()} className="mt-4 active:opacity-70">
-            <Text className="font-psemibold text-[14px] text-brand">Try again</Text>
+            <Text className="font-psemibold text-[14px] text-brand">
+              {t("common.tryAgain")}
+            </Text>
           </Pressable>
         </View>
       ) : (

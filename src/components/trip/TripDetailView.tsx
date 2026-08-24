@@ -15,6 +15,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
@@ -146,6 +148,7 @@ function ActivityRow({
   onPressPlace?: () => void;
   active?: boolean;
 }) {
+  const { t } = useTranslation();
   const mappable = isMappable(activity) && Boolean(onPressPlace);
   return (
     <View className="flex-row">
@@ -208,7 +211,9 @@ function ActivityRow({
           ) : null}
           {activity.estCostUsd != null ? (
             <Text className="ml-auto pl-2 font-psemibold text-[12px] text-ink">
-              {activity.estCostUsd === 0 ? "Free" : `$${activity.estCostUsd}`}
+              {activity.estCostUsd === 0
+                ? t("tripDetail.free")
+                : `$${activity.estCostUsd}`}
             </Text>
           ) : null}
         </View>
@@ -230,6 +235,7 @@ function DayAccordion({
   onPressPlace: (activity: Activity) => void;
   activeActivityId: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <View className="mb-3 overflow-hidden rounded-2xl border border-line bg-surface">
       <Pressable
@@ -243,7 +249,7 @@ function DayAccordion({
         </View>
         <View className="ml-3 flex-1">
           <Text className="font-psemibold text-[11px] uppercase tracking-wide text-muted">
-            Day {day.dayNumber}
+            {t("tripDetail.day", { number: day.dayNumber })}
           </Text>
           <Text className="font-psemibold text-[15px] text-ink">
             {day.themeTitle || `Day ${day.dayNumber}`}
@@ -286,6 +292,7 @@ export function TripDetailView({
   onAskAi: () => void;
   deleting: boolean;
 }) {
+  const { t } = useTranslation();
   const [openDays, setOpenDays] = useState<Set<string>>(
     () => new Set(trip.days[0] ? [trip.days[0].id] : []),
   );
@@ -300,11 +307,11 @@ export function TripDetailView({
 
   const confirmDelete = () =>
     Alert.alert(
-      "Delete this trip?",
-      "This permanently removes the trip and its itinerary.",
+      t("tripDetail.deleteTripTitle"),
+      t("tripDetail.deleteTripBody"),
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: onDelete },
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("common.delete"), style: "destructive", onPress: onDelete },
       ],
     );
 
@@ -323,7 +330,7 @@ export function TripDetailView({
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
         setCoverError(
-          "Allow photo access in your phone's settings to add a custom photo.",
+          t("tripDetail.photoPermission"),
         );
         return;
       }
@@ -367,7 +374,7 @@ export function TripDetailView({
       formData = new FormData();
       formData.append("file", blob, "cover.jpg");
     } catch {
-      setCoverError("Couldn't open that photo. Please try again.");
+      setCoverError(t("tripDetail.coverOpenFailed"));
       return;
     }
 
@@ -376,7 +383,7 @@ export function TripDetailView({
         setCoverError(
           err instanceof ApiError
             ? err.message
-            : "Couldn't upload that photo. Please try again.",
+            : t("tripDetail.coverUploadFailed"),
         ),
     });
   };
@@ -388,7 +395,7 @@ export function TripDetailView({
         setCoverError(
           err instanceof ApiError
             ? err.message
-            : "Couldn't switch photos. Please try again.",
+            : t("tripDetail.coverSwitchFailed"),
         ),
     });
   };
@@ -523,7 +530,7 @@ export function TripDetailView({
           <View className="absolute bottom-4 left-4 flex-row items-center rounded-full bg-black/55 px-3 py-1">
             <Ionicons name="star" size={12} color={colors.warning} />
             <Text className="ml-1.5 font-psemibold text-[12px] text-white">
-              {trip.numDays} {trip.numDays === 1 ? "day" : "days"}
+              {t("trip.days", { count: trip.numDays })}
             </Text>
           </View>
         </View>
@@ -550,15 +557,16 @@ export function TripDetailView({
           <View className="mt-3 flex-row flex-wrap">
             <MetaChip
               icon="calendar-outline"
-              text={`${trip.numDays} ${trip.numDays === 1 ? "day" : "days"}`}
+              text={t("trip.days", { count: trip.numDays })}
             />
             <MetaChip
               icon="people-outline"
-              text={`${trip.numTravelers} ${
-                trip.numTravelers === 1 ? "traveler" : "travelers"
-              }`}
+              text={t("trip.travelers", { count: trip.numTravelers })}
             />
-            <MetaChip icon="wallet-outline" text={trip.budgetLevel} />
+            <MetaChip
+              icon="wallet-outline"
+              text={t(`budget.${trip.budgetLevel}` as "budget.Budget")}
+            />
           </View>
 
           {/* Ask the AI assistant about this trip */}
@@ -572,10 +580,10 @@ export function TripDetailView({
             />
             <View className="ml-3 flex-1">
               <Text className="font-psemibold text-[14px] text-ink">
-                Ask AI about this trip
+                {t("tripDetail.askAi")}
               </Text>
               <Text className="font-sans text-[12px] text-muted">
-                Tweaks, food, packing, local tips…
+                {t("tripDetail.askAiBody")}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.faint} />
@@ -597,14 +605,14 @@ export function TripDetailView({
               onLayout={(e) => (mapYRef.current = e.nativeEvent.layout.y)}
             >
               <Text className="mt-6 font-psemibold text-[18px] text-ink">
-                Trip map
+                {t("tripDetail.tripMap")}
               </Text>
               <Text className="mt-1 font-sans text-[12px] text-muted">
                 {mapFocus
-                  ? "Showing one place"
-                  : `${mapPlaces.length} verified ${
-                      mapPlaces.length === 1 ? "place" : "places"
-                    }`}
+                  ? t("tripDetail.showingOnePlace")
+                  : t("tripDetail.verifiedPlaces", {
+                      count: mapPlaces.length,
+                    })}
               </Text>
               <View className="mt-3">
                 <TripMap
@@ -634,8 +642,8 @@ export function TripDetailView({
 
           <Text className="mt-4 text-center font-sans text-[11px] text-faint">
             {trip.useCustomCover
-              ? "Places via OpenStreetMap"
-              : "Places via OpenStreetMap · Photos via Unsplash"}
+              ? t("tripDetail.attributionPlaces")
+              : t("tripDetail.attributionPlacesPhotos")}
           </Text>
         </View>
       </ScrollView>

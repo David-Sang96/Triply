@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
@@ -37,6 +39,7 @@ type Props = {
  * Uses the same back/centred-title bar as the other pushed screens.
  */
 export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const goBack = () => (router.canGoBack() ? router.back() : router.replace("/"));
   // The SafeAreaView only claims the top edge, so the scroll view runs under the
@@ -50,7 +53,7 @@ export function InfoScreen({ title, subtitle, sections, link, footer }: Props) {
         <Pressable
           onPress={goBack}
           hitSlop={8}
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("chat.backA11y")}
           className="h-8 w-8 items-center justify-center active:opacity-70"
         >
           <Ionicons name="chevron-back" size={24} color={colors.ink} />

@@ -8,6 +8,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import type { Destination } from "@/lib/destinations";
 import { colors, shadows } from "@/theme/colors";
@@ -25,6 +27,7 @@ export function DestinationDetailView({
   onBack: () => void;
   onGenerate: () => void;
 }) {
+  const { t } = useTranslation();
   // Narrowed once into a local: TypeScript does not carry a null check on
   // `destination.photographerName` into the onPress closures below.
   // Unsplash's format credits the photographer and links both their profile and
@@ -101,7 +104,7 @@ export function DestinationDetailView({
                 onPress={() => openLink(credit.photoUrl)}
                 hitSlop={{ top: 10, bottom: 10, left: 2, right: 4 }}
                 accessibilityRole="link"
-                accessibilityLabel="View this photo on Unsplash"
+                accessibilityLabel={t("destinations.viewOnUnsplashA11y")}
                 className="active:opacity-70"
               >
                 <Text className="text-[10px] text-white/90">Unsplash</Text>
@@ -122,7 +125,7 @@ export function DestinationDetailView({
           {destination.description ? (
             <>
               <Text className="mt-5 font-psemibold text-[18px] text-ink">
-                About
+                {t("destinations.about")}
               </Text>
               <Text className="mt-2 font-sans text-[14px] leading-[21px] text-muted">
                 {destination.description}
@@ -137,7 +140,9 @@ export function DestinationDetailView({
           >
             <Ionicons name="sparkles" size={18} color={colors.surface} />
             <Text className="ml-2 font-psemibold text-[16px] text-white">
-              Generate a trip to {destination.name}
+              {t("destinations.generateTripTo", {
+                destination: destination.name,
+              })}
             </Text>
           </Pressable>
         </View>

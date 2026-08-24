@@ -6,19 +6,24 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 import type { TripStatus } from "@/lib/trips";
 import { colors, shadows } from "@/theme/colors";
 
-const STEPS = [
-  "Understanding your preferences",
-  "Generating itinerary with AI",
-  "Verifying places & locations",
-  "Finding the best images",
-  "Finalizing your trip",
-];
+// Catalog keys, not strings: the labels have to follow the language, and a
+// module-level array of literals would freeze whichever one was active at
+// import time.
+const STEP_KEYS = [
+  "generation.step1",
+  "generation.step2",
+  "generation.step3",
+  "generation.step4",
+  "generation.step5",
+] as const;
 
-// How far the pipeline has progressed, as an index into STEPS.
+// How far the pipeline has progressed, as an index into STEP_KEYS.
 const STATUS_STEP: Record<TripStatus, number> = {
   queued: 0,
   generating: 1,
@@ -36,6 +41,7 @@ export function GenerationLoading({
   status: TripStatus;
   onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const active = STATUS_STEP[status];
 
   return (
@@ -49,7 +55,7 @@ export function GenerationLoading({
           <Ionicons name="chevron-back" size={24} color={colors.ink} />
         </Pressable>
         <Text className="flex-1 text-center font-psemibold text-[17px] text-ink">
-          Generating your trip
+          {t("generation.loadingTitle")}
         </Text>
         <View className="h-8 w-8" />
       </View>
@@ -72,12 +78,12 @@ export function GenerationLoading({
           className="mt-6 rounded-2xl border border-line bg-surface p-4"
           style={shadows.sm}
         >
-          {STEPS.map((label, i) => {
+          {STEP_KEYS.map((stepKey, i) => {
             const done = i < active;
             const isActive = i === active;
             return (
               <View
-                key={label}
+                key={stepKey}
                 className={`flex-row items-center ${i > 0 ? "mt-4" : ""}`}
               >
                 <View
@@ -101,10 +107,14 @@ export function GenerationLoading({
                       done || isActive ? "text-ink" : "text-muted"
                     }`}
                   >
-                    {label}
+                    {t(stepKey)}
                   </Text>
                   <Text className="font-sans text-[12px] text-faint">
-                    {done ? "Done" : isActive ? "In progress" : "Pending"}
+                    {done
+                      ? t("generation.statusDone")
+                      : isActive
+                        ? t("generation.statusInProgress")
+                        : t("generation.statusPending")}
                   </Text>
                 </View>
               </View>
@@ -116,11 +126,10 @@ export function GenerationLoading({
           <Ionicons name="bulb-outline" size={18} color={colors.brand} />
           <View className="ml-3 flex-1">
             <Text className="font-psemibold text-[13px] text-brand">
-              Did you know?
+              {t("generation.didYouKnow")}
             </Text>
             <Text className="mt-0.5 font-sans text-[13px] text-muted">
-              We verify every place and optimize the route to give you the best
-              experience.
+              {t("generation.didYouKnowBody")}
             </Text>
           </View>
         </View>

@@ -8,12 +8,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
 import { Text } from "@/components/Text";
 
 // Route-level error boundary. This catches errors before they reach Sentry's
 // root wrap, so report explicitly. Raw details are shown only in development;
 // release builds show a generic message.
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -21,7 +24,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   return (
     <SafeAreaView className="flex-1 bg-white px-5">
       <Text className="mt-4 text-lg font-pbold text-red-600">
-        Something went wrong
+        {t("errors.unexpectedTitle")}
       </Text>
       {__DEV__ ? (
         <ScrollView className="mt-3 flex-1">
@@ -34,14 +37,14 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
         </ScrollView>
       ) : (
         <Text className="mt-3 flex-1 text-[15px] text-slate-500">
-          We hit an unexpected error. Please try again.
+          {t("errors.unexpectedBody")}
         </Text>
       )}
       <Pressable
         onPress={retry}
         className="my-4 h-[48px] items-center justify-center rounded-xl bg-[#208AEF]"
       >
-        <Text className="font-psemibold text-white">Try again</Text>
+        <Text className="font-psemibold text-white">{t("common.tryAgain")}</Text>
       </Pressable>
     </SafeAreaView>
   );
