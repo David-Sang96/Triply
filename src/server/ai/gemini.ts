@@ -17,7 +17,22 @@ export type TripParams = {
   budgetLevel: string;
   interests: string[];
   pace: string | null;
+  /** Language for the generated prose. "en" when the caller does not say. */
+  language?: string;
 };
+
+// Burmese output, when asked for. The place-name carve-out is not cosmetic:
+// the server geocodes "placeName" with Photon to put a pin on the map, and
+// Burmese-script names mostly fail to geocode — a translated name would cost
+// the trip its map pins and flip place_verified false. The user also needs a
+// name they can show a driver or match to a sign.
+function languageRules(language: string | undefined): string[] {
+  if (language !== "my") return [];
+  return [
+    `- Write "title", "summary", every day "title", and every activity "name" and "description" in Burmese (Myanmar script, Unicode — never Zawgyi).`,
+    `- LEAVE "placeName" EXACTLY as the real place is written for a map search, in its usual Latin/English form (e.g. "Shwezigon Pagoda"). Do NOT translate or transliterate it.`,
+  ];
+}
 
 function buildPrompt(p: TripParams): string {
   const days = Math.min(Math.max(p.numDays, 1), MAX_DAYS);
@@ -38,6 +53,7 @@ function buildPrompt(p: TripParams): string {
     `- Match the ${p.budgetLevel} budget and a ${pace} pace. Keep each day geographically sensible (avoid criss-crossing the city).`,
     `- "title" is a short catchy trip title. "summary" is 2-3 sentences describing the trip overall.`,
     `- Do not invent places. If unsure, choose a famous landmark in ${p.destination}.`,
+    ...languageRules(p.language),
   ].join("\n");
 }
 

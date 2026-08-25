@@ -1,9 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import {
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { AppleButton, GoogleButton } from "@/components/SocialAuthButtons";
 
 const BRAND_BLUE = "#208AEF";
@@ -30,6 +36,7 @@ function Feature({ icon, title, subtitle }: FeatureProps) {
 
 export default function Welcome() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
@@ -45,12 +52,12 @@ export default function Welcome() {
           <Text className="mt-1 text-lg font-pbold text-[#208AEF]">+</Text>
         </View>
         <Text className="mt-1 text-center text-[13px] text-slate-400">
-          AI travel trip-planner
+          {t("welcome.tagline")}
         </Text>
 
         {/* Headline */}
         <Text className="mt-4 text-center text-[26px] font-pbold leading-[31px] text-slate-900">
-          Plan smarter trips{"\n"}with AI, in seconds.
+          {t("welcome.headline")}
         </Text>
 
         {/* Hero image — full image visible (matches its 380:310 ratio, no crop) */}
@@ -66,27 +73,27 @@ export default function Welcome() {
         <View className="mt-6">
           <Feature
             icon="sparkles"
-            title="AI-powered itineraries"
-            subtitle="Personalized plans in seconds."
+            title={t("welcome.featureItinerariesTitle")}
+            subtitle={t("welcome.featureItinerariesSubtitle")}
           />
           <View className="h-4" />
           <Feature
             icon="location"
-            title="Smart local recommendations"
-            subtitle="Best places to eat, stay & explore."
+            title={t("welcome.featureLocalTitle")}
+            subtitle={t("welcome.featureLocalSubtitle")}
           />
           <View className="h-4" />
           <Feature
             icon="wallet"
-            title="Save time & travel better"
-            subtitle="Everything you need in one place."
+            title={t("welcome.featureTimeTitle")}
+            subtitle={t("welcome.featureTimeSubtitle")}
           />
         </View>
 
         {/* Primary: Sign in */}
         <Pressable
           onPress={() => router.push("/sign-in")}
-          className="mt-7 h-[52px] items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
+          className="mt-7 min-h-[52px] py-2 items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
           style={{
             shadowColor: "#101828",
             shadowOpacity: 0.12,
@@ -95,7 +102,9 @@ export default function Welcome() {
             elevation: 4,
           }}
         >
-          <Text className="text-base font-psemibold text-white">Sign in</Text>
+          <Text className="text-base font-psemibold text-white">
+            {t("welcome.signIn")}
+          </Text>
         </Pressable>
 
         {/* Social */}
@@ -104,9 +113,13 @@ export default function Welcome() {
 
         {/* Footer */}
         <View className="mt-5 flex-row items-center justify-center">
-          <Text className="text-[13px] text-slate-500">New to Triply? </Text>
+          <Text className="text-[13px] text-slate-500">
+            {t("welcome.newToTriply")}{" "}
+          </Text>
           <Pressable onPress={() => router.push("/sign-up")}>
-            <Text className="text-[13px] font-psemibold text-[#208AEF]">Sign up</Text>
+            <Text className="text-[13px] font-psemibold text-[#208AEF]">
+              {t("welcome.signUp")}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>

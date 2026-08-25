@@ -9,11 +9,13 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { Text } from "@/components/Text";
 
 import { OptionSheet } from "@/components/profile/OptionSheet";
 import { SettingsCard } from "@/components/profile/SettingsCard";
@@ -23,6 +25,7 @@ import { links } from "@/lib/links";
 import {
   BUDGETS,
   CURRENCIES,
+  LANGUAGE_LABELS,
   LANGUAGES,
   usePreferences,
 } from "@/lib/preferences";
@@ -54,6 +57,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { preferences, update } = usePreferences();
+  const { t } = useTranslation();
   const deleteAccount = useDeleteAccount();
 
   // Which preference row's sheet is open, if any.
@@ -62,7 +66,7 @@ export default function ProfileScreen() {
   );
 
   const name =
-    user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "traveler";
+    user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? t("profile.fallbackName");
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const avatarUrl = user?.imageUrl;
 
@@ -76,12 +80,12 @@ export default function ProfileScreen() {
   // the device's saved preferences are cleared in the hook.
   const onDeleteAccount = () => {
     Alert.alert(
-      "Delete your account?",
-      "This permanently removes your trips, chats and saved preferences. It cannot be undone.",
+      t("profile.deleteConfirmTitle"),
+      t("profile.deleteConfirmBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -89,10 +93,10 @@ export default function ProfileScreen() {
               router.replace("/welcome");
             } catch (err) {
               Alert.alert(
-                "Couldn't delete your account",
+                t("profile.deleteFailedTitle"),
                 err instanceof Error
                   ? err.message
-                  : "Something went wrong. Please try again.",
+                  : t("common.somethingWentWrong"),
               );
             }
           },
@@ -123,7 +127,7 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerClassName="px-[20px] pb-[12px] pt-[6px]"
         >
-          <Text className="font-pbold text-[26px] text-ink">Profile</Text>
+          <Text className="font-pbold text-[26px] text-ink">{t("profile.title")}</Text>
 
           {/* No top margin: the title's line box already leaves the 17dp the
               design has between its baseline and the avatar. */}
@@ -161,68 +165,68 @@ export default function ProfileScreen() {
           </View>
 
           <View className="mt-[22px] gap-[15px]">
-            <SettingsCard icon="options-outline" title="Preferences">
+            <SettingsCard icon="options-outline" title={t("profile.preferences")}>
               <SettingsRow
                 icon="globe-outline"
-                label="Language"
-                value={preferences.language}
+                label={t("profile.language")}
+                value={LANGUAGE_LABELS[preferences.language]}
                 onPress={() => setEditing("language")}
               />
               <SettingsRow
                 icon="wallet-outline"
-                label="Currency"
+                label={t("profile.currency")}
                 value={preferences.currency}
                 divided
                 onPress={() => setEditing("currency")}
               />
               <SettingsRow
                 icon="pricetag-outline"
-                label="Travel Budget"
-                value={preferences.budget}
+                label={t("profile.travelBudget")}
+                value={t(`budget.${preferences.budget}`)}
                 divided
                 onPress={() => setEditing("budget")}
               />
             </SettingsCard>
 
-            <SettingsCard icon="help-buoy-outline" title="Support">
+            <SettingsCard icon="help-buoy-outline" title={t("profile.support")}>
               <SettingsRow
                 icon="help-circle-outline"
-                label="Help Center"
+                label={t("profile.helpCenter")}
                 onPress={() => router.push("/help-center")}
               />
               <SettingsRow
                 icon="shield-checkmark-outline"
-                label="Privacy Policy"
+                label={t("profile.privacyPolicy")}
                 divided
                 onPress={() => router.push("/privacy-policy")}
               />
               <SettingsRow
                 icon="document-text-outline"
-                label="Terms of Service"
+                label={t("profile.termsOfService")}
                 divided
                 onPress={() => WebBrowser.openBrowserAsync(links.terms)}
               />
               <SettingsRow
                 icon="information-circle-outline"
-                label="About Triply"
+                label={t("profile.aboutTriply")}
                 divided
                 onPress={() => router.push("/about")}
               />
             </SettingsCard>
 
-            <SettingsCard icon="person-outline" title="Account">
+            <SettingsCard icon="person-outline" title={t("profile.account")}>
               {/* The card already adds 4dp below; the design leaves 11dp under
                   the last button. */}
               <View className="gap-[8px] pb-[7px] pt-[6px]">
                 <DangerButton
                   icon="log-out-outline"
-                  label="Sign Out"
+                  label={t("profile.signOut")}
                   onPress={onSignOut}
                   disabled={deleteAccount.isPending}
                 />
                 <DangerButton
                   icon="trash-outline"
-                  label="Delete Account"
+                  label={t("profile.deleteAccount")}
                   onPress={onDeleteAccount}
                   busy={deleteAccount.isPending}
                 />
@@ -233,22 +237,24 @@ export default function ProfileScreen() {
       </SafeAreaView>
 
       <OptionSheet
-        title={editing === "language" ? "Language" : null}
+        title={editing === "language" ? t("profile.language") : null}
         options={LANGUAGES}
         value={preferences.language}
+        labelOf={(code) => LANGUAGE_LABELS[code]}
         onSelect={(next) => update("language", next)}
         onClose={() => setEditing(null)}
       />
       <OptionSheet
-        title={editing === "currency" ? "Currency" : null}
+        title={editing === "currency" ? t("profile.currency") : null}
         options={CURRENCIES}
         value={preferences.currency}
         onSelect={(next) => update("currency", next)}
         onClose={() => setEditing(null)}
       />
       <OptionSheet
-        title={editing === "budget" ? "Travel Budget" : null}
+        title={editing === "budget" ? t("profile.travelBudget") : null}
         options={BUDGETS}
+        labelOf={(b) => t(`budget.${b}`)}
         value={preferences.budget}
         onSelect={(next) => update("budget", next)}
         onClose={() => setEditing(null)}
@@ -274,6 +280,7 @@ function DangerButton({
   busy?: boolean;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const inactive = busy || disabled;
 
   return (
@@ -282,7 +289,7 @@ function DangerButton({
       disabled={inactive}
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive, busy }}
-      className={`h-[37px] flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error ${
+      className={`min-h-[37px] py-1 flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error ${
         inactive ? "opacity-50" : "active:opacity-70"
       }`}
     >
@@ -292,7 +299,7 @@ function DangerButton({
         <Ionicons name={icon} size={18} color={colors.error} />
       )}
       <Text className="font-psemibold text-[12px] text-error">
-        {busy ? "Deleting…" : label}
+        {busy ? t("profile.deleting") : label}
       </Text>
     </Pressable>
   );

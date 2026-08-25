@@ -1,12 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
-  Text,
   View,
 } from "react-native";
 // The `Swipeable` exported from the package barrel is deprecated in favour of
@@ -19,21 +20,29 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import { useConversations, useDeleteConversation, type Conversation } from "@/lib/chat";
 import { colors } from "@/theme/colors";
 
 const BOT_ICON = require("@/assets/images/chat-bot.png");
 
-function timeAgo(iso: string): string {
+// Takes `t` rather than calling a hook — it is a plain function, and every
+// branch is user-facing.
+//
+// The final branch keeps toLocaleDateString() with no explicit locale, so it
+// follows the DEVICE, not the app language. Passing "my" would depend on
+// Hermes carrying Myanmar date data, and a wrong-but-plausible date is worse
+// than one formatted the way the rest of the phone formats dates.
+function timeAgo(iso: string, t: TFunction): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diffMs / 60_000);
-  if (min < 1) return "Just now";
-  if (min < 60) return `${min}m ago`;
+  if (min < 1) return t("time.justNow");
+  if (min < 60) return t("time.minutesAgo", { count: min });
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return t("time.hoursAgo", { count: hr });
   const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}d ago`;
+  if (day < 7) return t("time.daysAgo", { count: day });
   return new Date(iso).toLocaleDateString();
 }
 
@@ -48,6 +57,7 @@ function DeleteAction({
   progress: SharedValue<number>;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const style = useAnimatedStyle(() => ({
     transform: [
       { translateX: (1 - Math.min(progress.value, 1)) * DELETE_ACTION_WIDTH },
@@ -63,7 +73,7 @@ function DeleteAction({
     >
       <Pressable
         onPress={onPress}
-        accessibilityLabel="Delete conversation"
+        accessibilityLabel={t("assistant.deleteConversationA11y")}
         className="h-full w-full items-center justify-center rounded-2xl bg-error active:opacity-80"
       >
         <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
@@ -81,13 +91,14 @@ function ConversationRow({
   onPress: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const confirmDelete = () =>
     Alert.alert(
-      "Delete this conversation?",
-      "This permanently removes the conversation and its messages.",
+      t("assistant.deleteConversationTitle"),
+      t("assistant.deleteConversationBody"),
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: onDelete },
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("common.delete"), style: "destructive", onPress: onDelete },
       ],
     );
 
@@ -121,7 +132,7 @@ function ConversationRow({
               {conversation.title}
             </Text>
             <Text className="mt-0.5 font-sans text-[12px] text-muted">
-              {timeAgo(conversation.updatedAt)}
+              {timeAgo(conversation.updatedAt, t)}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.faint} />
@@ -137,6 +148,7 @@ function ConversationRow({
 // it stays a single thread per trip, reached from the trip itself.
 export default function AssistantScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const conversationsQuery = useConversations();
   const conversations = conversationsQuery.data ?? [];
   const deleteConversation = useDeleteConversation();
@@ -145,8 +157,8 @@ export default function AssistantScreen() {
     deleteConversation.mutate(id, {
       onError: (err) =>
         Alert.alert(
-          "Couldn't delete",
-          err instanceof ApiError ? err.message : "Please try again.",
+          t("assistant.deleteFailed"),
+          err instanceof ApiError ? err.message : t("assistant.pleaseTryAgain"),
         ),
     });
 
@@ -155,14 +167,16 @@ export default function AssistantScreen() {
       {/* Header */}
       <View className="flex-row items-center justify-between px-3 py-2.5">
         {/* No back button — this is a tab root, not a pushed screen. */}
-        <Text className="ml-2 font-pbold text-[20px] text-ink">Assistant</Text>
+        <Text className="ml-2 font-pbold text-[20px] text-ink">
+          {t("assistant.title")}
+        </Text>
         <Pressable
           onPress={() => router.push("/chat")}
           className="flex-row items-center rounded-full bg-brand px-3.5 py-2 active:opacity-90"
         >
           <Ionicons name="add" size={16} color={colors.surface} />
           <Text className="ml-1 font-psemibold text-[13px] text-white">
-            New chat
+            {t("assistant.newChat")}
           </Text>
         </Pressable>
       </View>
@@ -175,13 +189,15 @@ export default function AssistantScreen() {
         <View className="items-center px-8 pt-24">
           <Ionicons name="cloud-offline-outline" size={28} color={colors.muted} />
           <Text className="mt-2 font-psemibold text-[15px] text-ink">
-            Couldn&apos;t load your chats
+            {t("assistant.loadError")}
           </Text>
           <Pressable
             onPress={() => conversationsQuery.refetch()}
             className="mt-4 active:opacity-70"
           >
-            <Text className="font-psemibold text-[14px] text-brand">Try again</Text>
+            <Text className="font-psemibold text-[14px] text-brand">
+              {t("common.tryAgain")}
+            </Text>
           </Pressable>
         </View>
       ) : conversations.length > 0 ? (
@@ -207,18 +223,18 @@ export default function AssistantScreen() {
             style={{ width: 64, height: 64, borderRadius: 32 }}
           />
           <Text className="mt-4 font-psemibold text-[16px] text-ink">
-            No conversations yet
+            {t("assistant.emptyTitle")}
           </Text>
           <Text className="mt-1 text-center font-sans text-[14px] text-muted">
-            Ask me anything about planning your next trip.
+            {t("assistant.emptyBody")}
           </Text>
           <Pressable
             onPress={() => router.push("/chat")}
-            className="mt-6 h-[48px] flex-row items-center justify-center rounded-xl bg-brand px-6 active:opacity-90"
+            className="mt-6 min-h-[48px] py-2 flex-row items-center justify-center rounded-xl bg-brand px-6 active:opacity-90"
           >
             <Ionicons name="sparkles" size={16} color={colors.surface} />
             <Text className="ml-2 font-psemibold text-[15px] text-white">
-              Start chatting
+              {t("assistant.startChatting")}
             </Text>
           </Pressable>
         </View>

@@ -1,8 +1,17 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
+import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
+import { Text } from "@/components/Text";
 import type { Destination } from "@/lib/destinations";
 import { colors, shadows } from "@/theme/colors";
 
@@ -19,6 +28,7 @@ export function DestinationDetailView({
   onBack: () => void;
   onGenerate: () => void;
 }) {
+  const { t } = useTranslation();
   // Narrowed once into a local: TypeScript does not carry a null check on
   // `destination.photographerName` into the onPress closures below.
   // Unsplash's format credits the photographer and links both their profile and
@@ -53,7 +63,7 @@ export function DestinationDetailView({
             contentFit="cover"
             transition={200}
           />
-          <View className="absolute inset-0 bg-black/15" pointerEvents="none" />
+          <PhotoScrim />
 
           {/* Top actions */}
           <View className="absolute inset-x-0 top-0 flex-row items-center px-4 pt-2">
@@ -67,7 +77,7 @@ export function DestinationDetailView({
           </View>
 
           {/* Rating badge */}
-          <View className="absolute bottom-4 left-4 flex-row items-center rounded-full bg-black/55 px-3 py-1">
+          <View className="absolute bottom-4 left-4 flex-row items-center rounded-full px-3 py-1" style={PILL_ON_PHOTO}>
             <Ionicons name="star" size={12} color={colors.warning} />
             <Text className="ml-1.5 font-psemibold text-[12px] text-white">
               {destination.rating}
@@ -78,7 +88,7 @@ export function DestinationDetailView({
               shown (same pill as TripDetailView). Absent on rows still using a
               placeholder photo, which has no photographer to credit. */}
           {credit ? (
-            <View className="absolute bottom-4 right-4 flex-row items-center rounded-full bg-black/45 px-2 py-0.5">
+            <View className="absolute bottom-4 right-4 flex-row items-center rounded-full px-2 py-0.5" style={PILL_ON_PHOTO}>
               {/* hitSlop grows both targets vertically without overlapping each
                   other horizontally — the text itself is only 10px tall. */}
               <Pressable
@@ -95,7 +105,7 @@ export function DestinationDetailView({
                 onPress={() => openLink(credit.photoUrl)}
                 hitSlop={{ top: 10, bottom: 10, left: 2, right: 4 }}
                 accessibilityRole="link"
-                accessibilityLabel="View this photo on Unsplash"
+                accessibilityLabel={t("destinations.viewOnUnsplashA11y")}
                 className="active:opacity-70"
               >
                 <Text className="text-[10px] text-white/90">Unsplash</Text>
@@ -116,7 +126,7 @@ export function DestinationDetailView({
           {destination.description ? (
             <>
               <Text className="mt-5 font-psemibold text-[18px] text-ink">
-                About
+                {t("destinations.about")}
               </Text>
               <Text className="mt-2 font-sans text-[14px] leading-[21px] text-muted">
                 {destination.description}
@@ -126,12 +136,14 @@ export function DestinationDetailView({
 
           <Pressable
             onPress={onGenerate}
-            className="mt-6 h-[54px] flex-row items-center justify-center rounded-xl bg-brand active:opacity-90"
+            className="mt-6 min-h-[54px] py-2 flex-row items-center justify-center rounded-xl bg-brand active:opacity-90"
             style={shadows.md}
           >
             <Ionicons name="sparkles" size={18} color={colors.surface} />
             <Text className="ml-2 font-psemibold text-[16px] text-white">
-              Generate a trip to {destination.name}
+              {t("destinations.generateTripTo", {
+                destination: destination.name,
+              })}
             </Text>
           </Pressable>
         </View>

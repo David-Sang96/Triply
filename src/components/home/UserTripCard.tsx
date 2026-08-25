@@ -1,7 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  View,
+} from "react-native";
 
+import { useTranslation } from "react-i18next";
+
+import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
+import { Text } from "@/components/Text";
 import type { TripListItem } from "@/lib/trips";
 import { colors } from "@/theme/colors";
 
@@ -20,6 +28,7 @@ export function UserTripCard({
    * card for the Home horizontal rail. */
   full?: boolean;
 }) {
+  const { t } = useTranslation();
   const generating = IN_PROGRESS.includes(trip.status);
   const failed = trip.status === "failed";
 
@@ -47,26 +56,28 @@ export function UserTripCard({
       ) : (
         <View className="h-full w-full bg-line" />
       )}
-      <View className="absolute inset-0 bg-black/30" />
+      <PhotoScrim />
 
-      <View className="absolute left-3 top-3 flex-row items-center rounded-full bg-black/55 px-2.5 py-1">
+      <View className="absolute left-3 top-3 flex-row items-center rounded-full px-2.5 py-1" style={PILL_ON_PHOTO}>
         <Ionicons name="star" size={11} color={colors.warning} />
         <Text className="ml-1 font-psemibold text-[11px] text-white">
-          {trip.numDays} {trip.numDays === 1 ? "day" : "days"}
+          {t("trip.days", { count: trip.numDays })}
         </Text>
       </View>
 
       {generating ? (
-        <View className="absolute right-3 top-3 flex-row items-center rounded-full bg-black/55 px-2.5 py-1">
+        <View className="absolute right-3 top-3 flex-row items-center rounded-full px-2.5 py-1" style={PILL_ON_PHOTO}>
           <ActivityIndicator size="small" color={colors.surface} />
           <Text className="ml-1.5 font-psemibold text-[11px] text-white">
-            Generating…
+            {t("trip.generating")}
           </Text>
         </View>
       ) : null}
       {failed ? (
         <View className="absolute right-3 top-3 rounded-full bg-error px-2.5 py-1">
-          <Text className="font-psemibold text-[11px] text-white">Failed</Text>
+          <Text className="font-psemibold text-[11px] text-white">
+            {t("trip.failed")}
+          </Text>
         </View>
       ) : null}
 
@@ -77,11 +88,11 @@ export function UserTripCard({
         <View className="mt-1 flex-row items-center">
           <Ionicons name="people" size={12} color={colors.surface} />
           <Text className="ml-1 font-pmedium text-[11px] text-white/90">
-            {trip.numTravelers} {trip.numTravelers === 1 ? "traveler" : "travelers"}
+            {t("trip.travelers", { count: trip.numTravelers })}
           </Text>
           <Text className="mx-1.5 text-[11px] text-white/70">•</Text>
           <Text className="font-pmedium text-[11px] text-white/90">
-            {trip.budgetLevel}
+            {t(`budget.${trip.budgetLevel}` as "budget.Budget")}
           </Text>
         </View>
       </View>

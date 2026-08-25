@@ -1,6 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, Text, View } from "react-native";
+import {
+  Pressable,
+  View,
+} from "react-native";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import type { Pace } from "@/data/generate";
 import { colors } from "@/theme/colors";
 
@@ -15,6 +21,7 @@ export function PaceOption({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={onSelect}
@@ -37,9 +44,9 @@ export function PaceOption({
       </View>
 
       <View className="ml-3 flex-1">
-        <Text className="font-psemibold text-[14px] text-ink">{pace.label}</Text>
+        <Text className="font-psemibold text-[14px] text-ink">{t(`paces.${pace.id}Label` as "paces.relaxedLabel")}</Text>
         <Text className="font-sans text-[12px] text-muted">
-          {pace.description}
+          {t(`paces.${pace.id}Description` as "paces.relaxedDescription")}
         </Text>
       </View>
 

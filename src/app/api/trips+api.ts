@@ -16,6 +16,9 @@ const createTripSchema = z.object({
   budgetLevel: z.enum(budgetLevel.enumValues),
   interests: z.array(z.string().min(1)).max(10).default([]),
   pace: z.string().min(1).nullable().optional(),
+  // The language to generate the itinerary prose in. Optional so an older
+  // build that does not send it keeps working; it then defaults to English.
+  language: z.enum(["en", "my"]).optional(),
 });
 
 // GET /trips — the signed-in user's trips, newest first (list view fields only).
@@ -85,8 +88,8 @@ export async function POST(request: Request) {
     sql`, `,
   );
   const result = await db.execute<{ id: string }>(sql`
-    INSERT INTO ${trips} (user_id, destination, num_days, num_travelers, budget_level, interests, pace, status)
-    SELECT ${userId}, ${input.destination}, ${input.numDays}, ${input.numTravelers}, ${input.budgetLevel}::budget_level, ARRAY[${interestsSql}]::text[], ${input.pace ?? null}, 'queued'
+    INSERT INTO ${trips} (user_id, destination, num_days, num_travelers, budget_level, interests, pace, language, status)
+    SELECT ${userId}, ${input.destination}, ${input.numDays}, ${input.numTravelers}, ${input.budgetLevel}::budget_level, ARRAY[${interestsSql}]::text[], ${input.pace ?? null}, ${input.language ?? "en"}, 'queued'
     WHERE (
       SELECT count(*) FROM ${trips}
       WHERE ${trips.userId} = ${userId} AND ${trips.countsAgainstCap} = true AND ${trips.status} <> 'failed'
@@ -122,7 +125,9 @@ export async function POST(request: Request) {
       .update(trips)
       .set({
         status: "failed",
-        errorMessage: "We couldn't start generating this trip. Please try again.",
+        // A code, not prose — the app renders it in the active language.
+        errorCode: "enqueue_failed",
+        errorMessage: null,
         countsAgainstCap: false,
       })
       .where(eq(trips.id, trip.id));

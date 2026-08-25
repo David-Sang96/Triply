@@ -1,8 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useRef } from "react";
-import { Linking, Pressable, Text, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  View,
+} from "react-native";
 import { WebView } from "react-native-webview";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import { colors, shadows } from "@/theme/colors";
 
 export type MapPlace = {
@@ -176,6 +183,7 @@ export function TripMap({
   focus?: MapFocus | null;
   onShowAll?: () => void;
 }) {
+  const { t } = useTranslation();
   const html = buildHtml(places);
   const webRef = useRef<WebView>(null);
   // The page has to finish loading before window.__focus exists. A tap can
@@ -243,7 +251,7 @@ export function TripMap({
         >
           <Ionicons name="contract-outline" size={13} color={colors.brand} />
           <Text className="ml-1.5 font-psemibold text-[12px] text-ink">
-            Show all places
+            {t("tripDetail.showAllPlaces")}
           </Text>
         </Pressable>
       ) : null}

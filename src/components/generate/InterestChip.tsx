@@ -1,6 +1,11 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { Pressable, Text } from "react-native";
+import {
+  Pressable,
+} from "react-native";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import type { Interest } from "@/data/generate";
 import { colors } from "@/theme/colors";
 
@@ -22,6 +27,7 @@ export function InterestChip({
   onToggle,
   width,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={onToggle}
@@ -29,7 +35,7 @@ export function InterestChip({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected, disabled }}
       style={{ width }}
-      className={`h-[52px] flex-row items-center justify-center rounded-xl border active:opacity-80 ${
+      className={`min-h-[52px] py-2 flex-row items-center justify-center rounded-xl border active:opacity-80 ${
         selected ? "border-brand bg-brand" : "border-line bg-surface"
       } ${disabled ? "opacity-40" : ""}`}
     >
@@ -43,7 +49,11 @@ export function InterestChip({
           selected ? "text-white" : "text-ink"
         }`}
       >
-        {interest.label}
+        {/* The cast is the escape hatch for a dynamic key: interest.id is
+            typed `string`, so the template literal cannot be proved to be a
+            real catalog key. Every id in src/data/generate.ts has one, and a
+            missing key would render the id rather than crash. */}
+        {t(`interests.${interest.id}` as "interests.food")}
       </Text>
     </Pressable>
   );

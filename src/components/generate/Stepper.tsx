@@ -1,6 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, Text, View } from "react-native";
+import {
+  Pressable,
+  View,
+} from "react-native";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
 type Props = {
@@ -14,6 +20,7 @@ type Props = {
 
 // A clamped number stepper: [ − ] value [ + ] with a helper line underneath.
 export function Stepper({ value, min, max, onChange, helper }: Props) {
+  const { t } = useTranslation();
   const atMin = value <= min;
   const atMax = value >= max;
 
@@ -25,7 +32,7 @@ export function Stepper({ value, min, max, onChange, helper }: Props) {
           disabled={atMin}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Decrease value"
+          accessibilityLabel={t("destinations.decreaseA11y")}
           className="h-12 w-12 items-center justify-center active:opacity-60"
         >
           <Ionicons
@@ -42,7 +49,7 @@ export function Stepper({ value, min, max, onChange, helper }: Props) {
           disabled={atMax}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Increase value"
+          accessibilityLabel={t("destinations.increaseA11y")}
           className="h-12 w-12 items-center justify-center active:opacity-60"
         >
           <Ionicons

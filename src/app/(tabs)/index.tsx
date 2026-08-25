@@ -2,9 +2,11 @@ import { useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { DestinationCard } from "@/components/home/DestinationCard";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { InspirationPill } from "@/components/home/InspirationPill";
@@ -21,10 +23,11 @@ const HOME_DESTINATION_COUNT = 10;
 export default function HomeScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const { t } = useTranslation();
   const tripsQuery = useTrips();
   const destinationsQuery = useDestinations();
 
-  const firstName = user?.firstName ?? "there";
+  const firstName = user?.firstName ?? t("home.greetingFallback");
   const avatarUrl = user?.imageUrl;
   const trips = tripsQuery.data ?? [];
   const allDestinations = destinationsQuery.data ?? [];
@@ -90,7 +93,10 @@ export default function HomeScreen() {
 
         {/* Your trips */}
         <View className="mt-6 px-5">
-          <SectionHeader title="Your trips" onSeeAll={() => router.push("/trips")} />
+          <SectionHeader
+            title={t("home.yourTrips")}
+            onSeeAll={() => router.push("/trips")}
+          />
         </View>
         {tripsQuery.isLoading ? (
           <View className="h-[190px] items-center justify-center">
@@ -101,14 +107,18 @@ export default function HomeScreen() {
             onPress={() => tripsQuery.refetch()}
             className="mx-5 mt-3.5 items-center rounded-2xl border border-line bg-surface px-5 py-6 active:opacity-80"
           >
-            <Ionicons name="cloud-offline-outline" size={26} color={colors.muted} />
+            <Ionicons
+              name="cloud-offline-outline"
+              size={26}
+              color={colors.muted}
+            />
             <Text className="mt-2 font-psemibold text-[14px] text-ink">
-              Couldn&apos;t load your trips
+              {t("home.tripsLoadError")}
             </Text>
             <Text className="mt-1 text-center font-sans text-[12px] text-muted">
               {tripsQuery.error instanceof Error
                 ? tripsQuery.error.message
-                : "Tap to try again."}
+                : t("home.tapToTryAgain")}
             </Text>
           </Pressable>
         ) : trips.length > 0 ? (
@@ -134,10 +144,10 @@ export default function HomeScreen() {
               <Ionicons name="add" size={26} color={colors.brand} />
             </View>
             <Text className="mt-3 font-psemibold text-[15px] text-ink">
-              No trips yet
+              {t("home.noTripsYet")}
             </Text>
             <Text className="mt-1 text-center font-sans text-[13px] text-muted">
-              Tap to generate your first AI trip plan.
+              {t("home.noTripsBody")}
             </Text>
           </Pressable>
         )}
@@ -145,7 +155,7 @@ export default function HomeScreen() {
         {/* Popular destinations */}
         <View className="mt-6 px-5">
           <SectionHeader
-            title="Popular destinations"
+            title={t("home.popularDestinations")}
             // Same typed-routes cast as the destination cards below — the new
             // destinations.tsx route is not in the generated types yet.
             onSeeAll={() => router.push("/destinations" as Href)}
@@ -160,12 +170,16 @@ export default function HomeScreen() {
             onPress={() => destinationsQuery.refetch()}
             className="mx-5 mt-3.5 items-center rounded-2xl border border-line bg-surface px-5 py-6 active:opacity-80"
           >
-            <Ionicons name="cloud-offline-outline" size={26} color={colors.muted} />
+            <Ionicons
+              name="cloud-offline-outline"
+              size={26}
+              color={colors.muted}
+            />
             <Text className="mt-2 font-psemibold text-[14px] text-ink">
-              Couldn&apos;t load destinations
+              {t("home.destinationsLoadError")}
             </Text>
             <Text className="mt-1 text-center font-sans text-[12px] text-muted">
-              Tap to try again.
+              {t("home.tapToTryAgain")}
             </Text>
           </Pressable>
         ) : (
@@ -192,7 +206,7 @@ export default function HomeScreen() {
         {/* AI Inspirations */}
         <View className="mt-6 px-5">
           <Text className="font-psemibold text-[20px] leading-[28px] text-ink">
-            AI Inspirations
+            {t("home.aiInspirations")}
           </Text>
         </View>
         <ScrollView

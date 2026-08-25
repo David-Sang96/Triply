@@ -1,7 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
 type Props<T extends string> = {
@@ -11,6 +14,12 @@ type Props<T extends string> = {
   value: T;
   onSelect: (next: T) => void;
   onClose: () => void;
+  /**
+   * How to display an option. Defaults to the value itself, which is right for
+   * currencies and budgets. Language options are codes ("en"/"my"), so that
+   * row passes a lookup instead — otherwise the sheet would offer "en".
+   */
+  labelOf?: (option: T) => string;
 };
 
 /**
@@ -24,7 +33,9 @@ export function OptionSheet<T extends string>({
   value,
   onSelect,
   onClose,
+  labelOf = (option) => option,
 }: Props<T>) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
@@ -40,7 +51,7 @@ export function OptionSheet<T extends string>({
       <Pressable
         className="flex-1 justify-end"
         style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
-        accessibilityLabel="Close"
+        accessibilityLabel={t("common.close")}
         onPress={onClose}
       >
         {/* Swallows taps so pressing the sheet itself does not close it. */}
@@ -55,7 +66,7 @@ export function OptionSheet<T extends string>({
               onPress={onClose}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel={t("common.close")}
               className="h-8 w-8 items-center justify-center active:opacity-70"
             >
               <Ionicons name="close" size={20} color={colors.muted} />
@@ -87,7 +98,7 @@ export function OptionSheet<T extends string>({
                       selected ? "font-psemibold text-brand" : "font-sans text-ink"
                     }`}
                   >
-                    {option}
+                    {labelOf(option)}
                   </Text>
                   {selected ? (
                     <Ionicons name="checkmark" size={20} color={colors.brand} />

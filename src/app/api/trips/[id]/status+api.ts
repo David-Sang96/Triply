@@ -17,12 +17,20 @@ export async function GET(request: Request, { id }: Record<string, string>) {
   }
 
   const [row] = await db
-    .select({ status: trips.status, errorMessage: trips.errorMessage })
+    .select({
+      status: trips.status,
+      errorCode: trips.errorCode,
+      errorMessage: trips.errorMessage,
+    })
     .from(trips)
     .where(and(eq(trips.id, id), eq(trips.userId, userId)))
     .limit(1);
 
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
 
-  return Response.json({ status: row.status, errorMessage: row.errorMessage });
+  return Response.json({
+    status: row.status,
+    errorCode: row.errorCode,
+    errorMessage: row.errorMessage,
+  });
 }

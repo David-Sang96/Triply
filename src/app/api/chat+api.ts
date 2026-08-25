@@ -43,6 +43,8 @@ const postSchema = z
     message: z.string().trim().min(1).max(4000),
     tripId: z.string().nullable().optional(),
     conversationId: z.string().nullable().optional(),
+    // Optional so an older build that does not send it still works.
+    language: z.enum(["en", "my"]).optional(),
   })
   .refine((v) => !(v.tripId && v.conversationId), {
     message: "Only one of tripId or conversationId may be provided",
@@ -180,6 +182,15 @@ export async function POST(request: Request) {
   const message = parsed.data.message;
 
   let systemInstruction = SYSTEM_PROMPT;
+
+  // Answer in the user's language. Place names are carved out for the same
+  // reason as in the itinerary prompt: the user has to be able to search for
+  // them on a map and show them to a driver.
+  if (parsed.data.language === "my") {
+    systemInstruction +=
+      " Reply in Burmese (Myanmar script, Unicode — never Zawgyi)." +
+      " Keep place names, hotel names and transport line names in their usual Latin/English form so they can be searched on a map.";
+  }
   if (tripId) {
     const trip = await db.query.trips.findFirst({
       where: and(eq(trips.id, tripId), eq(trips.userId, userId)),

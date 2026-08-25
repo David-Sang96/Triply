@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -11,18 +12,15 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import { useChatHistory, useDeleteMessage, useSendChat } from "@/lib/chat";
 import { colors } from "@/theme/colors";
-
-const NEW_CHAT_GREETING =
-  "Hi! I'm your Triply travel assistant. Ask me anything about planning a trip.";
 
 const BOT_ICON = require("@/assets/images/chat-bot.png");
 
@@ -145,6 +143,8 @@ function TypingBubble() {
 // user's message is already saved server-side even when the reply fails, so
 // Retry just resends the same text as a new turn.
 function FailedBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation();
+
   return (
     <View className="mb-3 items-center">
       <View className="max-w-[90%] flex-row items-center rounded-xl border border-error bg-error/10 px-3 py-2">
@@ -154,7 +154,7 @@ function FailedBanner({ message, onRetry }: { message: string; onRetry: () => vo
         </Text>
         <Pressable onPress={onRetry} hitSlop={8} className="ml-2 active:opacity-70">
           <Text className="font-psemibold text-[13px] text-error underline">
-            Retry
+            {t("common.retry")}
           </Text>
         </Pressable>
       </View>
@@ -169,6 +169,7 @@ export default function ChatScreen() {
     conversationId?: string;
   }>();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const threadRef = { tripId: tripId ?? null, conversationId: conversationId ?? null };
   const history = useChatHistory(threadRef);
@@ -234,10 +235,10 @@ export default function ChatScreen() {
         secondLastPersisted.content === pendingUserMsg));
 
   const greeting = tripId
-    ? `Hi! I'm your Triply assistant. Ask me anything about your ${
-        dest ?? "trip"
-      } — tweaks, food, packing, or local tips.`
-    : NEW_CHAT_GREETING;
+    ? t("chat.greetingTrip", {
+        destination: dest ?? t("chat.greetingTripFallback"),
+      })
+    : t("chat.greeting");
 
   const showGreeting = !history.isLoading && persisted.length === 0;
 
@@ -268,7 +269,8 @@ export default function ChatScreen() {
         setPendingUserMsg(null);
         setFailed({
           text,
-          message: err instanceof ApiError ? err.message : "Couldn't get a reply.",
+          message:
+            err instanceof ApiError ? err.message : t("chat.replyFailed"),
         });
       },
     });
@@ -289,19 +291,21 @@ export default function ChatScreen() {
   // pair by turnId, so tapping either the question or the reply removes both.
   const confirmDeleteMessage = (messageId: string) =>
     Alert.alert(
-      "Delete this message?",
-      "This removes both your question and the reply.",
+      t("chat.deleteMessageTitle"),
+      t("chat.deleteMessageBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () =>
             deleteMessage.mutate(messageId, {
               onError: (err) =>
                 Alert.alert(
-                  "Couldn't delete",
-                  err instanceof ApiError ? err.message : "Please try again.",
+                  t("assistant.deleteFailed"),
+                  err instanceof ApiError
+                    ? err.message
+                    : t("assistant.pleaseTryAgain"),
                 ),
             }),
         },
@@ -324,7 +328,7 @@ export default function ChatScreen() {
         <Pressable
           onPress={goBack}
           hitSlop={8}
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("chat.backA11y")}
           className="h-9 w-9 items-center justify-center active:opacity-70"
         >
           <Ionicons name="chevron-back" size={24} color={colors.ink} />
@@ -335,10 +339,10 @@ export default function ChatScreen() {
         />
         <View className="ml-2.5 flex-1">
           <Text className="font-psemibold text-[16px] text-ink">
-            Triply Assistant
+            {t("chat.headerTitle")}
           </Text>
           <Text className="font-sans text-[11px] text-muted">
-            {tripId ? "About your trip" : "Your travel helper"}
+            {tripId ? t("chat.subtitleTrip") : t("chat.subtitleGeneral")}
           </Text>
         </View>
         {!tripId ? (
@@ -364,7 +368,9 @@ export default function ChatScreen() {
             Couldn&apos;t load this conversation
           </Text>
           <Pressable onPress={() => history.refetch()} className="mt-4 active:opacity-70">
-            <Text className="font-psemibold text-[14px] text-brand">Try again</Text>
+            <Text className="font-psemibold text-[14px] text-brand">
+              {t("common.tryAgain")}
+            </Text>
           </Pressable>
         </View>
       ) : (
@@ -416,7 +422,7 @@ export default function ChatScreen() {
         <TextInput
           value={input}
           onChangeText={setInput}
-          placeholder="Ask about your trip…"
+          placeholder={t("chat.inputPlaceholder")}
           placeholderTextColor={colors.faint}
           multiline
           className="max-h-[120px] flex-1 rounded-2xl bg-canvas px-4 py-2.5 font-sans text-[15px] text-ink"
@@ -424,7 +430,7 @@ export default function ChatScreen() {
         <Pressable
           onPress={send}
           disabled={!input.trim() || sendChat.isPending}
-          accessibilityLabel="Send message"
+          accessibilityLabel={t("chat.sendA11y")}
           className={`ml-2 h-11 w-11 items-center justify-center rounded-full bg-brand active:opacity-90 ${
             !input.trim() || sendChat.isPending ? "opacity-50" : ""
           }`}

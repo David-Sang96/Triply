@@ -1,12 +1,20 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  View,
+} from "react-native";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import { DestinationDetailView } from "@/components/destination/DestinationDetailView";
 import { useDestination } from "@/lib/destinations";
 import { colors } from "@/theme/colors";
 
 export default function DestinationScreen() {
+  const { t } = useTranslation();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const destinationQuery = useDestination(typeof slug === "string" ? slug : "");
@@ -27,13 +35,15 @@ export default function DestinationScreen() {
       <View className="flex-1 items-center justify-center bg-canvas px-8">
         <Ionicons name="cloud-offline-outline" size={28} color={colors.muted} />
         <Text className="mt-2 text-center font-psemibold text-[15px] text-ink">
-          Couldn&apos;t load this destination.
+          {t("destinations.loadFailed")}
         </Text>
         <Pressable
           onPress={() => destinationQuery.refetch()}
           className="mt-4 active:opacity-70"
         >
-          <Text className="font-psemibold text-[14px] text-brand">Try again</Text>
+          <Text className="font-psemibold text-[14px] text-brand">
+            {t("common.tryAgain")}
+          </Text>
         </Pressable>
       </View>
     );
@@ -43,10 +53,12 @@ export default function DestinationScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-canvas px-8">
         <Text className="text-center font-psemibold text-[15px] text-ink">
-          Couldn&apos;t find that destination.
+          {t("destinations.notFound")}
         </Text>
         <Pressable onPress={goBack} className="mt-4 active:opacity-70">
-          <Text className="font-psemibold text-[14px] text-brand">Go back</Text>
+          <Text className="font-psemibold text-[14px] text-brand">
+            {t("destinations.goBack")}
+          </Text>
         </Pressable>
       </View>
     );

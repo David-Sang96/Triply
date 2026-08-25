@@ -104,7 +104,9 @@ export async function POST(request: Request, { id }: Record<string, string>) {
       .update(trips)
       .set({
         status: "failed",
-        errorMessage: "We couldn't start generating this trip. Please try again.",
+        // A code, not prose — the app renders it in the active language.
+        errorCode: "enqueue_failed",
+        errorMessage: null,
         countsAgainstCap: false,
       })
       .where(eq(trips.id, id));

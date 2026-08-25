@@ -1,18 +1,19 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { InterestChip } from "@/components/generate/InterestChip";
 import { PaceOption } from "@/components/generate/PaceOption";
 import { SegmentedControl } from "@/components/generate/SegmentedControl";
@@ -35,6 +36,7 @@ const CHIP_GAP = 12; // gap-3 between the 3 interest columns
 // itself is wired up in a later phase.
 export default function GenerateScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { destination: prefill, interest: interestPrefill } =
@@ -127,8 +129,8 @@ export default function GenerateScreen() {
           const message =
             err instanceof ApiError
               ? err.message
-              : "Something went wrong. Please try again.";
-          Alert.alert("Couldn't start your trip", message);
+              : t("common.somethingWentWrong");
+          Alert.alert(t("generate.startFailedTitle"), message);
         },
       },
     );
@@ -146,7 +148,7 @@ export default function GenerateScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.ink} />
         </Pressable>
         <Text className="font-psemibold text-[17px] text-ink">
-          Generate a trip
+          {t("generate.headerTitle")}
         </Text>
         <View className="h-8 w-8 items-center justify-center">
           <Ionicons name="sparkles" size={20} color={colors.brand} />
@@ -160,16 +162,15 @@ export default function GenerateScreen() {
       >
         {/* Intro */}
         <Text className="mt-2 font-psemibold text-[24px] leading-[32px] text-ink">
-          Let&apos;s plan your perfect trip
+          {t("generate.intro")}
         </Text>
         <Text className="mt-2 font-sans text-[14px] leading-[20px] text-muted">
-          Tell us a few details and our AI will generate the best itinerary for
-          you.
+          {t("generate.introBody")}
         </Text>
 
         {/* Destination */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
-          Where do you want to go?
+          {t("generate.whereLabel")}
         </Text>
         <View
           className={`mt-2.5 h-14 flex-row items-center rounded-xl border bg-surface px-4 ${
@@ -183,7 +184,7 @@ export default function GenerateScreen() {
               setDestination(t);
               if (showDestError && t.trim()) setShowDestError(false);
             }}
-            placeholder="Search destination"
+            placeholder={t("generate.wherePlaceholder")}
             placeholderTextColor={colors.faint}
             className="ml-3 flex-1 font-sans text-[14px] text-ink"
           />
@@ -195,21 +196,21 @@ export default function GenerateScreen() {
         </View>
         {showDestError ? (
           <Text className="mt-1.5 font-sans text-[12px] text-error">
-            Please enter where you want to go.
+            {t("generate.whereRequired")}
           </Text>
         ) : null}
 
         {/* Days */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
-          How many days?
+          {t("generate.daysLabel")}
         </Text>
         <View className="mt-2.5">
-          <Stepper value={days} min={1} max={7} onChange={setDays} helper="1 – 7 days" />
+          <Stepper value={days} min={1} max={7} onChange={setDays} helper={t("generate.daysHelper")} />
         </View>
 
         {/* Travelers */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
-          How many travelers?
+          {t("generate.travelersLabel")}
         </Text>
         <View className="mt-2.5">
           <Stepper
@@ -217,13 +218,13 @@ export default function GenerateScreen() {
             min={1}
             max={10}
             onChange={setTravelers}
-            helper="1 – 10 travelers"
+            helper={t("generate.travelersHelper")}
           />
         </View>
 
         {/* Budget */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
-          Budget level
+          {t("generate.budgetLabel")}
         </Text>
         <View className="mt-2.5">
           <SegmentedControl options={BUDGETS} value={budget} onChange={setBudget} />
@@ -231,9 +232,9 @@ export default function GenerateScreen() {
 
         {/* Interests */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
-          What are you interested in?{" "}
+          {t("generate.interestsLabel")}{" "}
           <Text className="text-[13px] text-brand">
-            (Select up to {MAX_INTERESTS})
+            {t("generate.interestsHint", { max: MAX_INTERESTS })}
           </Text>
         </Text>
         <View className="mt-3 flex-row flex-wrap gap-3">
@@ -254,7 +255,7 @@ export default function GenerateScreen() {
 
         {/* Travel Pace */}
         <Text className="mt-6 font-psemibold text-[15px] text-ink">
-          Travel Pace
+          {t("generate.paceLabel")}
         </Text>
         <View className="mt-3">
           {PACES.map((option) => (
@@ -271,7 +272,7 @@ export default function GenerateScreen() {
         <Pressable
           onPress={onGenerate}
           disabled={createTrip.isPending}
-          className={`mt-6 h-[54px] flex-row items-center justify-center rounded-xl bg-brand active:opacity-90 ${
+          className={`mt-6 min-h-[54px] py-2 flex-row items-center justify-center rounded-xl bg-brand active:opacity-90 ${
             createTrip.isPending ? "opacity-70" : ""
           }`}
           style={shadows.md}
@@ -282,7 +283,7 @@ export default function GenerateScreen() {
             <Ionicons name="sparkles" size={18} color={colors.surface} />
           )}
           <Text className="ml-2 font-psemibold text-[16px] text-white">
-            {createTrip.isPending ? "Starting…" : "Generate trip"}
+            {createTrip.isPending ? t("generate.submitting") : t("generate.submit")}
           </Text>
         </Pressable>
 
@@ -293,7 +294,7 @@ export default function GenerateScreen() {
             color={colors.faint}
           />
           <Text className="ml-1.5 font-sans text-[12px] text-faint">
-            No payment required
+            {t("generate.noPayment")}
           </Text>
         </View>
 

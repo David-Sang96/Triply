@@ -1,7 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { ComponentProps } from "react";
-import { Pressable, Text } from "react-native";
+import {
+  Pressable,
+} from "react-native";
 
+import { Text } from "@/components/Text";
 import { colors } from "@/theme/colors";
 
 type Props = {

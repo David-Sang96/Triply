@@ -75,6 +75,14 @@ export const trips = pgTable(
     budgetLevel: budgetLevel("budget_level").notNull(),
     interests: text("interests").array().notNull(),
     pace: text("pace"),
+    // The language the itinerary prose was generated in ("en" / "my").
+    // Nullable because every row that existed before multi-language support
+    // predates the concept; those are English, and the app treats null as
+    // English. Stored on the trip rather than read from the user each time so
+    // a retry regenerates in the language the trip was created in, and so a
+    // user who switches language does not see their existing trips claim to
+    // be in the new one.
+    language: text("language"),
     title: text("title"),
     summary: text("summary"),
     coverImageUrl: text("cover_image_url"),
@@ -101,6 +109,14 @@ export const trips = pgTable(
       }[]
     >(),
     status: tripStatus("status").notNull().default("queued"),
+    // A fixed failure category the app translates ("ai_rate_limited",
+    // "generation_failed", "enqueue_failed"). errorMessage below is the older
+    // English prose and is kept for rows written before this column existed —
+    // the app prefers the code and falls back to the prose when it is null.
+    //
+    // A code is also what AGENTS.md allows into telemetry, where the
+    // user-facing prose is not.
+    errorCode: text("error_code"),
     errorMessage: text("error_message"),
     // Failed generations do not count toward the per-user cap.
     countsAgainstCap: boolean("counts_against_cap").notNull().default(true),

@@ -4,12 +4,14 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useTranslation } from "react-i18next";
+
+import { Text } from "@/components/Text";
 import { DestinationCard } from "@/components/home/DestinationCard";
 import { useDestinations } from "@/lib/destinations";
 import { colors } from "@/theme/colors";
@@ -21,6 +23,7 @@ const GUTTER = 14; // gap-3.5 between the two columns and between rows
 // the same ["destinations"] query the Home rail already fetched, so it opens
 // with data instead of a spinner.
 export default function DestinationsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -40,13 +43,13 @@ export default function DestinationsScreen() {
         <Pressable
           onPress={goBack}
           hitSlop={8}
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("chat.backA11y")}
           className="h-8 w-8 items-center justify-center active:opacity-70"
         >
           <Ionicons name="chevron-back" size={24} color={colors.ink} />
         </Pressable>
         <Text className="flex-1 text-center font-psemibold text-[17px] text-ink">
-          Popular destinations
+          {t("destinations.title")}
         </Text>
         {/* Balances the back button so the title stays optically centered. */}
         <View className="h-8 w-8" />
@@ -63,10 +66,10 @@ export default function DestinationsScreen() {
         >
           <Ionicons name="cloud-offline-outline" size={28} color={colors.muted} />
           <Text className="mt-2 font-psemibold text-[15px] text-ink">
-            Couldn&apos;t load destinations
+            {t("home.destinationsLoadError")}
           </Text>
           <Text className="mt-1 text-center font-sans text-[13px] text-muted">
-            Tap to try again.
+            {t("home.tapToTryAgain")}
           </Text>
         </Pressable>
       ) : destinations.length > 0 ? (
@@ -84,9 +87,9 @@ export default function DestinationsScreen() {
           windowSize={7}
           ListHeaderComponent={
             <Text className="font-sans text-[13px] text-muted">
-              {destinations.length}{" "}
-              {destinations.length === 1 ? "destination" : "destinations"} to
-              explore
+              {t("destinations.countToExplore", {
+                count: destinations.length,
+              })}
             </Text>
           }
           // Breathing room under the last row. Same total as generate.tsx
@@ -117,10 +120,10 @@ export default function DestinationsScreen() {
             <Ionicons name="compass-outline" size={30} color={colors.brand} />
           </View>
           <Text className="mt-4 font-psemibold text-[16px] text-ink">
-            Nothing here yet
+            {t("destinations.emptyTitle")}
           </Text>
           <Text className="mt-1 text-center font-sans text-[14px] text-muted">
-            Popular destinations will show up here soon.
+            {t("destinations.emptyBody")}
           </Text>
         </View>
       )}

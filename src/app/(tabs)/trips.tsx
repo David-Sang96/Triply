@@ -1,8 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { Text } from "@/components/Text";
 import { UserTripCard } from "@/components/home/UserTripCard";
 import { useTrips } from "@/lib/trips";
 import { colors } from "@/theme/colors";
@@ -10,18 +17,19 @@ import { colors } from "@/theme/colors";
 // The Trips tab: the full list of the user's generated trips.
 export default function TripsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const tripsQuery = useTrips();
   const trips = tripsQuery.data ?? [];
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={["top"]}>
       <View className="px-5 pb-3 pt-2">
-        <Text className="font-pbold text-[22px] text-ink">My Trips</Text>
+        <Text className="font-pbold text-[22px] text-ink">{t("trips.title")}</Text>
         {/* Count only once the list is actually known — showing "0 trips"
             while loading or after a failed fetch would be a lie. */}
         {tripsQuery.isSuccess ? (
           <Text className="mt-0.5 font-sans text-[13px] text-muted">
-            {trips.length} {trips.length === 1 ? "trip" : "trips"}
+            {t("trips.count", { count: trips.length })}
           </Text>
         ) : null}
       </View>
@@ -37,10 +45,10 @@ export default function TripsScreen() {
         >
           <Ionicons name="cloud-offline-outline" size={28} color={colors.muted} />
           <Text className="mt-2 font-psemibold text-[15px] text-ink">
-            Couldn&apos;t load your trips
+            {t("home.tripsLoadError")}
           </Text>
           <Text className="mt-1 text-center font-sans text-[13px] text-muted">
-            Tap to try again.
+            {t("home.tapToTryAgain")}
           </Text>
         </Pressable>
       ) : trips.length > 0 ? (
@@ -63,18 +71,18 @@ export default function TripsScreen() {
             <Ionicons name="briefcase-outline" size={30} color={colors.brand} />
           </View>
           <Text className="mt-4 font-psemibold text-[16px] text-ink">
-            No trips yet
+            {t("trips.emptyTitle")}
           </Text>
           <Text className="mt-1 text-center font-sans text-[14px] text-muted">
-            Your planned and saved trips will show up here.
+            {t("trips.emptyBody")}
           </Text>
           <Pressable
             onPress={() => router.push("/generate")}
-            className="mt-6 h-[48px] flex-row items-center justify-center rounded-xl bg-brand px-6 active:opacity-90"
+            className="mt-6 min-h-[48px] py-2 flex-row items-center justify-center rounded-xl bg-brand px-6 active:opacity-90"
           >
             <Ionicons name="sparkles" size={16} color={colors.surface} />
             <Text className="ml-2 font-psemibold text-[15px] text-white">
-              Generate a trip
+              {t("trip.generateATrip")}
             </Text>
           </Pressable>
         </View>
