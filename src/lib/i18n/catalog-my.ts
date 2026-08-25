@@ -196,6 +196,7 @@ export const my: Catalog<typeof en> = {
     free: "အခမဲ့",
     askAi: "ဤခရီးစဉ်အကြောင်း AI ကိုမေးရန်",
     askAiBody: "ပြင်ဆင်ချက်၊ အစားအသောက်၊ ပစ္စည်းထုပ်ခြင်း၊ ဒေသအကြံပြုချက်…",
+    overview: "အနှစ်ချုပ်",
     tripMap: "ခရီးစဉ်မြေပုံ",
     showingOnePlace: "နေရာတစ်ခု ပြသနေသည်",
     verifiedPlaces_one: "စစ်ဆေးပြီး နေရာ {{count}} ခု",
@@ -242,6 +243,14 @@ export const my: Catalog<typeof en> = {
     termsRequired: "ဆက်လက်ရန် စည်းကမ်းများကို လက်ခံပါ။",
     couldNotCreate: "အကောင့် မဖွင့်နိုင်ပါ။",
     verificationFailed: "အတည်ပြုခြင်း မအောင်မြင်ပါ။ ထပ်စမ်းကြည့်ပါ။",
+  },
+
+  inspirations: {
+    food: "အစားအသောက်\nခရီးစဉ်",
+    nature: "သဘာဝ\nအပန်းဖြေ",
+    culture: "ယဉ်ကျေးမှု\nခရီးစဉ်",
+    beach: "ကမ်းခြေ\nအနားယူ",
+    night: "ညဘဝ\nသက်ဝင်",
   },
 
   tabs: {

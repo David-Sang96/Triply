@@ -203,6 +203,7 @@ export const en = {
     free: "Free",
     askAi: "Ask AI about this trip",
     askAiBody: "Tweaks, food, packing, local tips…",
+    overview: "Overview",
     tripMap: "Trip map",
     showingOnePlace: "Showing one place",
     verifiedPlaces_one: "{{count}} verified place",
@@ -248,6 +249,16 @@ export const en = {
     termsRequired: "Please accept the Terms to continue.",
     couldNotCreate: "Could not create your account.",
     verificationFailed: "Verification failed. Please try again.",
+  },
+
+  // Home's "AI Inspirations" tiles, keyed by the ids in src/data/home.ts.
+  // The \n is the deliberate two-line break inside each tile.
+  inspirations: {
+    food: "Food\nAdventures",
+    nature: "Nature\nEscapes",
+    culture: "Cultural\nJourneys",
+    beach: "Beach\nRelaxation",
+    night: "Vibrant\nNightlife",
   },
 
   tabs: {

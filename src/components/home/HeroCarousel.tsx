@@ -1,12 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
-import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";

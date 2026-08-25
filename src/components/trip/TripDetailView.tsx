@@ -592,7 +592,7 @@ export function TripDetailView({
           {trip.summary ? (
             <>
               <Text className="mt-5 font-psemibold text-[18px] text-ink">
-                Overview
+                {t("tripDetail.overview")}
               </Text>
               <Text className="mt-2 font-sans text-[14px] leading-[21px] text-muted">
                 {trip.summary}
