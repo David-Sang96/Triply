@@ -158,7 +158,7 @@ function ActivityRow({
       </View>
       <View className={`ml-3 flex-1 ${last ? "" : "pb-4"}`}>
         <Text className="font-psemibold text-[11px] uppercase tracking-wide text-brand">
-          {activity.timeOfDay}
+          {t(`timeOfDay.${activity.timeOfDay}` as "timeOfDay.morning")}
         </Text>
         <Text className="mt-0.5 font-psemibold text-[15px] text-ink">
           {activity.name}

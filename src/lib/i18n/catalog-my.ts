@@ -256,6 +256,12 @@ export const my: Catalog<typeof en> = {
     night: "ညဘဝ\nသက်ဝင်",
   },
 
+  timeOfDay: {
+    morning: "မနက်",
+    afternoon: "နေ့လယ်",
+    evening: "ညနေ",
+  },
+
   tabs: {
     home: "ပင်မ",
     assistant: "အကူ",

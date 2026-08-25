@@ -264,6 +264,14 @@ export const en = {
     night: "Vibrant\nNightlife",
   },
 
+  // trips.time_of_day is a Postgres enum, so it is a fixed category the app
+  // renders — not free text from the model.
+  timeOfDay: {
+    morning: "Morning",
+    afternoon: "Afternoon",
+    evening: "Evening",
+  },
+
   tabs: {
     home: "Home",
     assistant: "Assistant",
