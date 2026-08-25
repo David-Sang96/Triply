@@ -174,6 +174,8 @@ export const en = {
 
   generation: {
     loadingTitle: "Generating your trip",
+    crafting: "Crafting your perfect itinerary…",
+    craftingTime: "This usually takes 30-60 seconds.",
     step1: "Understanding your preferences",
     step2: "Generating itinerary with AI",
     step3: "Verifying places & locations",

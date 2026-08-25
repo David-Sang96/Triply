@@ -68,10 +68,10 @@ export function GenerationLoading({
         </View>
 
         <Text className="mt-6 text-center font-pbold text-[22px] text-ink">
-          Crafting your perfect itinerary…
+          {t("generation.crafting")}
         </Text>
         <Text className="mt-2 text-center font-sans text-[14px] text-muted">
-          This usually takes 30–60 seconds.
+          {t("generation.craftingTime")}
         </Text>
 
         <View
