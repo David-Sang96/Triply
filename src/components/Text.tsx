@@ -1,6 +1,7 @@
+import { isValidElement, type ReactNode } from "react";
 import { Text as RNText, type TextProps } from "react-native";
 
-import { useLanguage, type Language } from "@/lib/preferences";
+import { type Language } from "@/lib/preferences";
 
 // Why this component exists, so nobody "simplifies" it away:
 //
@@ -50,6 +51,36 @@ function weightOf(className: string | undefined): Weight {
   return "sans";
 }
 
+// U+1000–U+109F is the Myanmar block. Extended-A/B exist but this app's
+// Burmese never leaves the base block.
+const MYANMAR = /[က-႟]/;
+
+/**
+ * Whether anything actually rendered here is Burmese.
+ *
+ * The font is chosen by CONTENT, not by the app language, and that is the
+ * whole point. Noto Sans Myanmar's vertical metrics are far taller than
+ * Poppins' — it has to leave room for stacked marks above and below the
+ * baseline. Applying it to Latin text inflates every line box, which was
+ * measured on the hero card: the same English title from the destinations
+ * table rendered ~40dp taller in Burmese mode, pushing the "Generate a trip"
+ * button through the bottom of its fixed-height card and clipping it.
+ *
+ * So Latin stays on Poppins whatever the language is. A mixed string (say
+ * "Triply အကူအညီပေးသူ") goes to Noto, because it must: Poppins has no Myanmar
+ * glyphs at all.
+ */
+function hasMyanmar(node: ReactNode): boolean {
+  if (typeof node === "string") return MYANMAR.test(node);
+  if (typeof node === "number") return false;
+  if (Array.isArray(node)) return node.some(hasMyanmar);
+  if (isValidElement(node)) {
+    const { children } = node.props as { children?: ReactNode };
+    return children === undefined ? false : hasMyanmar(children);
+  }
+  return false;
+}
+
 export function fontFamilyFor(
   className: string | undefined,
   language: Language,
@@ -62,15 +93,17 @@ export function fontFamilyFor(
  * Import this instead of `Text` from "react-native"; everything else about the
  * call site stays the same.
  */
-export function Text({ className, style, ...rest }: TextProps) {
-  const language = useLanguage();
+export function Text({ className, style, children, ...rest }: TextProps) {
+  const script: Language = hasMyanmar(children) ? "my" : "en";
 
   return (
     <RNText
       className={className}
       // Ours goes first so a caller passing their own fontFamily still wins.
-      style={[{ fontFamily: fontFamilyFor(className, language) }, style]}
+      style={[{ fontFamily: fontFamilyFor(className, script) }, style]}
       {...rest}
-    />
+    >
+      {children}
+    </RNText>
   );
 }
