@@ -359,7 +359,7 @@ export default function SignUp() {
               error={errFor("fullName")}
             />
             <AuthField
-              label="Email"
+              label={t("auth.email")}
               icon="mail-outline"
               value={emailAddress}
               onChangeText={(v) => {

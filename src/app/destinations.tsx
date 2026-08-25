@@ -87,9 +87,9 @@ export default function DestinationsScreen() {
           windowSize={7}
           ListHeaderComponent={
             <Text className="font-sans text-[13px] text-muted">
-              {destinations.length}{" "}
-              {destinations.length === 1 ? "destination" : "destinations"} to
-              explore
+              {t("destinations.countToExplore", {
+                count: destinations.length,
+              })}
             </Text>
           }
           // Breathing room under the last row. Same total as generate.tsx

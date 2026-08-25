@@ -3,12 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { type Href, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Text } from "@/components/Text";
@@ -112,7 +107,11 @@ export default function HomeScreen() {
             onPress={() => tripsQuery.refetch()}
             className="mx-5 mt-3.5 items-center rounded-2xl border border-line bg-surface px-5 py-6 active:opacity-80"
           >
-            <Ionicons name="cloud-offline-outline" size={26} color={colors.muted} />
+            <Ionicons
+              name="cloud-offline-outline"
+              size={26}
+              color={colors.muted}
+            />
             <Text className="mt-2 font-psemibold text-[14px] text-ink">
               {t("home.tripsLoadError")}
             </Text>
@@ -171,7 +170,11 @@ export default function HomeScreen() {
             onPress={() => destinationsQuery.refetch()}
             className="mx-5 mt-3.5 items-center rounded-2xl border border-line bg-surface px-5 py-6 active:opacity-80"
           >
-            <Ionicons name="cloud-offline-outline" size={26} color={colors.muted} />
+            <Ionicons
+              name="cloud-offline-outline"
+              size={26}
+              color={colors.muted}
+            />
             <Text className="mt-2 font-psemibold text-[14px] text-ink">
               {t("home.destinationsLoadError")}
             </Text>

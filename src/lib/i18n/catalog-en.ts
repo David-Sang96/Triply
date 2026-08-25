@@ -158,6 +158,8 @@ export const en = {
 
   destinations: {
     title: "Popular destinations",
+    countToExplore_one: "{{count}} destination to explore",
+    countToExplore_other: "{{count}} destinations to explore",
     emptyTitle: "Nothing here yet",
     emptyBody: "Popular destinations will show up here soon.",
     loadFailed: "Couldn't load this destination.",
@@ -204,6 +206,7 @@ export const en = {
     askAi: "Ask AI about this trip",
     askAiBody: "Tweaks, food, packing, local tips…",
     overview: "Overview",
+    dailyItinerary: "Daily itinerary",
     tripMap: "Trip map",
     showingOnePlace: "Showing one place",
     verifiedPlaces_one: "{{count}} verified place",
