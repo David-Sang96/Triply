@@ -81,6 +81,38 @@ function hasMyanmar(node: ReactNode): boolean {
   return false;
 }
 
+// Burmese set at the same point size as Latin reads noticeably bigger, because
+// a Myanmar line stacks marks above and below the round bases. Measured on the
+// Home section headings, both at text-[20px]: English "Your trips" covers
+// 21.0dp of ink, Burmese "သင့်ခရီးစဉ်များ" covers 29.7dp — 41% taller for the
+// same nominal size.
+//
+// Matching the two exactly would need ~0.71, which shrinks the round bases
+// (already only 11.0dp) past comfortable reading. This is the usual compromise
+// for Myanmar alongside Latin: take most of the difference out, leave the
+// script the vertical room it genuinely needs.
+const MYANMAR_FONT_SCALE = 0.85;
+
+// …but not below this. The scale is an optical correction for text that reads
+// too large; at the small end Burmese needs every pixel it has, because the
+// marks stacked around each base collapse into the base before the base itself
+// becomes unreadable. This app's smallest sizes are 10px and 11px, and 0.85
+// would drop both to 9px.
+const MYANMAR_MIN_FONT_SIZE = 12;
+
+// Never scales UP: a design that already asked for 10px keeps 10px.
+function myanmarFontSize(size: number): number {
+  return Math.min(size, Math.max(MYANMAR_MIN_FONT_SIZE, Math.round(size * MYANMAR_FONT_SCALE)));
+}
+
+// Every font size in this app is written as text-[Npx] — 199 of them, and not
+// one uses Tailwind's named scale — so parsing it here is reliable. If a named
+// size ever appears, it simply won't match and the size is left alone.
+function fontSizeOf(className: string | undefined): number | undefined {
+  const match = className?.match(/\btext-\[(\d+)px\]/);
+  return match ? Number(match[1]) : undefined;
+}
+
 export function fontFamilyFor(
   className: string | undefined,
   language: Language,
@@ -95,12 +127,18 @@ export function fontFamilyFor(
  */
 export function Text({ className, style, children, ...rest }: TextProps) {
   const script: Language = hasMyanmar(children) ? "my" : "en";
+  const size = script === "my" ? fontSizeOf(className) : undefined;
 
   return (
     <RNText
       className={className}
-      // Ours goes first so a caller passing their own fontFamily still wins.
-      style={[{ fontFamily: fontFamilyFor(className, script) }, style]}
+      // Ours go first so a caller passing their own fontFamily or fontSize
+      // still wins.
+      style={[
+        { fontFamily: fontFamilyFor(className, script) },
+        size ? { fontSize: myanmarFontSize(size) } : null,
+        style,
+      ]}
       {...rest}
     >
       {children}
