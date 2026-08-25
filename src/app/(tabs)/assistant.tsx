@@ -230,7 +230,7 @@ export default function AssistantScreen() {
           </Text>
           <Pressable
             onPress={() => router.push("/chat")}
-            className="mt-6 h-[48px] flex-row items-center justify-center rounded-xl bg-brand px-6 active:opacity-90"
+            className="mt-6 min-h-[48px] py-2 flex-row items-center justify-center rounded-xl bg-brand px-6 active:opacity-90"
           >
             <Ionicons name="sparkles" size={16} color={colors.surface} />
             <Text className="ml-2 font-psemibold text-[15px] text-white">

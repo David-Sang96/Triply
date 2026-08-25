@@ -289,7 +289,7 @@ function DangerButton({
       disabled={inactive}
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive, busy }}
-      className={`h-[37px] flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error ${
+      className={`min-h-[37px] py-1 flex-row items-center justify-center gap-[7px] rounded-[6px] border border-error ${
         inactive ? "opacity-50" : "active:opacity-70"
       }`}
     >

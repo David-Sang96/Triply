@@ -5,6 +5,7 @@ import {
   View,
 } from "react-native";
 
+import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
 import { Text } from "@/components/Text";
 import type { Destination } from "@/lib/destinations";
 import { colors } from "@/theme/colors";
@@ -41,9 +42,9 @@ export function DestinationCard({
         contentFit="cover"
         transition={200}
       />
-      <View className="absolute inset-0 bg-black/25" />
+      <PhotoScrim />
 
-      <View className="absolute right-2.5 top-2.5 flex-row items-center rounded-full bg-black/55 px-2 py-0.5">
+      <View className="absolute right-2.5 top-2.5 flex-row items-center rounded-full px-2 py-0.5" style={PILL_ON_PHOTO}>
         <Ionicons name="star" size={10} color={colors.warning} />
         <Text className="ml-1 font-psemibold text-[10px] text-white">
           {destination.rating}

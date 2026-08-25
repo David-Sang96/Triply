@@ -8,6 +8,7 @@ import {
 
 import { useTranslation } from "react-i18next";
 
+import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
 import { Text } from "@/components/Text";
 import type { TripListItem } from "@/lib/trips";
 import { colors } from "@/theme/colors";
@@ -55,9 +56,9 @@ export function UserTripCard({
       ) : (
         <View className="h-full w-full bg-line" />
       )}
-      <View className="absolute inset-0 bg-black/30" />
+      <PhotoScrim />
 
-      <View className="absolute left-3 top-3 flex-row items-center rounded-full bg-black/55 px-2.5 py-1">
+      <View className="absolute left-3 top-3 flex-row items-center rounded-full px-2.5 py-1" style={PILL_ON_PHOTO}>
         <Ionicons name="star" size={11} color={colors.warning} />
         <Text className="ml-1 font-psemibold text-[11px] text-white">
           {t("trip.days", { count: trip.numDays })}
@@ -65,7 +66,7 @@ export function UserTripCard({
       </View>
 
       {generating ? (
-        <View className="absolute right-3 top-3 flex-row items-center rounded-full bg-black/55 px-2.5 py-1">
+        <View className="absolute right-3 top-3 flex-row items-center rounded-full px-2.5 py-1" style={PILL_ON_PHOTO}>
           <ActivityIndicator size="small" color={colors.surface} />
           <Text className="ml-1.5 font-psemibold text-[11px] text-white">
             {t("trip.generating")}

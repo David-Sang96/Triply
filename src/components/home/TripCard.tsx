@@ -5,6 +5,7 @@ import {
   View,
 } from "react-native";
 
+import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
 import { Text } from "@/components/Text";
 import type { Trip } from "@/data/home";
 import { colors } from "@/theme/colors";
@@ -20,10 +21,10 @@ export function TripCard({ trip }: { trip: Trip }) {
         contentFit="cover"
         transition={200}
       />
-      <View className="absolute inset-0 bg-black/25" />
+      <PhotoScrim />
 
       {/* Days badge */}
-      <View className="absolute left-3 top-3 flex-row items-center rounded-full bg-black/55 px-2.5 py-1">
+      <View className="absolute left-3 top-3 flex-row items-center rounded-full px-2.5 py-1" style={PILL_ON_PHOTO}>
         <Ionicons name="star" size={11} color={colors.warning} />
         <Text className="ml-1 font-psemibold text-[11px] text-white">
           {trip.days}
@@ -54,7 +55,7 @@ export function TripCard({ trip }: { trip: Trip }) {
             </Text>
           </View>
 
-          <Pressable className="h-8 w-8 items-center justify-center rounded-full bg-black/55 active:opacity-80">
+          <Pressable className="h-8 w-8 items-center justify-center rounded-full active:opacity-80" style={PILL_ON_PHOTO}>
             <Ionicons name="arrow-forward" size={15} color={colors.surface} />
           </Pressable>
         </View>

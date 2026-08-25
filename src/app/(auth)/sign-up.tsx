@@ -298,7 +298,7 @@ export default function SignUp() {
           <Pressable
             onPress={onVerify}
             disabled={busy || code.length < 6}
-            className="mt-8 h-[52px] items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
+            className="mt-8 min-h-[52px] py-2 items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
             style={{
               opacity: busy || code.length < 6 ? 0.6 : 1,
               shadowColor: "#101828",
@@ -483,7 +483,7 @@ export default function SignUp() {
           <Pressable
             onPress={onCreate}
             disabled={busy}
-            className="mt-6 h-[52px] items-center justify-center rounded-xl bg-[#FF6B6B] active:opacity-90"
+            className="mt-6 min-h-[52px] py-2 items-center justify-center rounded-xl bg-[#FF6B6B] active:opacity-90"
             style={{
               opacity: busy ? 0.6 : 1,
               shadowColor: "#101828",

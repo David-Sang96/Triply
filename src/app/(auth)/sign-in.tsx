@@ -48,7 +48,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       )}
       <Pressable
         onPress={retry}
-        className="my-4 h-[48px] items-center justify-center rounded-xl bg-[#208AEF]"
+        className="my-4 min-h-[48px] py-2 items-center justify-center rounded-xl bg-[#208AEF]"
       >
         <Text className="font-psemibold text-white">{t("common.tryAgain")}</Text>
       </Pressable>
@@ -330,7 +330,7 @@ export default function SignIn() {
           <Pressable
             onPress={onVerifyCode}
             disabled={busy || code.length < 6}
-            className="mt-8 h-[52px] items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
+            className="mt-8 min-h-[52px] py-2 items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
             style={{ opacity: busy || code.length < 6 ? 0.6 : 1 }}
           >
             <Text className="text-base font-psemibold text-white">
@@ -409,7 +409,7 @@ export default function SignIn() {
         <Pressable
           onPress={onSubmit}
           disabled={busy}
-          className="mt-6 h-[52px] items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
+          className="mt-6 min-h-[52px] py-2 items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
           style={{
             opacity: busy ? 0.6 : 1,
             shadowColor: "#101828",

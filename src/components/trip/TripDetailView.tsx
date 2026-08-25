@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTranslation } from "react-i18next";
 
+import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
 import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
 import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
@@ -82,7 +83,7 @@ function HeroCarousel({ images }: { images: TripImage[] }) {
         ))}
       </ScrollView>
 
-      <View className="absolute inset-0 bg-black/15" pointerEvents="none" />
+      <PhotoScrim />
 
       {/* Page dots */}
       {images.length > 1 ? (
@@ -102,7 +103,7 @@ function HeroCarousel({ images }: { images: TripImage[] }) {
       {current ? (
         <Pressable
           onPress={() => Linking.openURL(current.unsplashUrl)}
-          className="absolute bottom-3 right-3 rounded-full bg-black/45 px-2 py-0.5 active:opacity-80"
+          className="absolute bottom-3 right-3 rounded-full px-2 py-0.5 active:opacity-80" style={PILL_ON_PHOTO}
         >
           <Text className="text-[10px] text-white/90">
             {current.photographerName} / Unsplash
@@ -125,7 +126,7 @@ function CustomCover({ url }: { url: string }) {
         contentFit="cover"
         transition={200}
       />
-      <View className="absolute inset-0 bg-black/15" pointerEvents="none" />
+      <PhotoScrim />
     </View>
   );
 }
@@ -527,7 +528,7 @@ export function TripDetailView({
           </View>
 
           {/* Days badge */}
-          <View className="absolute bottom-4 left-4 flex-row items-center rounded-full bg-black/55 px-3 py-1">
+          <View className="absolute bottom-4 left-4 flex-row items-center rounded-full px-3 py-1" style={PILL_ON_PHOTO}>
             <Ionicons name="star" size={12} color={colors.warning} />
             <Text className="ml-1.5 font-psemibold text-[12px] text-white">
               {t("trip.days", { count: trip.numDays })}

@@ -42,7 +42,7 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       )}
       <Pressable
         onPress={retry}
-        className="my-4 h-[48px] items-center justify-center rounded-xl bg-[#208AEF]"
+        className="my-4 min-h-[48px] py-2 items-center justify-center rounded-xl bg-[#208AEF]"
       >
         <Text className="font-psemibold text-white">{t("common.tryAgain")}</Text>
       </Pressable>

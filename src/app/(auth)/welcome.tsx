@@ -93,7 +93,7 @@ export default function Welcome() {
         {/* Primary: Sign in */}
         <Pressable
           onPress={() => router.push("/sign-in")}
-          className="mt-7 h-[52px] items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
+          className="mt-7 min-h-[52px] py-2 items-center justify-center rounded-xl bg-[#208AEF] active:opacity-90"
           style={{
             shadowColor: "#101828",
             shadowOpacity: 0.12,

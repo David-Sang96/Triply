@@ -35,7 +35,7 @@ export function InterestChip({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected, disabled }}
       style={{ width }}
-      className={`h-[52px] flex-row items-center justify-center rounded-xl border active:opacity-80 ${
+      className={`min-h-[52px] py-2 flex-row items-center justify-center rounded-xl border active:opacity-80 ${
         selected ? "border-brand bg-brand" : "border-line bg-surface"
       } ${disabled ? "opacity-40" : ""}`}
     >

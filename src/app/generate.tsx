@@ -272,7 +272,7 @@ export default function GenerateScreen() {
         <Pressable
           onPress={onGenerate}
           disabled={createTrip.isPending}
-          className={`mt-6 h-[54px] flex-row items-center justify-center rounded-xl bg-brand active:opacity-90 ${
+          className={`mt-6 min-h-[54px] py-2 flex-row items-center justify-center rounded-xl bg-brand active:opacity-90 ${
             createTrip.isPending ? "opacity-70" : ""
           }`}
           style={shadows.md}
