@@ -145,23 +145,52 @@ export async function GET(request: Request) {
   const userId = await getUserId(request);
   if (!userId) return unauthorized();
 
-  let rows = await readRates();
+  try {
+    let rows = await readRates();
 
-  // Two requests arriving together can both refresh. The upsert is idempotent
-  // and the second write is identical to the first, so the race costs one
-  // wasted fetch a day at worst — cheaper than any lock would be.
-  if (needsRefresh(rows)) {
-    await refreshFromFeed();
-    rows = await readRates();
+    // Two requests arriving together can both refresh. The upsert is idempotent
+    // and the second write is identical to the first, so the race costs one
+    // wasted fetch a day at worst — cheaper than any lock would be.
+    if (needsRefresh(rows)) {
+      await refreshFromFeed();
+      rows = await readRates();
+    }
+
+    const rates: Record<string, number> = {};
+    for (const row of rows) rates[row.currency] = row.ratePerUsd;
+
+    const updatedAt = rows.length
+      ? new Date(Math.max(...rows.map((r) => r.updatedAt.getTime()))).toISOString()
+      : null;
+
+    // USD is absent by design — it is the base, and the client treats it as 1.
+    return Response.json({ base: "USD", rates, updatedAt });
+  } catch (err) {
+    // Without this the query simply throws, the Worker returns an unhandled
+    // 500, and nothing is reported — there is no Sentry SDK in this runtime, so
+    // an uncaught error here is genuinely silent.
+    //
+    // That silence is the expensive part, because the app is *designed* to fall
+    // back to dollars when it has no rates. A broken table and a currency that
+    // simply has no row therefore look identical on the phone: prices in
+    // dollars, no error, nothing to see. Exactly that happened on the day this
+    // shipped — the fx_rates table had not been migrated, every request 500'd,
+    // and the only symptom was "the currency setting does nothing".
+    //
+    // captureServerErrorOnce rather than captureServerError: a missing table or
+    // a bad DATABASE_URL fails every request alike, so one report says
+    // everything. Isolates recycle, so a still-broken deployment reports again
+    // periodically instead of going quiet for good.
+    await captureServerErrorOnce("fx_rates_read", err, {
+      failure_kind: "fx_rates_unavailable",
+      route: "GET /api/rates",
+      status: 503,
+    });
+
+    // 503 rather than an empty 200. Both render dollars, because that is what
+    // formatMoney does with no rate — but an empty 200 would claim the rates
+    // are legitimately unavailable, and the client would cache that answer for
+    // 12 hours. An error lets React Query retry.
+    return Response.json({ error: "Exchange rates are unavailable" }, { status: 503 });
   }
-
-  const rates: Record<string, number> = {};
-  for (const row of rows) rates[row.currency] = row.ratePerUsd;
-
-  const updatedAt = rows.length
-    ? new Date(Math.max(...rows.map((r) => r.updatedAt.getTime()))).toISOString()
-    : null;
-
-  // USD is absent by design — it is the base, and the client treats it as 1.
-  return Response.json({ base: "USD", rates, updatedAt });
 }
