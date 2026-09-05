@@ -352,6 +352,32 @@ this file drifted badly once by ticking boxes on code that had never run.
       1 search + 5 pings per generation instead of 2 requests, so roughly 8
       generations/hour rather than 25 until production is approved.*
 
+- [x] **Multi-language UI — English + Burmese**, switchable instantly, with the
+      generated itinerary and assistant replies following the choice.
+      **Verified in production on a real device, 5 Sep**: the app in Burmese, and
+      a trip generated from an English destination came back with its title,
+      summary, day titles and activity prose in Burmese.
+      `i18next` + `react-i18next` for the app's own strings; Noto Sans Myanmar
+      for Myanmar script, picked **per text run by script** rather than by the
+      app language — a Burmese UI still renders English place names in Poppins,
+      and mixing the two inside one label used to clip it. Burmese is also scaled
+      down optically, because stacked diacritics make it render ~42% taller than
+      English at the same nominal size.
+      Server side, `trips.language` (`"en" | "my"`, migration `0010`) drives the
+      Gemini prompt. **`placeName` is deliberately exempt** and stays in Latin
+      script: the server geocodes it to place map pins, and Burmese-script names
+      mostly fail to geocode — translating them would cost the trip its pins and
+      flip `place_verified` false. The same migration adds `trips.error_code`, so
+      failures travel as a code the app renders in the active language instead of
+      server-authored English prose.
+      **Shipped over the air, with no build.** The native fingerprint is
+      unchanged (`27878b8d…3988c4`) because `i18next` and the fonts are JS and
+      assets only, so the 16 Aug internal APK took it via `eas update`. Order
+      matters and was followed: `db:migrate:prod` first (both columns are
+      nullable, so the then-live backend was unaffected), then `eas deploy`, then
+      `eas update` — updating the app first would have sent `language` to a
+      server that did not yet know the column.
+
 ## Phase 8 — Release
 
 See [`docs/RELEASE.md`](docs/RELEASE.md) for the full procedure.
