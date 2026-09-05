@@ -5,15 +5,27 @@ import type { Rates } from "@/lib/rates";
 // moment they are drawn. That is what lets changing the Currency preference
 // reprice trips the user already has — a currency captured per trip could not.
 
-const SYMBOLS: Record<Currency, string> = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  MMK: "K",
-  SGD: "S$",
-  THB: "฿",
+// Symbol and, just as importantly, which side of the number it goes on.
+//
+// The kyat is written after the amount — "1,800 Ks", not "K1,800". Treating
+// every currency as a prefix because the dollar is one produces something a
+// Burmese reader immediately clocks as wrong, which rather undoes the point of
+// offering their currency at all.
+const FORMATS: Record<Currency, { symbol: string; suffix?: true }> = {
+  USD: { symbol: "$" },
+  EUR: { symbol: "€" },
+  GBP: { symbol: "£" },
+  JPY: { symbol: "¥" },
+  MMK: { symbol: "Ks", suffix: true },
+  SGD: { symbol: "S$" },
+  THB: { symbol: "฿" },
 };
+
+function withSymbol(amount: number, currency: Currency): string {
+  const { symbol, suffix } = FORMATS[currency];
+  const digits = group(amount);
+  return suffix ? `${digits} ${symbol}` : `${symbol}${digits}`;
+}
 
 /**
  * Rounds a converted amount to something honest.
@@ -62,7 +74,7 @@ export function formatMoney(
   // precision *invented by the conversion*, and an unconverted amount has none
   // to hide — it is the number the model actually gave. Rounding it anyway
   // turned $1,234 into $1,230, which is a worse answer, not a humbler one.
-  const dollars = `${SYMBOLS.USD}${group(Math.round(Math.abs(usd)))}`;
+  const dollars = withSymbol(Math.round(Math.abs(usd)), "USD");
   if (currency === "USD") return dollars;
 
   const rate = rates?.[currency];
@@ -70,5 +82,5 @@ export function formatMoney(
     return dollars;
   }
 
-  return `${SYMBOLS[currency]}${group(roundForDisplay(Math.abs(usd) * rate))}`;
+  return withSymbol(roundForDisplay(Math.abs(usd) * rate), currency);
 }
