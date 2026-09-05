@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -275,6 +276,41 @@ export const destinations = pgTable("destinations", {
 
 export type Destination = typeof destinations.$inferSelect;
 export type NewDestination = typeof destinations.$inferInsert;
+
+// Exchange rates against USD, which is how every cost is stored
+// (activities.est_cost_usd) and how the AI is asked to quote. Conversion happens
+// when a price is drawn, so changing the Currency preference reprices trips the
+// user already has, including old ones — a per-trip currency could not do that.
+//
+// USD itself is deliberately absent: a row whose value must always be exactly 1
+// is a row somebody eventually edits. Code treats USD as the identity.
+//
+// `source` is the whole mechanism rather than mere bookkeeping. The refresh in
+// /api/rates writes 'feed' rows only, so a 'manual' row survives it. That
+// exists for the kyat: open.er-api.com is the only free feed carrying MMK and
+// it publishes the Central Bank official rate (~2,100/USD), roughly half what a
+// traveller actually pays. Showing that number would mislead the exact audience
+// this app added Burmese for, so MMK is maintained by hand — see docs/RELEASE.md.
+export const fxRateSource = pgEnum("fx_rate_source", ["feed", "manual"]);
+
+export const fxRates = pgTable("fx_rates", {
+  // ISO 4217 code, e.g. "EUR". Text rather than an enum: the supported list is
+  // an app-level choice that changes more often than a database type should.
+  currency: text("currency").primaryKey(),
+  // doublePrecision, not numeric: Drizzle hands numeric back as a string, and
+  // every consumer here wants a number. float8 carries ~15 significant digits,
+  // which is far more than an exchange rate applied to an AI cost estimate.
+  ratePerUsd: doublePrecision("rate_per_usd").notNull(),
+  source: fxRateSource("source").notNull().default("feed"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export type FxRate = typeof fxRates.$inferSelect;
+export type NewFxRate = typeof fxRates.$inferInsert;
+export type FxRateSource = (typeof fxRateSource.enumValues)[number];
 
 export const tripsRelations = relations(trips, ({ one, many }) => ({
   user: one(users, { fields: [trips.userId], references: [users.id] }),

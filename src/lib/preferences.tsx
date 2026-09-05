@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
+import { BUDGETS, type Budget } from "@/data/generate";
 import i18n from "@/lib/i18n";
 
 // Travel preferences shown on the Profile screen. These live on the device
@@ -18,13 +19,17 @@ import i18n from "@/lib/i18n";
 // it — so the removed options are handled by coerce() falling back to the
 // default, which it already did for any unrecognised value.
 
+// BUDGETS is imported rather than declared here. The same three values used to
+// be written out in four places — this file, src/data/generate.ts,
+// src/lib/trips.ts, and the budget_level pgEnum — which is three chances for
+// them to drift apart. src/data/generate.ts owns the list because that is where
+// the Generate form reads it; the pgEnum is the database's own type and cannot
+// import app code, so it stays separate and must keep the same three values.
 export const LANGUAGES = ["en", "my"] as const;
 export const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "MMK", "SGD", "THB"] as const;
-export const BUDGETS = ["Budget", "Mid-range", "Luxury"] as const;
 
 export type Language = (typeof LANGUAGES)[number];
 export type Currency = (typeof CURRENCIES)[number];
-export type Budget = (typeof BUDGETS)[number];
 
 /** What the picker shows. Each language is named in its own language. */
 export const LANGUAGE_LABELS: Record<Language, string> = {

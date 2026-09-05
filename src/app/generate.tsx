@@ -26,6 +26,7 @@ import {
   type Budget,
 } from "@/data/generate";
 import { ApiError } from "@/lib/api";
+import { usePreferences } from "@/lib/preferences";
 import { useCreateTrip } from "@/lib/trips";
 import { colors, shadows } from "@/theme/colors";
 
@@ -39,6 +40,7 @@ export default function GenerateScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const { preferences } = usePreferences();
   const { destination: prefill, interest: interestPrefill } =
     useLocalSearchParams<{ destination?: string; interest?: string }>();
 
@@ -48,7 +50,12 @@ export default function GenerateScreen() {
   const [destination, setDestination] = useState(prefill ?? "");
   const [days, setDays] = useState(5);
   const [travelers, setTravelers] = useState(2);
-  const [budget, setBudget] = useState<Budget>("Mid-range");
+  // Seeded from the Profile "Travel budget" preference, and only seeded — the
+  // user can still change it for this one trip. A preference is a starting
+  // point, not a lock, so this is deliberately the initial state rather than a
+  // value synced on every render: changing the setting mid-form would otherwise
+  // yank the choice out from under whoever was filling it in.
+  const [budget, setBudget] = useState<Budget>(preferences.budget);
   // Pre-selected when arriving from an "AI Inspirations" tile (validated
   // against the real interest list so a bad/unknown id can't sneak in);
   // defaults to Food otherwise, same as before.

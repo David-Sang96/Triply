@@ -6,6 +6,8 @@ import {
 } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
+import type { Budget } from "@/data/generate";
+
 import { useApiFetch } from "./api";
 import { useLanguage } from "./preferences";
 
@@ -20,7 +22,11 @@ export type TripStatus =
   | "ready"
   | "failed";
 
-export type BudgetLevel = "Budget" | "Mid-range" | "Luxury";
+// An alias, not a redeclaration: the three values live in src/data/generate.ts.
+// The name stays BudgetLevel because that is what the API contract and the
+// budget_level column call it, and renaming it would touch every call site to
+// say nothing new.
+export type BudgetLevel = Budget;
 export type TimeOfDay = "morning" | "afternoon" | "evening";
 
 export type TripListItem = {

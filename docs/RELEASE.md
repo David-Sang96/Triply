@@ -735,5 +735,23 @@ failing step names the code. The fix is to split that step's work into several
       `--environment production` the routes load unconfigured and the deploy is
       refused — and `EXPO_PUBLIC_API_URL` points at that origin
 - [ ] Clerk webhook and Inngest Cloud point at the deployed origin
+- [ ] **The kyat rate in `fx_rates` is set and not stale.** This is the one
+      number in the app that no feed maintains. `open.er-api.com` does carry
+      MMK, but at the Central Bank official rate (~2,100/USD) — roughly half
+      what a traveller actually pays — so `/api/rates` deliberately excludes it
+      and the row is kept by hand:
+
+      ```sql
+      INSERT INTO fx_rates (currency, rate_per_usd, source)
+      VALUES ('MMK', <today's market rate>, 'manual')
+      ON CONFLICT (currency) DO UPDATE
+        SET rate_per_usd = EXCLUDED.rate_per_usd, updated_at = now();
+      ```
+
+      Or edit the one cell in `npm run db:studio:prod`. It applies immediately;
+      no deploy, no app update. **Until the row exists, Burmese users see prices
+      in dollars** — deliberately, because an unconverted price beats a wrong
+      one. A stale rate has no alarm attached to it, which is why it is on this
+      list.
 - [ ] `expo.version` in `app.json` bumped if this is a user-visible release
 - [ ] Build tested from the install link on a real device before submitting

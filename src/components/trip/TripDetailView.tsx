@@ -20,6 +20,9 @@ import { useTranslation } from "react-i18next";
 import { PhotoScrim, PILL_ON_PHOTO } from "@/components/PhotoScrim";
 import { Text } from "@/components/Text";
 import { ApiError } from "@/lib/api";
+import { formatMoney } from "@/lib/money";
+import { usePreferences } from "@/lib/preferences";
+import { useRates } from "@/lib/rates";
 import type { Activity, Day, TripDetail, TripImage } from "@/lib/trips";
 import { useToggleTripCover, useUploadTripCover } from "@/lib/trips";
 import { colors } from "@/theme/colors";
@@ -150,6 +153,10 @@ function ActivityRow({
   active?: boolean;
 }) {
   const { t } = useTranslation();
+  // Both are cheap per row: preferences is a context read, and every ActivityRow
+  // shares one React Query cache entry rather than issuing a request each.
+  const { preferences } = usePreferences();
+  const { data: rates } = useRates();
   const mappable = isMappable(activity) && Boolean(onPressPlace);
   return (
     <View className="flex-row">
@@ -214,7 +221,7 @@ function ActivityRow({
             <Text className="ml-auto pl-2 font-psemibold text-[12px] text-ink">
               {activity.estCostUsd === 0
                 ? t("tripDetail.free")
-                : `$${activity.estCostUsd}`}
+                : formatMoney(activity.estCostUsd, preferences.currency, rates)}
             </Text>
           ) : null}
         </View>

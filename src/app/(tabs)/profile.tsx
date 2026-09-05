@@ -20,10 +20,10 @@ import { Text } from "@/components/Text";
 import { OptionSheet } from "@/components/profile/OptionSheet";
 import { SettingsCard } from "@/components/profile/SettingsCard";
 import { SettingsRow } from "@/components/profile/SettingsRow";
+import { BUDGETS } from "@/data/generate";
 import { useDeleteAccount } from "@/lib/account";
 import { links } from "@/lib/links";
 import {
-  BUDGETS,
   CURRENCIES,
   LANGUAGE_LABELS,
   LANGUAGES,
