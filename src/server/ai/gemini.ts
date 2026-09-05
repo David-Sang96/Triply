@@ -30,6 +30,8 @@ function languageRules(language: string | undefined): string[] {
   if (language !== "my") return [];
   return [
     `- Write "title", "summary", every day "title", and every activity "name" and "description" in Burmese (Myanmar script, Unicode — never Zawgyi).`,
+    `- Write natural, idiomatic Burmese the way a Burmese speaker actually says it — NOT a word-by-word translation of English. Use warm, polite, conversational phrasing, the register a friendly local guide uses with a traveller, not formal literary or textbook Burmese.`,
+    `- Keep numbers, prices and times in Arabic numerals, never Burmese numerals.`,
     `- LEAVE "placeName" EXACTLY as the real place is written for a map search, in its usual Latin/English form (e.g. "Shwezigon Pagoda"). Do NOT translate or transliterate it.`,
   ];
 }

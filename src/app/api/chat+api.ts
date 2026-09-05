@@ -20,7 +20,28 @@ const HISTORY_LIMIT = 30;
 // place the request uses, rather than being restated on the client and drifting.
 const CHAT_MODEL = "gemini-flash-latest";
 const CHAT_TEMPERATURE = 0.7;
-const CHAT_MAX_OUTPUT_TOKENS = 800;
+// `maxOutputTokens` is a budget for thinking AND the reply together, and Gemini
+// 3.x thinks by default. Measured on gemini-3.8-flash, which is what
+// `gemini-flash-latest` resolves to today, asking one ordinary travel question:
+//
+//   800, thinking default → finishReason MAX_TOKENS, 780 thought tokens,
+//                           32 reply tokens — a 72-character stub
+//   800, thinking off     → finishReason STOP, 478 reply tokens, full answer
+//   3000, thinking default → finishReason STOP, 980 thought tokens wasted
+//
+// So the old 800-with-thinking spent 97% of the budget before writing a word,
+// and truncated or returned nothing at all — the 502 below. Nobody changed this
+// route to break it: `gemini-flash-latest` is a floating alias, and it silently
+// moved to a thinking model underneath us. That is the same trap ITINERARY_MODELS
+// pins against in src/server/ai/gemini.ts.
+//
+// Thinking is off because this is a conversational travel assistant, not a
+// reasoning task, and off is faster and cheaper on a rate-limited free tier.
+// The cap is still raised well above what a reply needs: Burmese costs far more
+// tokens per character than English, so the old ceiling was tightest exactly
+// where the writing was already weakest.
+const CHAT_MAX_OUTPUT_TOKENS = 1500;
+const CHAT_THINKING_BUDGET = 0; // 0 = disabled, -1 = automatic
 const MAX_TITLE_LENGTH = 40;
 
 function normalizeUuid(raw: string | null | undefined): string | null {
@@ -57,6 +78,29 @@ const SYSTEM_PROMPT = [
   "Reply in plain text. Do NOT use Markdown formatting — no asterisks, no '#', no bold or italic markers. For lists, use a simple '-' dash and short lines.",
   "Only answer travel-related questions; if asked something off-topic, politely steer back to travel.",
   "Never ask for or store personal identity details (full name, email, passwords, payment info).",
+].join(" ");
+
+// Appended when the user's app language is Burmese.
+//
+// The register guidance is not padding. Told only "reply in Burmese", the model
+// answers in English internally and renders it clause by clause: grammatical,
+// but stiff and faintly foreign in a way native readers notice immediately.
+// Naming the register and asking for Burmese phrasing rather than a translation
+// of English is the only lever available here — the chat runs on
+// `gemini-flash-latest` (currently gemini-3.8-flash), and Gemini Pro, which the
+// Gemini phone app uses, is quota-zero on the free tier rather than merely
+// limited, so "just use a bigger model" is not an option without billing.
+//
+// Arabic numerals are specified because Burmese numerals render inconsistently
+// across the fonts and keyboards users actually have, and a price or a meeting
+// time is the worst place for that.
+const BURMESE_RULES = [
+  "Reply in Burmese (Myanmar script, Unicode — never Zawgyi).",
+  "Write natural, idiomatic Burmese the way a Burmese speaker actually says it. Do NOT translate an English sentence word by word.",
+  "Use warm, polite, conversational Burmese — the register a friendly local guide uses with a traveller, not formal literary or textbook Burmese.",
+  "Keep sentences short and easy to read aloud.",
+  "Write numbers, prices, times and dates in Arabic numerals (2, 10:00, $50), never Burmese numerals.",
+  "Keep place names, hotel names, restaurant names and transport line names in their usual Latin/English form so they can be searched on a map and shown to a driver.",
 ].join(" ");
 
 type TripWithDays = {
@@ -187,9 +231,7 @@ export async function POST(request: Request) {
   // reason as in the itinerary prompt: the user has to be able to search for
   // them on a map and show them to a driver.
   if (parsed.data.language === "my") {
-    systemInstruction +=
-      " Reply in Burmese (Myanmar script, Unicode — never Zawgyi)." +
-      " Keep place names, hotel names and transport line names in their usual Latin/English form so they can be searched on a map.";
+    systemInstruction += " " + BURMESE_RULES;
   }
   if (tripId) {
     const trip = await db.query.trips.findFirst({
@@ -286,10 +328,30 @@ export async function POST(request: Request) {
         systemInstruction,
         temperature: CHAT_TEMPERATURE,
         maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,
+        thinkingConfig: { thinkingBudget: CHAT_THINKING_BUDGET },
       },
     });
     const reply = response.text?.trim();
     if (!reply) {
+      // Report the reason, not just the fact. An empty reply is almost always
+      // the token budget running out before the model wrote anything
+      // (finishReason MAX_TOKENS) rather than a refusal or a safety block, and
+      // from the outside those are indistinguishable — which is how the
+      // thinking-token regression described above stayed invisible. Both values
+      // are enum-like or counts, so this stays inside the telemetry rule.
+      await captureServerError(
+        new Error("Gemini returned an empty chat reply"),
+        {
+          failure_kind: "chat_empty_reply",
+          route: "POST /api/chat",
+          status: 502,
+          tags: {
+            finish_reason: response.candidates?.[0]?.finishReason ?? "unknown",
+            thought_tokens: response.usageMetadata?.thoughtsTokenCount ?? 0,
+            max_output_tokens: CHAT_MAX_OUTPUT_TOKENS,
+          },
+        },
+      );
       return Response.json(
         { error: "The assistant didn't reply. Please try again." },
         { status: 502 },
