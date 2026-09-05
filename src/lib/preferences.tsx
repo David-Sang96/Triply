@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 import { BUDGETS, type Budget } from "@/data/generate";
 import i18n from "@/lib/i18n";
+import { queryClient } from "@/lib/query";
 
 // Travel preferences shown on the Profile screen. These live on the device
 // only — there is no user_preferences table yet, so nothing here is sent to
@@ -160,6 +161,20 @@ export function PreferencesProvider({
       i18n.changeLanguage(preferences.language);
     }
   }, [preferences.language]);
+
+  // Picking a currency asks for fresh rates.
+  //
+  // useRates caches for 12 hours, which is right for a feed that publishes
+  // daily and wrong for the kyat, whose rate is typed into the database by
+  // hand. Setting that row and then finding the app still showing dollars —
+  // because it had cached the rate list from before the row existed — is a
+  // confusing 12 hours, and it happened on the day this shipped.
+  //
+  // Invalidating on mount as well as on change costs nothing: at a cold start
+  // there is no cached data to keep, so the query was going to fetch anyway.
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["fx-rates"] });
+  }, [preferences.currency]);
 
   return (
     <PreferencesContext.Provider value={{ preferences, update }}>
